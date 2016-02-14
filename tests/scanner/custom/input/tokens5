@@ -1,0 +1,3 @@
+// This tests that truefalse and falstrue are parsed as IDENTIFIER but
+// true and false are still parsed as BOOLEANLITERAL
+truefalse falsetrue true false

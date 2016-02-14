@@ -15,7 +15,7 @@ import antlr.Token
 import edu.mit.compilers.grammar.{ DecafParser, DecafParserTokenTypes, DecafScanner, DecafScannerTokenTypes }
 
 object Compiler {
-  val tokenMap = Map(DecafScannerTokenTypes.ID -> "IDENTIFIER")
+  val tokenMap = Map(DecafScannerTokenTypes.CHAR_LITERAL -> "CHARLITERAL", DecafScannerTokenTypes.INT_LITERAL -> "INTLITERAL", DecafScannerTokenTypes.TRUE -> "BOOLEANLITERAL", DecafScannerTokenTypes.FALSE -> "BOOLEANLITERAL", DecafScannerTokenTypes.STRING_LITERAL -> "STRINGLITERAL", DecafScannerTokenTypes.ID -> "IDENTIFIER")
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(
     new java.io.FileOutputStream(CLI.outfile)))
   def main(args: Array[String]): Unit = {
