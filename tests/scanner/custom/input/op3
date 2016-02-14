@@ -1,0 +1,2 @@
+// Make sure these are parsed properly (i.e. be careful of nondeterminism)
++ += - -= = ==
