@@ -75,13 +75,14 @@ MINUS options { paraphrase = "-"; } : {LA(2) != '='}? '-';
 MUL options { paraphrase = "*"; } : '*';
 DIV options { paraphrase = "/"; } : '/';
 MOD options { paraphrase = "%"; } : '%';
+EQ options { paraphrase = "="; } : {LA(2) != '='}? '=';
 
 ID options { paraphrase = "ID"; } : ALPHA (ALPHA_NUM)*;
 
 // === Operators ===
 // Put the operators into the parser to prevent lexical nondeterminism
 // BIN_OP : (ARITH_OP | REL_OP | EQ_OP | COND_OP); // Put this into the parser to avoid nondeterminism
-ASSIGN_OP : ("+=" | "-=" | {LA(2) != '='}? '=' );
+ASSIGN_OP_DELTA : ("+=" | "-=" ); // "=" is lexed separately as it is also used in a for loop.
 EQ_OP :  ("==" | "!=");
 COND_OP : ("&&" | "||");
 // ARITH_OP : ( '+' | '-' | '*' | '/' | '%'); // Put this into the parser to avoid nondeterminism
