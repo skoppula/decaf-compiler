@@ -1,0 +1,4 @@
+// double ternary operator
+int f () {
+return a?b:c?d:e;
+}
