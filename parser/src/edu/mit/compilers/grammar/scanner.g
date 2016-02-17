@@ -76,6 +76,8 @@ MUL options { paraphrase = "*"; } : '*';
 DIV options { paraphrase = "/"; } : '/';
 MOD options { paraphrase = "%"; } : '%';
 EQ options { paraphrase = "="; } : {LA(2) != '='}? '=';
+AND options { paraphrase = "&&"; } : "&&";
+OR options { paraphrase = "||"; } : "||";
 
 ID options { paraphrase = "ID"; } : ALPHA (ALPHA_NUM)*;
 
@@ -84,7 +86,7 @@ ID options { paraphrase = "ID"; } : ALPHA (ALPHA_NUM)*;
 // BIN_OP : (ARITH_OP | REL_OP | EQ_OP | COND_OP); // Put this into the parser to avoid nondeterminism
 ASSIGN_OP_DELTA : ("+=" | "-=" ); // "=" is lexed separately as it is also used in a for loop.
 EQ_OP :  ("==" | "!=");
-COND_OP : ("&&" | "||");
+// COND_OP : ("&&" | "||"); // Put this into parser to enforce precedence
 // ARITH_OP : ( '+' | '-' | '*' | '/' | '%'); // Put this into the parser to avoid nondeterminism
 REL_OP : ("<=" | ">=" | '<' | '>');
 
