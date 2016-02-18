@@ -78,78 +78,38 @@ statement
     )
   ;
 
-method_call
-  : method_name LPAREN ( (expr | STRING_LITERAL) (COMMA (expr | STRING_LITERAL))*)? RPAREN
-    //( method_name LPAREN (expr (COMMA expr)*)?  RPAREN
-    //| method_name LPAREN (callout_arg (COMMA callout_arg)*)? RPAREN
-    //)
-  ;
+method_call : method_name LPAREN (callout_arg (COMMA callout_arg)*)? RPAREN;
+callout_arg : expr | STRING_LITERAL;
+method_name : ID;
+location : (ID | ID LBRACK expr RBRACK);
 
-method_name : {LA(2) == LPAREN}? ID;
+// == Expressions ==
+// Hacking around binary operator precedence and fixing left recursion
+expr : expr_bin (options { greedy = true; }: QUESTION expr COLON expr)*;
+expr_bin : expr_or;
+expr_or : expr_and (options { greedy = true; }: OR expr_and)*;
+expr_and : expr_eq (options { greedy = true; }: AND expr_eq)*;
+expr_eq : expr_rel (options { greedy = true; }: EQ_OP expr_rel)*;
+expr_rel : expr_add (options { greedy = true; }: REL_OP expr_add)*;
+expr_add : expr_mul (options { greedy = true; }: add_op expr_mul)*;
+expr_mul : expr_atom (options { greedy = true; }: mul_op expr_atom)*;
 
-location : {LA(2) != LPAREN}? (ID | ID LBRACK expr RBRACK);
-
-expr
-  : ( method_call expr_
-    | location expr_
-    | literal expr_
-    | AT ID expr_
-    | MINUS expr expr_
-    | NOT expr expr_
-    | LPAREN expr RPAREN expr_
+expr_atom
+  : ( method_call
+    | location
+    | literal
+    | AT ID
+    | MINUS expr 
+    | NOT expr
+    | LPAREN expr RPAREN
     )
   ;
-
-expr_
-  : ( QUESTION expr COLON expr expr_
-    | bin_op expr expr_
-    | // epsilon
-    )
-  ;
-
-//expr
-  //:(| location
-    //| method_call
-    //| literal
-    //| AT ID
-    //| expr bin_op expr // Need to eliminate left recursion 
-    //| MINUS expr
-    //| NOT expr
-    //| LPAREN expr RPAREN
-    //| expr QUESTION expr COLON expr // Need to eliminate left recursion
-//  ;
-
-// callout_arg : expr | STRING_LITERAL;
 
 // === Literals ===
 literal : (INT_LITERAL | CHAR_LITERAL | bool_literal );
 bool_literal : (TRUE | FALSE);
 
 // === Operators ===
-bin_op : (OR | AND | EQ_OP | REL_OP | add_op | mul_op);
-//bin_op : (arith_op | REL_OP | EQ_OP | cond_op);
-assign_op : (ASSIGN_OP_DELTA | EQ);
-// arith_op : (add_op | mul_op);
+assign_op : (PLUSEQ | MINUSEQ | EQ);
 add_op : (PLUS | MINUS);
 mul_op : (MUL | DIV | MOD);
-// cond_op : (AND | OR);
-
-// == Hacking around binary operator precedence ==
-// Increasing order of precedence
-// Likely will have to reformat below to fit the hacks around left recursion
-/*
-bin_op : bin_or;
-bin_or : bin_and (OR bin_and)*;
-bin_and : bin_eq (AND bin_eq)*;
-bin_eq : bin_rel (EQ_OP bin_rel)*;
-bin_rel : bin_add (REL_OP bin_add)*;
-bin_add : bin_mul (add_op bin_mul)*;
-bin_mul : un_op (mul_op un_op)*;
-
-un_op : un_not;
-un_not : (NOT)* un_minus;
-un_minus : (MINUS)* expr;
-*/
-
-// OLD RULES
-// program : TK_class ID LCURLY RCURLY EOF;

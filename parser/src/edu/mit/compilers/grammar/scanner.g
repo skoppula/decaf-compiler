@@ -76,29 +76,25 @@ MUL options { paraphrase = "*"; } : '*';
 DIV options { paraphrase = "/"; } : '/';
 MOD options { paraphrase = "%"; } : '%';
 EQ options { paraphrase = "="; } : {LA(2) != '='}? '=';
+PLUSEQ options { paraphrase = "+="; } : "+=";
+MINUSEQ options { paraphrase = "-="; } : "-=";
 AND options { paraphrase = "&&"; } : "&&";
 OR options { paraphrase = "||"; } : "||";
 
 ID options { paraphrase = "ID"; } : ALPHA (ALPHA_NUM)*;
 
 // === Operators ===
-// Put the operators into the parser to prevent lexical nondeterminism
-// BIN_OP : (ARITH_OP | REL_OP | EQ_OP | COND_OP); // Put this into the parser to avoid nondeterminism
-ASSIGN_OP_DELTA : ("+=" | "-=" ); // "=" is lexed separately as it is also used in a for loop.
+// Some of the operators are put into the parser to prevent lexical nondeterminism
 EQ_OP :  ("==" | "!=");
-// COND_OP : ("&&" | "||"); // Put this into parser to enforce precedence
-// ARITH_OP : ( '+' | '-' | '*' | '/' | '%'); // Put this into the parser to avoid nondeterminism
 REL_OP : ("<=" | ">=" | '<' | '>');
 
 // === Literals ===
-// LITERAL : (INT_LITERAL | CHAR_LITERAL | BOOL_LITERAL); // Put this into the parser to avoid nondeterminism
+// Since "true" and "false" are reserved keywords, they are parsed as individual tokens and used directly in the parser
 INT_LITERAL options { paraphrase = "INT"; } : (DECIMAL_LITERAL | HEX_LITERAL);
+CHAR_LITERAL options { paraphrase = "CHAR"; } : '\'' CHAR '\'';
+STRING_LITERAL options { paraphrase = "STRING"; } : '"' (CHAR)*  '"';
 
-// BOOL_LITERAL options { paraphrase = "BOOL"; } : ("true" | "false"); // These are reserved keywords so they go into the tokens section
-CHAR_LITERAL options { paraphrase = "CHAR"; }: '\'' CHAR '\'' ;
-STRING_LITERAL options { paraphrase = "STRING"; } : '"' (CHAR)*  '"' ;
-
-WS : (' '  | '\t' | '\n' {newline();} ) {_ttype = Token.SKIP;} ;
+WS : (' ' | '\t' | '\n' { newline(); } ) { _ttype = Token.SKIP; };
 COMMENT : "//" (~'\n')* '\n' { _ttype = Token.SKIP; newline(); };
 
 protected DECIMAL_LITERAL : DIGIT (DIGIT)*;
@@ -107,5 +103,7 @@ protected ALPHA_NUM : (ALPHA | DIGIT);
 protected ALPHA : ('a'..'z' | 'A'..'Z'| '_');
 protected HEX_DIGIT : (DIGIT | 'a'..'f' | 'A'..'F');
 protected DIGIT : ('0'..'9');
-protected CHAR : (ESC|'\40'..'\41'|'\43'..'\46'|'\50'..'\133'|'\135'..'\176'); // Printable range (octal) is '\40'..'\176'. Exclude '"' , '\'' , '\\'.
+
+// Printable range (octal) is '\40'..'\176'. Exclude '"' , '\'' , '\\'.
+protected CHAR : (ESC|'\40'..'\41'|'\43'..'\46'|'\50'..'\133'|'\135'..'\176'); 
 protected ESC :  '\\' ('"'|'\''|'\\'|'t'|'n');
