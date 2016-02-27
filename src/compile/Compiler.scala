@@ -101,6 +101,6 @@ object Compiler {
       */
     val ast: CommonAST = parse(fileName);
     print(ast);
-    return (t adast, null)
+    return (ast, null)
   }
 }
