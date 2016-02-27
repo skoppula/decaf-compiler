@@ -1,23 +1,26 @@
+package compilerTests
+
 import org.scalatest.FunSuite
+import org.scalatest.BeforeAndAfterAll
+import java.io._
 
-import scala.sys.process._
+class ParserTestSuite extends FunSuite with BeforeAndAfterAll {
 
-class ParserTestSuite extends FunSuite {
+  val file = new File("tests/test_output/parser_test.out")
+  val bw = new BufferedWriter(new FileWriter(file))
+
   test("Parser passes the 6.035 public parser tests") {
-    val result = "./tests/parser/test.sh" !!;
-    println(result);
-    assert(result.equals(""))
+    TestUtil.checkTestScriptOutput("Running the 6.035 public parser tests", "./tests/parser/test.sh", bw)
   }
 
   test("Parser passes the 6.035 hidden parser tests") {
-    val result = "./tests/parser-hidden/test.sh" !!;
-    println(result);
-    assert(result.equals(""))
+    TestUtil.checkTestScriptOutput("Running the 6.035 hidden parser tests", "./tests/parser-hidden/test.sh", bw)
   }
 
-  test("Parser passes the 6.035 custom tests") {
-    val result = "./tests/parser/custom/test.sh" !!;
-    println(result);
-    assert(result.equals(""))
+  test("Parser passes the 6.035 custom parser tests") {
+    TestUtil.checkTestScriptOutput("Running the 6.035 custom parser tests", "./tests/parser/custom/test.sh", bw)
+  }
+  override def afterAll {
+    bw.close()
   }
 }

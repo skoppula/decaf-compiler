@@ -1,0 +1,27 @@
+Running the 6.035 public semantics tests...
+Exit Status: 1
+Standard Output:
+Illegal file ./tests/semantics/illegal/array-test.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-01.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-02.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-03.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-04.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-05.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-06.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-07.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-08.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-09.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-10.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-11.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-12.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-13.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-14.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-15.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-16.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-17.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-18.dcf semantic checked successfully.
+Illegal file ./tests/semantics/illegal/illegal-19.dcf semantic checked successfully.
+callout
+
+Standard Error:
+
