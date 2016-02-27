@@ -94,39 +94,13 @@ object Compiler {
     } 
   }
 
-  def inter(fileName: String): CommonAST = {
+  def inter(fileName: String): (CommonAST, SymbolTable) = {
     /**
       * Create the intermediate AST representation + symbol table structures
-      * Heavily borrows from parser() (as of now)
+      * Where all the identifier and semantic checking magic will happen
       */
-    var inputStream : java.io.FileInputStream = null
-    try {
-      inputStream = new java.io.FileInputStream(fileName)
-    } catch {
-      case f: FileNotFoundException => { Console.err.println("File " + fileName + " does not exist"); return null }
-    }
-
-    try {
-      val scanner = new DecafScanner(new DataInputStream(inputStream))
-      val parser = new DecafParser(scanner);
-
-      parser.setTrace(CLI.debug)
-      parser.program()
-      val t = parser.getAST().asInstanceOf[CommonAST]
-      print(t)
-
-      if (parser.getError()) {
-        print("[ERROR] Creating AST failed\n")
-        return null
-      } else if (CLI.debug){
-        print(t.toStringList())
-      }
-
-      return t
-
-    } catch {
-      case e: Exception => Console.err.println(CLI.infile + " " + e)
-        null
-    }
+    val ast: CommonAST = parse(fileName);
+    print(ast);
+    return (t adast, null)
   }
 }
