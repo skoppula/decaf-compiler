@@ -113,6 +113,7 @@ object Compiler {
       parser.setTrace(CLI.debug)
       parser.program()
       val t = parser.getAST().asInstanceOf[CommonAST]
+      print(t)
 
       if (parser.getError()) {
         print("[ERROR] Creating AST failed\n")
