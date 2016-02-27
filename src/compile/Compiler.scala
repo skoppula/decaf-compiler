@@ -28,6 +28,11 @@ object Compiler {
           System.exit(1)
         }
         System.exit(0)
+    } else if (CLI.target == CLI.Action.INTER) {
+      if(inter(CLI.infile) == null) {
+        System.exit(1)
+      }
+      System.exit(0)
     }
   }
 
@@ -82,10 +87,45 @@ object Compiler {
       } else if (CLI.debug){
         print(t.toStringList())
       }
-      t
+      return t
     } catch {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
       null
     } 
+  }
+
+  def inter(fileName: String): CommonAST = {
+    /**
+      * Create the intermediate AST representation + symbol table structures
+      * Heavily borrows from parser() (as of now)
+      */
+    var inputStream : java.io.FileInputStream = null
+    try {
+      inputStream = new java.io.FileInputStream(fileName)
+    } catch {
+      case f: FileNotFoundException => { Console.err.println("File " + fileName + " does not exist"); return null }
+    }
+
+    try {
+      val scanner = new DecafScanner(new DataInputStream(inputStream))
+      val parser = new DecafParser(scanner);
+
+      parser.setTrace(CLI.debug)
+      parser.program()
+      val t = parser.getAST().asInstanceOf[CommonAST]
+
+      if (parser.getError()) {
+        print("[ERROR] Creating AST failed\n")
+        return null
+      } else if (CLI.debug){
+        print(t.toStringList())
+      }
+
+      return t
+
+    } catch {
+      case e: Exception => Console.err.println(CLI.infile + " " + e)
+        null
+    }
   }
 }
