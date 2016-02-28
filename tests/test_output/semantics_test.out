@@ -21,7 +21,18 @@ Illegal file ./tests/semantics/illegal/illegal-16.dcf semantic checked successfu
 Illegal file ./tests/semantics/illegal/illegal-17.dcf semantic checked successfully.
 Illegal file ./tests/semantics/illegal/illegal-18.dcf semantic checked successfully.
 Illegal file ./tests/semantics/illegal/illegal-19.dcf semantic checked successfully.
-callout
+num children 0
+root text and type callout 6
+first child null
+next sibling random
+next next sibling ;
+next sibling childrennull
+ callout random ; callout srandom ; callout printf ; int A [ 100 ] ; int length ; int partition ( int p , int r ) { int x , i , j , t ; int z ; x = A [ p ] ; i = p - 1 ; j = r + 1 ; for ( z = 0 , length * length ) { int a ; j = j - 1 ; for ( a = 0 , length ) { if ( A [ j ] <= x ) { break ; } j = j - 1 ; } for ( a = i + 1 , length ) { if ( A [ a ] >= x ) { i = a ; break ; } } if ( i < j ) { t = A [ i ] ; A [ i ] = A [ j ] ; A [ j ] = t ; } else { return j ; } } return - 1 ; } void quicksort ( int p , int r ) { int q ; if ( p < r ) { q = partition ( p , r ) ; quicksort ( p , q ) ; quicksort ( q + 1 , r ) ; } } void main ( ) { int temp , i ; length = 10 ; printf ( "creating random array of %d elements\n" , length ) ; srandom ( 17 ) ; for ( i = 0 , length ) { temp = random ( ) ; A [ i ] = temp ; } printf ( "\nbefore sort:\n" ) ; for ( i = 0 , length ) { printf ( "%d\n" , A [ i ] ) ; } quicksort ( 0 , length - 1 ) ; printf ( "\nafter sort\n" ) ; for ( i = 0 , length ) { printf ( "%d\n" , A [ i ] ) ; } } null
+dsds
+ callout
+[Ljava.lang.reflect.Field;@2b7639c8
+
+<0>,EOF,<2>,NULL_TREE_LOOKAHEAD,"boolean","break","callout","continue","else","false","for","while","if","int","return","true","void",{,},(,),[,],@,!,?,:,;,,,+,-,*,/,%,=,+=,-=,&&,||,ID,EQ_OP,REL_OP,INT,CHAR,STRING,WS,COMMENT,DECIMAL_LITERAL,HEX_LITERAL,ALPHA_NUM,ALPHA,HEX_DIGIT,DIGIT,CHAR,ESC
 
 Standard Error:
 

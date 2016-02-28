@@ -76,7 +76,7 @@ object Compiler {
     }
     try {
       val scanner = new DecafScanner(new DataInputStream(inputStream))
-      val parser = new DecafParser(scanner);
+      val parser = new DecafParser(scanner)
 
       parser.setTrace(CLI.debug)
       parser.program()
@@ -100,7 +100,19 @@ object Compiler {
       * Where all the identifier and semantic checking magic will happen
       */
     val ast: CommonAST = parse(fileName);
-    print(ast);
+    println("num children " + ast.getNumberOfChildren());
+    println("root text and type " +  ast.getText() + ' ' + ast.getType());
+    println("first child " + ast.getFirstChild());
+    println("next sibling " + ast.getNextSibling());
+    val main = ast.getNextSibling
+    println("next next sibling " + main.getNextSibling);
+    println("next sibling children" + main.getFirstChild);
+    println(ast.toStringList());
+    println("dsds")
+    println(ast.toStringTree());
+    println(classOf[DecafParserTokenTypes].getFields);
+    println()
+    println(DecafParser._tokenNames.deep.mkString(","))
     return (ast, null)
   }
 }

@@ -55,7 +55,7 @@
   </target>
 
   <target name="scanner" depends="init">
-    <antlr
+    <antlr 
       target="${src}/${base_package_dir}/grammar/scanner.g"
       outputdirectory="${autogen}/${base_package_dir}/grammar"
       trace="yes">

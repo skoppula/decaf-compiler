@@ -105,5 +105,5 @@ protected HEX_DIGIT : (DIGIT | 'a'..'f' | 'A'..'F');
 protected DIGIT : ('0'..'9');
 
 // Printable range (octal) is '\40'..'\176'. Exclude '"' , '\'' , '\\'.
-protected CHAR : (ESC|'\40'..'\41'|'\43'..'\46'|'\50'..'\133'|'\135'..'\176'); 
+protected CHAR : (ESC|'\40'..'\41'|'\43'..'\46'|'\50'..'\133'|'\135'..'\176');
 protected ESC :  '\\' ('"'|'\''|'\\'|'t'|'n');
