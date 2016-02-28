@@ -3,3 +3,4 @@ parser/autogen/*
 parser/classes/*
 parser/dist/*
 .idea/*
+tests/test_output/*
