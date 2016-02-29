@@ -1,4 +1,5 @@
 package compile
+
 import util.CLI
 import scala.util.parsing.input.Reader
 import scala.util.parsing.input.StreamReader
@@ -65,8 +66,8 @@ object Compiler {
 
   def parse(fileName: String): CommonAST  = {
     /** 
-    Parse the file specified by the filename. Eventually, this method
-    may return a type specific to your compiler.
+    *Parse the file specified by the filename. Eventually, this method
+    *may return a type specific to your compiler.
     */
     var inputStream : java.io.FileInputStream = null
     try {
@@ -81,6 +82,7 @@ object Compiler {
       parser.setTrace(CLI.debug)
       parser.program()
       val t = parser.getAST().asInstanceOf[CommonAST]
+
       if (parser.getError()) {
         print("[ERROR] Parse failed\n")
         return null
@@ -94,12 +96,16 @@ object Compiler {
     } 
   }
 
+
+
   def inter(fileName: String): (CommonAST, SymbolTable) = {
     /**
       * Create the intermediate AST representation + symbol table structures
       * Where all the identifier and semantic checking magic will happen
       */
     val ast: CommonAST = parse(fileName);
+    GraphUtil.visualize(ast)
+
     println("num children " + ast.getNumberOfChildren());
     println("root text and type " +  ast.getText() + ' ' + ast.getType());
     println("first child " + ast.getFirstChild());
