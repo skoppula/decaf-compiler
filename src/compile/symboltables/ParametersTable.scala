@@ -13,7 +13,7 @@ import scala.collection.mutable
 class ParametersTable(
      parentsSymbolTable : GlobalFieldTable,
      tableInfo : String,
-     parametersTable : mutable.HashMap[String, BaseDescriptor])
+     parametersTable : mutable.LinkedHashMap[String, BaseDescriptor])
   extends SymbolTable(parentsSymbolTable, tableInfo) {
 
   if(CLI.irdebug)
@@ -46,7 +46,7 @@ class ParametersTable(
     }
   }
 
-  def getParametersTable : mutable.HashMap[String, BaseDescriptor] = {
+  def getParametersTable : mutable.LinkedHashMap[String, BaseDescriptor] = {
     parametersTable
   }
 }

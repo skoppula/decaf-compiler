@@ -2,16 +2,16 @@ package compile
 
 import _root_.util.CLI
 import java.io._
-import compile.symboltables.{MethodsTable, GlobalFieldTable, SymbolTable}
+import compile.descriptors.{MethodDescriptor, BaseDescriptor}
+import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
 
 import scala.Console
 import compile.util.GraphUtil.walkExperimental
-import scala.collection.mutable.Set
-import scala.collection.mutable.Stack
+import scala.collection.mutable
 
 // Begin parser/scanner imports
 import antlr.CommonAST
-import edu.mit.compilers.grammar.{ DecafParser, DecafParserTokenTypes, DecafScanner, DecafScannerTokenTypes }
+import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenTypes }
 
 object Compiler {
 
@@ -19,7 +19,7 @@ object Compiler {
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(
     new java.io.FileOutputStream(CLI.outfile)))
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array[String]());
+    CLI.parse(args, Array[String]())
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
       System.exit(0)
@@ -54,7 +54,7 @@ object Compiler {
         } catch {
           case ex: Exception => {
             Console.err.println(CLI.infile + " " + ex)
-            scanner.consume();
+            scanner.consume()
           }
         }
       }
@@ -95,12 +95,19 @@ object Compiler {
     } 
   }
 
-  def addNewScope(scopeStack : Stack[SymbolTable]) {
-    // TODO
-  }
+  def addNewMethod(
+                    scopeStack : mutable.Stack[SymbolTable],
+                    methodsTable: MethodsTable,
+                    globalFieldTable: GlobalFieldTable,
 
-  def addNewMethod(methodName : String, scopeStack : Stack[SymbolTable], methodsTable: MethodsTable): Unit = {
-    // TODO
+                    methodName : String,
+                    parameters : mutable.LinkedHashMap[String, BaseDescriptor],
+                    methodInfo : String) {
+
+    val parametersTable : ParametersTable = new ParametersTable(globalFieldTable, methodInfo + ": parameter table", parameters)
+    val methodDescriptor = new MethodDescriptor(parametersTable, methodInfo)
+    methodsTable.insert(methodName, methodDescriptor)
+    scopeStack.push(parametersTable)
   }
 
   def inter(fileName: String): (CommonAST, SymbolTable) = {
@@ -131,7 +138,7 @@ object Compiler {
 
     // Step 2.c.
     val methodsTable : MethodsTable = new MethodsTable
-    var scopeStack = Stack.empty[SymbolTable]
+    var scopeStack = mutable.Stack.empty[SymbolTable]
 
     // Step Three
     methodsTable.validate()
