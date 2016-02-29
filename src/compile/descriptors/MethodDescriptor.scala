@@ -4,7 +4,8 @@ import compile.symboltables.ParametersTable
 
 class MethodDescriptor(
     parameterTable : ParametersTable,
-    methodInfo: String)
+    methodInfo: String,
+    returnType : BaseDescriptor)
   extends Descriptor {
   val name = "MethodType"
 

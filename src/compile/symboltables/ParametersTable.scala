@@ -1,7 +1,7 @@
 package compile.symboltables
 
 import compile.IdentifierAlreadyExistsException
-import compile.descriptors.BaseDescriptor
+import compile.descriptors.{IntTypeDescriptor, BoolArrayTypeDescriptor, BaseDescriptor}
 import util.CLI
 
 import scala.collection.mutable

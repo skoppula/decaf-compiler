@@ -97,15 +97,17 @@ object Compiler {
 
   def addNewMethod(
                     scopeStack : mutable.Stack[SymbolTable],
-                    methodsTable: MethodsTable,
-                    globalFieldTable: GlobalFieldTable,
+                    methodsTable : MethodsTable,
+                    globalFieldTable : GlobalFieldTable,
+                    currMethodDescriptor : MethodDescriptor,
 
                     methodName : String,
                     parameters : mutable.LinkedHashMap[String, BaseDescriptor],
+                    returnType : BaseDescriptor,
                     methodInfo : String) {
 
     val parametersTable : ParametersTable = new ParametersTable(globalFieldTable, methodInfo + ": parameter table", parameters)
-    val methodDescriptor = new MethodDescriptor(parametersTable, methodInfo)
+    val methodDescriptor = new MethodDescriptor(parametersTable, methodInfo, returnType)
     methodsTable.insert(methodName, methodDescriptor)
     scopeStack.push(parametersTable)
   }
@@ -120,25 +122,51 @@ object Compiler {
       * Step 1: Traverse tree and create AST
       * Step 2: (catch errors on any one of these steps)
       *   a. Step through AST and note callouts
+      *       (check 1) callout reptition -> CalloutManager handles this
+      *
       *   b. When first field declaration starts and store global field declarations
+      *
       *   c. When first method declaration happens, start scope/local symbol table stack and method table
-      *       - Check that array bounds 0 < x < size of array
-      *       -
-      *      Stop parsing AST when after processing main method
+      *       - (check 4) array bounds -> when descriptor is returned, can check this
+      *       - (check 1 and 2) No identifier twice in scope/before declared -> symbol tables/scope stack handle this
+      *       - (check 5) signature = arguments -> when descriptor is returned, can check this
+      *       - (check 6) if method used as expression, returns result -> when descriptor is returned, can check this
+      *       - (check 7) arrays + strings not used as arguments -> we can check our parameter types when creating parameters
+      *                                                               LinkedHashMap, args won't match when we
+      *                                                               check args==signature (check 5)
+      *       - (check 8) return [value] can't be in non-return type -> check this with currMethodDescriptor
+      *       - (check 9) return type must match signature -> check this with currMethodDescriptor
+      *
       * Step 3: Run any other validation checks
+      *       - (check 3) 1 main() -> validate() in MethodsTable
       */
 
     // Step 1
 
     // Step 2.a.
-    var calloutSet : Set[String] = Set.empty[String]
+    // Toy example using callout manager
+    val calloutManager : CalloutManager = new CalloutManager
+    try {
+      calloutManager.addCallout("printf")
+    } catch {
+      case cae: CalloutAlreadyExistsException => {
+        println("Line 2: Callout already exists (oh no)")
+        sys.exit(1)
+      }
+      case iva: InvalidCalloutException => {
+        println("Line 2: welp callout in wrong place")
+      }
+    }
+
 
     // Step 2.b.
+    calloutManager.closeCallouts
     val globalFieldTable : GlobalFieldTable = new GlobalFieldTable("the global field table")
 
     // Step 2.c.
     val methodsTable : MethodsTable = new MethodsTable
     var scopeStack = mutable.Stack.empty[SymbolTable]
+    var currMethodDescriptor : MethodDescriptor = null;
 
     // Step Three
     methodsTable.validate()
