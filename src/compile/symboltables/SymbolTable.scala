@@ -3,9 +3,9 @@ package compile.symboltables
 import compile.descriptors.BaseDescriptor
 import util.CLI
 import scala.collection.mutable
-import compile.IdentifierAlreadyExistsException
+import compile.{ScopeTypes, IdentifierAlreadyExistsException}
 
-class SymbolTable(parentSymbolTable : SymbolTable, tableInfo : String) {
+class SymbolTable(parentSymbolTable : SymbolTable, tableInfo : String, scopeType : ScopeTypes.EnumVal) {
   var symbolTableMap : mutable.HashMap[String, BaseDescriptor] = mutable.HashMap.empty[String, BaseDescriptor]
   var childrenSymbolTables : mutable.Set[SymbolTable] = mutable.Set.empty[SymbolTable]
 
