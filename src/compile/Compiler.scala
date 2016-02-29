@@ -127,7 +127,7 @@ object Compiler {
       *   b. When first field declaration starts and store global field declarations
       *
       *   c. When first method declaration happens, start scope/local symbol table stack and method table
-      *       - (check 4) array bounds -> when descriptor is returned, can check this
+      *       - (check 4) decl array size > 0 -> when inserting into symbol table, can check this
       *       - (check 1 and 2) No identifier twice in scope/before declared -> symbol tables/scope stack handle this
       *       - (check 5) signature = arguments -> when descriptor is returned, can check this
       *       - (check 6) if method used as expression, returns result -> when descriptor is returned, can check this
@@ -136,6 +136,14 @@ object Compiler {
       *                                                               check args==signature (check 5)
       *       - (check 8) return [value] can't be in non-return type -> check this with currMethodDescriptor
       *       - (check 9) return type must match signature -> check this with currMethodDescriptor
+      *       - (check 10) var that's array location must exist -> during symbol table retrieval we check this
+      *       - (check 11) array must have int location type -> parse whether it's int from AST
+      *       - (check 12) @var, var must be array -> retrieve from symbol table, check if array descriptor
+      *       - (check 13, 14) if/while/? condition = bool -> parse whether it's bool from AST
+      *       - (check 15) ternary result exprs must have same type -> parse whether it's bool from AST
+      *       - (check 16, 17, 18, 19, 20) operands of arith_ops/bool_ops/eq_ops/assign have correct type -> parse from AST
+      *       - (check 21, 22) for loops contain int in conditions-> parse/typecheck from AST
+      *       - (check 23) break and continue are in for/while -> check from SymbolTable at top of scope stack
       *
       * Step 3: Run any other validation checks
       *       - (check 3) 1 main() -> validate() in MethodsTable

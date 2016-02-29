@@ -1,5 +1,5 @@
 // class definitions for the intermediate representation 
-
+/*
 abstract class Ir
 abstract class IrExpression
 
@@ -36,4 +36,4 @@ class               IrContinue extends IrStatement
 abstract class IrType
 class IrIntType extends IrType
 class IrBoolType extends IrType
-
+*/
