@@ -89,6 +89,7 @@ public class CLI {
    * the command line, requesting debugging output.
    */
   public static boolean debug;
+  public static boolean irdebug;
 
   /**
    * Sets up default values for all of the
@@ -128,7 +129,9 @@ public class CLI {
     opts = new boolean[optnames.length];
 
     for (int i = 0; i < args.length; i++) {
-      if (args[i].equals("--debug") || args[i].equals("-d")) {
+      if (args[i].equals("--idebug") || args[i].equals("-d")) {
+        irdebug = true;
+      } else if (args[i].equals("--debug") || args[i].equals("-d")) {
         debug = true;
       } else if (args[i].startsWith("--outfile=")) {
           outfile = args[i].substring(10);

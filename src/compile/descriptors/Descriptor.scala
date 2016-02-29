@@ -1,7 +1,16 @@
 package compile.descriptors
 
-import compile.symboltables.SymbolTableEntry
+abstract class Descriptor {
+  val name : String
 
-abstract class Descriptor extends SymbolTableEntry {
-  var byteSize : Int;
+  override def equals(that: Any) : Boolean = {
+    that match {
+      case that : Descriptor => this.name == that.toString
+      case _ => false
+    }
+  }
+
+  override def toString: String = {
+    this.name
+  }
 }

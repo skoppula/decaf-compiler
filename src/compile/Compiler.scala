@@ -2,16 +2,19 @@ package compile
 
 import _root_.util.CLI
 import java.io._
-import compile.symboltables.SymbolTable
+import compile.symboltables.{MethodsTable, GlobalFieldTable, SymbolTable}
 
 import scala.Console
 import compile.util.GraphUtil.walkExperimental
+import scala.collection.mutable.Set
+import scala.collection.mutable.Stack
 
 // Begin parser/scanner imports
 import antlr.CommonAST
 import edu.mit.compilers.grammar.{ DecafParser, DecafParserTokenTypes, DecafScanner, DecafScannerTokenTypes }
 
 object Compiler {
+
   val tokenMap = Map(DecafScannerTokenTypes.CHAR_LITERAL -> "CHARLITERAL", DecafScannerTokenTypes.INT_LITERAL -> "INTLITERAL", DecafScannerTokenTypes.TRUE -> "BOOLEANLITERAL", DecafScannerTokenTypes.FALSE -> "BOOLEANLITERAL", DecafScannerTokenTypes.STRING_LITERAL -> "STRINGLITERAL", DecafScannerTokenTypes.ID -> "IDENTIFIER")
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(
     new java.io.FileOutputStream(CLI.outfile)))
@@ -92,13 +95,50 @@ object Compiler {
     } 
   }
 
+  def addNewScope(scopeStack : Stack[SymbolTable]) {
+    // TODO
+  }
 
+  def addNewMethod(methodName : String, scopeStack : Stack[SymbolTable], methodsTable: MethodsTable): Unit = {
+    // TODO
+  }
 
   def inter(fileName: String): (CommonAST, SymbolTable) = {
     /**
       * Create the intermediate AST representation + symbol table structures
       * Where all the identifier and semantic checking magic will happen
       */
+
+    /**
+      * Step 1: Traverse tree and create AST
+      * Step 2: (catch errors on any one of these steps)
+      *   a. Step through AST and note callouts
+      *   b. When first field declaration starts and store global field declarations
+      *   c. When first method declaration happens, start scope/local symbol table stack and method table
+      *       - Check that array bounds 0 < x < size of array
+      *       -
+      *      Stop parsing AST when after processing main method
+      * Step 3: Run any other validation checks
+      */
+
+    // Step 1
+
+    // Step 2.a.
+    var calloutSet : Set[String] = Set.empty[String]
+
+    // Step 2.b.
+    val globalFieldTable : GlobalFieldTable = new GlobalFieldTable("the global field table")
+
+    // Step 2.c.
+    val methodsTable : MethodsTable = new MethodsTable
+    var scopeStack = Stack.empty[SymbolTable]
+
+    // Step Three
+    methodsTable.validate()
+    globalFieldTable.validate()
+
+
+    /*******************************************************************/
 
     def funcPre(ast : CommonAST, a : Any) : Any = {
       // Below is unsafe, but we just want a quick print for now.
