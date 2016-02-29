@@ -1,3 +1,3 @@
-package compile
+package compile.symboltables
 
 abstract class SymbolTableEntry {}
