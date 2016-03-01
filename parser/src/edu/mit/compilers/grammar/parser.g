@@ -105,7 +105,7 @@ field_decl
     ;
 
 field_decl_arg
-    : ID | array_id
+    : (ID | array_id)
       { #field_decl_arg = #([FIELD_DECL_ARG, "field declaration argument"], #field_decl_arg); }
     ;
 
