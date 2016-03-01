@@ -4,7 +4,7 @@ import compile.descriptors.BaseDescriptor
 import util.CLI
 import compile.IdentifierNotFoundException
 
-class GlobalFieldTable(tableInfo : String) extends SymbolTable(parentSymbolTable = null, tableInfo) {
+class GlobalFieldTable(tableInfo : String) extends SymbolTable(parentSymbolTable = null, tableInfo, scopeType = null) {
   if(CLI.irdebug)
     println("Creating global field table")
 

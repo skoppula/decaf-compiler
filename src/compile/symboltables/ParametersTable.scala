@@ -14,7 +14,7 @@ class ParametersTable(
      parentsSymbolTable : GlobalFieldTable,
      tableInfo : String,
      parametersTable : mutable.LinkedHashMap[String, BaseDescriptor])
-  extends SymbolTable(parentsSymbolTable, tableInfo) {
+  extends SymbolTable(parentsSymbolTable, tableInfo, scopeType = null) {
 
   if(CLI.irdebug)
     println("Creating parameters field table")
