@@ -3,46 +3,41 @@ package compile
 // class definitions for the intermediate representation 
 abstract class Ir
 
-class IrProgram(calloutDecls : List[IrCalloutDecl], fieldDecls : List[IrFieldDecl], methodDecls : List[IrMethodDecl]) extends Ir
-
+case class IrProgram(calloutDecls : List[IrCalloutDecl], fieldDecls : List[IrFieldDecl], methodDecls : List[IrMethodDecl]) extends Ir
 
 // == Declarations ==
 abstract class IrMemberDecl extends Ir
-class              IrCalloutDecl(name: String) extends IrMemberDecl
+case class         IrCalloutDecl(name: String) extends IrMemberDecl
+case class         IrFieldDecl(fieldType: IrType, fields: List[IrFieldDeclArg]) extends IrMemberDecl
+case class         IrMethodDecl(methodType: IrType, methodArgs: List[IrMethodDeclArg], block: IrBlock) extends IrMemberDecl
 
-class              IrFieldDecl(fieldType: IrType, fields: List[IrFieldDeclArg]) extends IrMemberDecl
 abstract class IrFieldDeclArg
-class              IrSingleFieldDecl(name: String) extends IrFieldDeclArg
-class              IrArrayFieldDecl(name: String, size: Integer) extends IrFieldDeclArg
+case class         IrSingleFieldDecl(name: String) extends IrFieldDeclArg
+case class         IrArrayFieldDecl(name: String, size: Integer) extends IrFieldDeclArg
 
-class              IrMethodDecl(methodType: IrType, methodArgs: List[IrMethodDeclArg], block: IrBlock) extends IrMemberDecl
-class IrMethodDeclArg(argType: IrType, name: String)
-
-
-
+case class IrMethodDeclArg(argType: IrType, name: String)
 
 // == Block ==
-class IrBlock(fieldDecls: List[IrFieldDecl], stmts: List[IrStatement]) extends Ir
+case class IrBlock(fieldDecls: List[IrFieldDecl], stmts: List[IrStatement]) extends Ir
 
 // == Types ==
 abstract class IrType extends Ir
-class              IrIntType extends IrType
-class              IrBoolType extends IrType
+case class         IrIntType() extends IrType
+case class         IrBoolType() extends IrType
 
 // == Statements ==
 abstract class IrStatement extends Ir
-abstract class     IrAssignStmt extends IrStatement
-case class             IrEqualsAssignStmt(loc: IrLocation, expr: IrExpression) extends IrAssignStmt
-case class             IrMinusAssignStmt(loc: IrLocation, expr: IrExpression) extends IrAssignStmt
-case class             IrPlusAssignStmt(loc: IrLocation, expr: IrExpression) extends IrAssignStmt
+case class         IrEqualsAssignStmt (loc: IrLocation, expr: IrExpression) extends IrStatement
+case class         IrMinusAssignStmt (loc: IrLocation, expr: IrExpression) extends IrStatement
+case class         IrPlusAssignStmt (loc: IrLocation, expr: IrExpression) extends IrStatement
 
-class              IrMethodCallStmt(methCall: IrCallExpr) extends IrStatement
-class              IrIfStmt(cond: IrExpression, bodyBlock: IrBlock, elseBlock: Option[IrBlock]) extends IrStatement
-class              IrForStmt (loc: IrLocation, initVal: IrExpression, endVal: IrExpression, inc: Option[IrIntLiteral], bodyBlock: IrBlock) extends IrStatement
-class              IrWhileStmt (boolExpr : IrExpression) extends IrStatement
-class              IrReturnStmt (value: Option[IrExpression]) extends IrStatement
-class              IrBreakStmt extends IrStatement
-class              IrContinueStmt extends IrStatement
+case class         IrMethodCallStmt (methCall: IrCallExpr) extends IrStatement
+case class         IrIfStmt (cond: IrExpression, bodyBlock: IrBlock, elseBlock: Option[IrBlock]) extends IrStatement
+case class         IrForStmt (loc: IrLocation, initVal: IrExpression, endVal: IrExpression, inc: Option[IrIntLiteral], bodyBlock: IrBlock) extends IrStatement
+case class         IrWhileStmt (boolExpr : IrExpression) extends IrStatement
+case class         IrReturnStmt (value: Option[IrExpression]) extends IrStatement
+case class         IrBreakStmt () extends IrStatement
+case class         IrContinueStmt () extends IrStatement
 
 
 // == Expressions ==
@@ -50,48 +45,50 @@ abstract class IrExpression extends Ir
 
 // = Method Call or Callout =
 abstract class IrCallExpr extends IrExpression
-class              IrMethodCallExpr(name: String, args: List[IrCallExprArg]) extends IrCallExpr
-class              IrCalloutExpr(name: String, args: List[IrCallArg]) extends IrCallExpr
+case class         IrMethodCallExpr(name: String, args: List[IrCallExprArg]) extends IrCallExpr
+case class         IrCalloutExpr(name: String, args: List[IrCallArg]) extends IrCallExpr
 abstract class IrCallArg
-class              IrCallExprArg(arg : IrExpression) extends IrCallArg
-class              IrCallStringArg(arg : IrStringLiteral) extends IrCallArg
+case class         IrCallExprArg(arg : IrExpression) extends IrCallArg
+case class         IrCallStringArg(arg : IrStringLiteral) extends IrCallArg
 
 // = Literals =
 abstract class     IrLiteral extends IrExpression
-class                  IrIntLiteral(value: Int) extends IrLiteral
-class                  IrBooleanLiteral(value: Boolean) extends IrLiteral
-class                  IrCharLiteral(value: Char) extends IrLiteral
-class                  IrStringLiteral(value: String) extends IrLiteral
+case class             IrIntLiteral(value: Int) extends IrLiteral
+case class             IrBooleanLiteral(value: Boolean) extends IrLiteral
+case class             IrCharLiteral(value: Char) extends IrLiteral
+case class             IrStringLiteral(value: String) extends IrLiteral
 // = Location =
 abstract class     IrLocation extends IrExpression
 case class             IrSingleLocation(name: String) extends IrExpression
 case class             IrArrayLocation(name: String, index: IrExpression) extends IrExpression
 // = Ternary Expression =
-class              IrTernOpExpr(cond: IrExpression, leftExpr: IrExpression, rightExpr: IrExpression) extends IrExpression
+case class          IrTernOpExpr(cond: IrExpression, leftExpr: IrExpression, rightExpr: IrExpression) extends IrExpression
 // = Binary Expression =
-class              IrBinOpExpr(binOp: IrBinOp, leftExpr: IrExpression, rightExpr: IrExpression) extends IrExpression
+case class          IrBinOpExpr(binOp: IrBinOp, leftExpr: IrExpression, rightExpr: IrExpression) extends IrExpression
 // = Binary Operators =
 abstract class IrBinOp
 abstract class     IrArithOp extends IrBinOp
-class                  IrMulOp extends IrArithOp
-class                  IrDivOp extends IrArithOp
-class                  IrModOp extends IrArithOp
-class                  IrAddOp extends IrArithOp
-class                  IrSubOp extends IrArithOp
-abstract class     IrBoolOp extends IrBinOp
-class                  IrLtOp extends IrBoolOp
-class                  IrLteOp extends IrBoolOp
-class                  IrGtOp extends IrBoolOp
-class                  IrGteOp extends IrBoolOp
-class                  IrEqOp extends IrBoolOp
-class                  IrNeqOp extends IrBoolOp
-class                  IrAndOp extends IrBoolOp
-class                  IrOrOp extends IrBoolOp
+case class             IrMulOp() extends IrArithOp
+case class             IrDivOp() extends IrArithOp
+case class             IrModOp() extends IrArithOp
+case class             IrAddOp() extends IrArithOp
+case class             IrSubOp() extends IrArithOp
+abstract class     IrRelOp extends IrBinOp
+case class              IrLtOp() extends IrRelOp
+case class              IrLteOp() extends IrRelOp
+case class              IrGtOp() extends IrRelOp
+case class              IrGteOp() extends IrRelOp
+abstract class     IrEqOp extends IrBinOp
+case class              IrEqualOp() extends IrEqOp
+case class              IrNotEqualOp() extends IrEqOp
+abstract class     IrCondOp extends IrBinOp
+case class              IrAndOp() extends IrCondOp
+case class              IrOrOp() extends IrCondOp
 
 // = Unary Expression =
-class          IrUnopExpr(unop: IrUnop, expr: IrExpression) extends IrExpression
+case class          IrUnopExpr(unop: IrUnop, expr: IrExpression) extends IrExpression
 // = Unary Operators = 
 abstract class IrUnop
-class              IrMinusOp extends IrUnop
-class              IrNotOp extends IrUnop
-class              IrArraySizeOp extends IrUnop
+case class         IrMinusOp() extends IrUnop
+case class         IrNotOp() extends IrUnop
+case class         IrArraySizeOp() extends IrUnop
