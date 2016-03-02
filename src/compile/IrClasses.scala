@@ -1,18 +1,23 @@
+package compile
+
 // class definitions for the intermediate representation 
 abstract class Ir
+
+class IrProgram(calloutDecls : List[IrCalloutDecl], fieldDecls : List[IrFieldDecl], methodDecls : List[IrMethodDecl]) extends Ir
 
 
 // == Declarations ==
 abstract class IrMemberDecl extends Ir
 class              IrCalloutDecl(name: String) extends IrMemberDecl
 
-class              IrMethodDecl(methodType: IrType, methodArgs: List[IrMethodDeclArg], block: IrBlock) extends IrMemberDecl
-class IrMethodDeclArg(argType: IrType, name: String)
-
 class              IrFieldDecl(fieldType: IrType, fields: List[IrFieldDeclArg]) extends IrMemberDecl
 abstract class IrFieldDeclArg
 class              IrSingleFieldDecl(name: String) extends IrFieldDeclArg
 class              IrArrayFieldDecl(name: String, size: Integer) extends IrFieldDeclArg
+
+class              IrMethodDecl(methodType: IrType, methodArgs: List[IrMethodDeclArg], block: IrBlock) extends IrMemberDecl
+class IrMethodDeclArg(argType: IrType, name: String)
+
 
 
 
