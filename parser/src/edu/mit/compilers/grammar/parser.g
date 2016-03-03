@@ -115,7 +115,7 @@ array_id
     ;
 
 method_decl 
-    : (type | VOID) ID LPAREN! ((type ID) (COMMA! type ID)*)? RPAREN! block
+    : (type | VOID) ID LPAREN! (method_decl_arg (COMMA! method_decl_arg)*)? RPAREN! block
       { #method_decl = #([METHOD_DECL, "method declaration"], #method_decl); }        
     ;
 
@@ -138,7 +138,7 @@ statement
      location (PLUSEQ^ | MINUSEQ^ | EQ^) expr SEMICOLON!
     | method_call SEMICOLON!
     | IF^ LPAREN! expr RPAREN! block (ELSE! block)?
-    | FOR^ LPAREN! ID EQ! expr COMMA! expr (COMMA INT_LITERAL)? RPAREN! block
+    | FOR^ LPAREN! ID EQ! expr COMMA! expr (COMMA! INT_LITERAL)? RPAREN! block
     | WHILE^ LPAREN! expr RPAREN! block
     | RETURN^ (expr)? SEMICOLON!
     | BREAK^ SEMICOLON!
@@ -185,8 +185,12 @@ expr_eq : expr_rel (options { greedy = true; }: EQ_OP^ expr_rel)*;
 expr_rel : expr_add (options { greedy = true; }: REL_OP^ expr_add)*;
 expr_add : expr_mul (options { greedy = true; }: (PLUS^ | MINUS^) expr_mul)*;
 expr_mul : expr_not (options { greedy = true; }: (MUL^ | DIV^ | MOD^) expr_not)*;
-expr_not : (NOT^)* expr_unary_min;
-expr_unary_min : (MINUS^)* expr_array_len;
+expr_not 
+    : NOT^ expr_not { #expr_not = #([EXPR, "expr"], #expr_not); }
+    | expr_unary_min;
+expr_unary_min 
+    : MINUS^ expr_unary_min  { #expr_unary_min = #([EXPR, "expr"], #expr_unary_min); }
+    | expr_array_len;
 expr_array_len : (AT^)? expr_atom;
 
 expr_atom
@@ -195,6 +199,7 @@ expr_atom
     | literal
     | LPAREN! expr RPAREN!
     )
+    { #expr_atom = #([EXPR, "expr"], #expr_atom); }
   ;
 
 // === Literals ===
