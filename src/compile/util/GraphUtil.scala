@@ -1,6 +1,6 @@
 package compile.util
 
-import antlr.CommonAST
+import compile.TokenAST
 import antlr.collections.AST
 import antlr.debug.misc.ASTFrame
 import edu.mit.compilers.grammar.{ DecafParser, DecafParserTokenTypes => Token}
@@ -13,13 +13,13 @@ object GraphUtil {
     return DecafParser._tokenNames(i)
   }
 
-  def visualize(ast : CommonAST) {
+  def visualize(ast : TokenAST) {
     val frame : ASTFrame = new ASTFrame("AST JTree Example", ast);
     frame.setVisible(true);
     Thread.sleep(20000)
   }
 
-  def walk(ast : CommonAST, funcPre : CommonAST => Any, funcPost : CommonAST => Any) : Any = {
+  def walk(ast : TokenAST, funcPre : TokenAST => Any, funcPost : TokenAST => Any) : Any = {
     /**
       * DFS recursion via walk through the AST. Applies the function funcPreOrder on
       * ast, and then recursively calls walk on the child (if it exists). Then applies
@@ -31,7 +31,7 @@ object GraphUtil {
     // Recursive call on child
     val child = Option(ast.getFirstChild)
     child match {
-      case Some(c:CommonAST) => walk(c, funcPre, funcPost)
+      case Some(c:TokenAST) => walk(c, funcPre, funcPost)
       case None => {}
     }
 
@@ -40,14 +40,14 @@ object GraphUtil {
     // recursive call on the next sibling
     var sibling = Option(ast.getNextSibling)
     sibling match {
-      case Some(s:CommonAST) => {
+      case Some(s:TokenAST) => {
         walk(s, funcPre, funcPost)
       }
       case None => {}
     }
   }
 
-  def walkPreOrder(ast : CommonAST, funcPre : CommonAST => Any) : Any = {
+  def walkPreOrder(ast : TokenAST, funcPre : TokenAST => Any) : Any = {
     /**
       * DFS recursion via preorder traversal through the AST. Applies the
       * function funcPreOrder on ast, and then recursively calls walk on the child
@@ -59,21 +59,21 @@ object GraphUtil {
     // Recursive call on child
     val child = Option(ast.getFirstChild)
     child match {
-      case Some(c:CommonAST) => walkPreOrder(c, funcPre)
+      case Some(c:TokenAST) => walkPreOrder(c, funcPre)
       case None => {}
     }
 
     // recursive call on the next sibling
     var sibling = Option(ast.getNextSibling)
     sibling match {
-      case Some(s:CommonAST) => {
+      case Some(s:TokenAST) => {
         walkPreOrder(s, funcPre)
       }
       case None => {}
     }
   }
 
-  def walkPostOrder(ast : CommonAST, funcPost : CommonAST => Any) : Any = {
+  def walkPostOrder(ast : TokenAST, funcPost : TokenAST => Any) : Any = {
     /**
       * DFS recursion via postorder traversal through the AST. Recursively calls
       * walkPostOrder on the child (if it exists). Then applies funcPost to ast.
@@ -83,7 +83,7 @@ object GraphUtil {
     // Recursive call on child
     val child = Option(ast.getFirstChild)
     child match {
-      case Some(c:CommonAST) => walkPostOrder(c, funcPost)
+      case Some(c:TokenAST) => walkPostOrder(c, funcPost)
       case None => {}
     }
 
@@ -92,14 +92,14 @@ object GraphUtil {
     // recursive call on the next sibling
     var sibling = Option(ast.getNextSibling)
     sibling match {
-      case Some(s:CommonAST) => {
+      case Some(s:TokenAST) => {
         walkPostOrder(s, funcPost)
       }
       case None => {}
     }
   }
 
-  def walkExperimental(ast : CommonAST, funcPre : (CommonAST, Any) => Any, funcPost : (CommonAST, Any) => Any, arg : Any) : Any = {
+  def walkExperimental(ast : TokenAST, funcPre : (TokenAST, Any) => Any, funcPost : (TokenAST, Any) => Any, arg : Any) : Any = {
     /**
       * DFS recursion via walk through the AST. Takes preorder and postorder function
       * and and an argument to pass into those functions. Probably should not be used
@@ -111,7 +111,7 @@ object GraphUtil {
     // Recursive call on child
     val child = Option(ast.getFirstChild)
     child match {
-      case Some(c:CommonAST) => walkExperimental(c, funcPre, funcPost, resultPre)
+      case Some(c:TokenAST) => walkExperimental(c, funcPre, funcPost, resultPre)
       case None => {}
     }
 
@@ -120,7 +120,7 @@ object GraphUtil {
     // recursive call on the next sibling
     var sibling = Option(ast.getNextSibling)
     sibling match {
-      case Some(s:CommonAST) => {
+      case Some(s:TokenAST) => {
         walkExperimental(s, funcPre, funcPost, arg)
       }
       case None => {}
@@ -130,8 +130,8 @@ object GraphUtil {
   }
 
 
-  def constructIR(ast : CommonAST) : IrProgram = {
-    /** Expects CommonAST from ANTLR
+  def constructIR(ast : TokenAST) : IrProgram = {
+    /** Expects TokenAST from ANTLR
       */
 
     val numChild = ast.getNumberOfChildren()
@@ -592,7 +592,7 @@ object GraphUtil {
 
   // This returns an expr node with the input ast as its only child
   def makeChildOfExprNode(ast: AST) : AST = {
-    var parent = new CommonAST()
+    var parent = new TokenAST()
     parent.setType(Token.EXPR)
     parent.setText("expr")
     parent.addChild(ast)

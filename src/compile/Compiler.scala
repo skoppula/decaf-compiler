@@ -10,7 +10,7 @@ import compile.util.GraphUtil.{walkExperimental, visualize, constructIR}
 import scala.collection.mutable
 
 // Begin parser/scanner imports
-import antlr.CommonAST
+import antlr.ASTFactory
 import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenTypes }
 
 object Compiler {
@@ -63,7 +63,7 @@ object Compiler {
     }
   }
 
-  def parse(fileName: String): CommonAST  = {
+  def parse(fileName: String): TokenAST  = {
     /** 
     *Parse the file specified by the filename. Eventually, this method
     *may return a type specific to your compiler.
@@ -79,8 +79,9 @@ object Compiler {
       val parser = new DecafParser(scanner)
 
       parser.setTrace(CLI.debug)
+      parser.setASTNodeClass("compile.TokenAST")
       parser.program()
-      val t = parser.getAST().asInstanceOf[CommonAST]
+      val t = parser.getAST().asInstanceOf[TokenAST]
 
       if (parser.getError()) {
         print("[ERROR] Parse failed\n")
@@ -112,7 +113,7 @@ object Compiler {
     scopeStack.push(parametersTable)
   }
 
-  def inter(fileName: String): (CommonAST, SymbolTable) = {
+  def inter(fileName: String): (TokenAST, SymbolTable) = {
     /**
       * Create the intermediate AST representation + symbol table structures
       * Where all the identifier and semantic checking magic will happen
@@ -183,14 +184,14 @@ object Compiler {
 
     /*******************************************************************/
 
-    def funcPre(ast : CommonAST, a : Any) : Any = {
+    def funcPre(ast : TokenAST, a : Any) : Any = {
       // Below is unsafe, but we just want a quick print for now.
       val s : String = a.asInstanceOf[String]
-      println(s + ">" + "Entered " + ast.getText())
+      println(s + ">" + "Entered " + ast.getText() + " Line: " + ast.getLine() + " Column: " + ast.getColumn())
       return (s + ">")
     }
 
-    def funcPost(ast : CommonAST, a : Any) : Any = {
+    def funcPost(ast : TokenAST, a : Any) : Any = {
       val s : String = a.asInstanceOf[String]
       println(s + "Exited " + ast.getText())
       return s.substring(0, s.length - 1)
