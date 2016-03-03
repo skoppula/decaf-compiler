@@ -185,13 +185,15 @@ expr_eq : expr_rel (options { greedy = true; }: EQ_OP^ expr_rel)*;
 expr_rel : expr_add (options { greedy = true; }: REL_OP^ expr_add)*;
 expr_add : expr_mul (options { greedy = true; }: (PLUS^ | MINUS^) expr_mul)*;
 expr_mul : expr_not (options { greedy = true; }: (MUL^ | DIV^ | MOD^) expr_not)*;
-expr_not 
-    : NOT^ expr_not { #expr_not = #([EXPR, "expr"], #expr_not); }
-    | expr_unary_min;
-expr_unary_min 
-    : MINUS^ expr_unary_min  { #expr_unary_min = #([EXPR, "expr"], #expr_unary_min); }
-    | expr_array_len;
-expr_array_len : (AT^)? expr_atom;
+expr_not //: (NOT^)* expr_unary_min;
+    : NOT^ expr_not
+    | expr_unary_min
+    ;
+expr_unary_min //: (MINUS^)* expr_array_len;
+    : MINUS^ expr_unary_min
+    | expr_array_len
+    ;
+expr_array_len : (AT^)? expr_atom ;
 
 expr_atom
   : ( method_call

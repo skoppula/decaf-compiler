@@ -6,7 +6,7 @@ import compile.descriptors.{MethodDescriptor, BaseDescriptor}
 import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
 
 import scala.Console
-import compile.util.GraphUtil.walkExperimental
+import compile.util.GraphUtil.{walkExperimental, visualize, constructIR}
 import scala.collection.mutable
 
 // Begin parser/scanner imports
@@ -150,7 +150,7 @@ object Compiler {
       */
 
     // Step 1
-
+    var ir = constructIR(parse(fileName))
     // Step 2.a.
     // Toy example using callout manager
     val calloutManager : CalloutManager = new CalloutManager
@@ -201,11 +201,11 @@ object Compiler {
     ast match {
       case Some(a) => {
         walkExperimental(a, funcPre, funcPost, "");
+        println(ir)
         return (a, null);
       }
       case None => {}
     }
-
     return (null, null)
   }
 
