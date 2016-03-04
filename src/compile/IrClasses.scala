@@ -73,17 +73,17 @@ case class         IrVoidType(loc: NodeLocation) extends IrType(loc) {
 abstract class IrStatement(loc: NodeLocation) extends Ir {
     nodeLoc = loc
 }
-abstract class IrAssignStmt(loc: IrLocation, expr: IrExpression, nodeloc: NodeLocation) extends IrStatement(nodeloc) {
+abstract class IrAssignStmt(irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrStatement(loc) {
     expr.parent = this
 }
-case class         IrEqualsAssignStmt (loc: IrLocation, expr: IrExpression, nodeloc: NodeLocation) extends IrAssignStmt(loc, expr, nodeloc) {
-    override def toString(): String = loc.toString() + " := " + expr.toString();
+case class         IrEqualsAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
+    override def toString(): String = irLoc.toString() + " := " + expr.toString();
 }
-case class         IrMinusAssignStmt (loc: IrLocation, expr: IrExpression, nodeloc: NodeLocation) extends IrAssignStmt(loc, expr, nodeloc) {
-    override def toString(): String = loc.toString() + " -= " + expr.toString(); 
+case class         IrMinusAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
+    override def toString(): String = irLoc.toString() + " -= " + expr.toString(); 
 }
-case class         IrPlusAssignStmt (loc: IrLocation, expr: IrExpression, nodeloc: NodeLocation) extends IrAssignStmt(loc, expr, nodeloc) {
-    override def toString(): String = loc.toString() + " += " + expr.toString();
+case class         IrPlusAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
+    override def toString(): String = irLoc.toString() + " += " + expr.toString();
 }
 
 case class         IrMethodCallStmt (methCall: IrCallExpr, loc: NodeLocation) extends IrStatement(loc) {
@@ -98,7 +98,7 @@ case class         IrIfStmt (cond: IrExpression, ifBlock: IrBlock, elseBlock: Op
     }
 }
 
-case class         IrForStmt (loc: IrLocation, initVal: IrExpression, endVal: IrExpression, inc: Option[IrIntLiteral], bodyBlock: IrBlock, nodeLoc: NodeLocation) extends IrStatement(nodeLoc) {
+case class         IrForStmt (irLoc: IrLocation, initVal: IrExpression, endVal: IrExpression, inc: Option[IrIntLiteral], bodyBlock: IrBlock, loc: NodeLocation) extends IrStatement(loc) {
     bodyBlock.parent = this
 }
 
