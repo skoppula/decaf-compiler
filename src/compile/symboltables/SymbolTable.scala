@@ -57,4 +57,8 @@ class SymbolTable(parentSymbolTable : SymbolTable, tableInfo : String, scopeType
     tableInfo
   }
 
+  def returnTableContents : String = {
+    symbolTableMap.mkString("\n")
+  }
+
 }

@@ -2,11 +2,12 @@ package compile
 
 import _root_.util.CLI
 import java.io._
-import compile.descriptors.{MethodDescriptor, BaseDescriptor}
+import compile.Ir._
+import compile.descriptors._
 import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
 
 import scala.Console
-import compile.util.GraphUtil.{walkExperimental, visualize, constructIR}
+import compile.util.GraphUtil.{walkExperimental, visualize}
 import scala.collection.mutable
 
 // Begin parser/scanner imports
@@ -18,6 +19,7 @@ object Compiler {
   val tokenMap = Map(DecafScannerTokenTypes.CHAR_LITERAL -> "CHARLITERAL", DecafScannerTokenTypes.INT_LITERAL -> "INTLITERAL", DecafScannerTokenTypes.TRUE -> "BOOLEANLITERAL", DecafScannerTokenTypes.FALSE -> "BOOLEANLITERAL", DecafScannerTokenTypes.STRING_LITERAL -> "STRINGLITERAL", DecafScannerTokenTypes.ID -> "IDENTIFIER")
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(
     new java.io.FileOutputStream(CLI.outfile)))
+
   def main(args: Array[String]): Unit = {
     CLI.parse(args, Array[String]())
     if (CLI.target == CLI.Action.SCAN) {
@@ -150,20 +152,24 @@ object Compiler {
       *       - (check 3) 1 main() -> validate() in MethodsTable
       */
 
+    val exceptionGenie : ExceptionGenie = new ExceptionGenie
+
     // Step 1
-    var ir = constructIR(parse(fileName))
+    val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
+
     // Step 2.a.
     // Toy example using callout manager
     val calloutManager : CalloutManager = new CalloutManager
-    try {
-      calloutManager.addCallout("printf")
-    } catch {
-      case cae: CalloutAlreadyExistsException => {
-        println("Line 2: Callout already exists (oh no)")
-        sys.exit(1)
-      }
-      case iva: InvalidCalloutException => {
-        println("Line 2: welp callout in wrong place")
+    for(callout <- ir.calloutDecls) {
+      try {
+        calloutManager.addCallout(callout.name)
+      } catch {
+        case cae: CalloutAlreadyExistsException => {
+          exceptionGenie.insert(new CalloutAlreadyExistsWithLocException("Callout already exists", callout.nodeLoc))
+        }
+        case iva: InvalidCalloutException => {
+          exceptionGenie.insert(new InvalidCalloutWithLocException("Callout in wrong place", callout.nodeLoc))
+        }
       }
     }
 
@@ -171,6 +177,43 @@ object Compiler {
     // Step 2.b.
     calloutManager.closeCallouts
     val globalFieldTable : GlobalFieldTable = new GlobalFieldTable("the global field table")
+
+    // Iterates over each field declaration statement
+    for(fieldDecl <- ir.fieldDecls) {
+      var isInt: Boolean = false;
+      if (fieldDecl.fieldType.isInstanceOf[IrVoidType])
+        exceptionGenie.insert(new VoidCannotBeDeclarationTypeException("void can't be declaration type", fieldDecl.loc))
+      else {
+        isInt = fieldDecl.fieldType.isInstanceOf[IrIntType]
+      }
+
+      // Iterates over each variable in the declaration line
+      for (field <- fieldDecl.fields) {
+        try {
+          if (field.isInstanceOf[IrSingleFieldDecl]) {
+            if (isInt)
+              globalFieldTable.insert(field.asInstanceOf[IrSingleFieldDecl].name, new IntTypeDescriptor())
+            else
+              globalFieldTable.insert(field.asInstanceOf[IrSingleFieldDecl].name, new BoolTypeDescriptor())
+          } else {
+            if (isInt) {
+              val intArr = field.asInstanceOf[IrArrayFieldDecl]
+              val arrSize = intArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved :(", intArr.loc))
+              globalFieldTable.insert(intArr.name, new IntArrayTypeDescriptor(arrSize))
+            } else {
+              val boolArr = field.asInstanceOf[IrArrayFieldDecl]
+              val arrSize = boolArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved :(", boolArr.loc))
+              globalFieldTable.insert(boolArr.name, new BoolArrayTypeDescriptor(arrSize))
+            }
+          }
+
+        } catch {
+          case iae: IdentifierAlreadyExistsException => {
+            exceptionGenie.insert(new IdentifierAlreadyExistsWithLocException("Global field already exists", field.nodeLoc))
+          }
+        }
+      }
+    }
 
     // Step 2.c.
     val methodsTable : MethodsTable = new MethodsTable
@@ -181,28 +224,16 @@ object Compiler {
     methodsTable.validate()
     globalFieldTable.validate()
 
+    println(ir)
 
     /*******************************************************************/
 
-    def funcPre(ast : TokenAST, a : Any) : Any = {
-      // Below is unsafe, but we just want a quick print for now.
-      val s : String = a.asInstanceOf[String]
-      println(s + ">" + "Entered " + ast.getText() + " Line: " + ast.getLine() + " Column: " + ast.getColumn())
-      return (s + ">")
-    }
-
-    def funcPost(ast : TokenAST, a : Any) : Any = {
-      val s : String = a.asInstanceOf[String]
-      println(s + "Exited " + ast.getText())
-      return s.substring(0, s.length - 1)
-    }
 
     val ast = Option(parse(fileName));
 
     ast match {
       case Some(a) => {
-        walkExperimental(a, funcPre, funcPost, "");
-        println(ir)
+        // walkExperimental(a, funcPre, funcPost, "");
         return (a, null);
       }
       case None => {}

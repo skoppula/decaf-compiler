@@ -6,6 +6,9 @@ class NodeLocation(ln: Int, cn: Int) {
     // var program : String = pr //TODO: get the program name somehow
     var lineNumber : Int = ln
     var columnNumber : Int = cn
+    override def toString() : String = {
+      return "Node location(line: " + lineNumber + ", column: " + columnNumber + ")"
+    }
 }
 
 abstract class Ir {
@@ -28,7 +31,7 @@ abstract class IrMemberDecl(loc : NodeLocation) extends Ir {
     nodeLoc = loc
 }
 case class         IrCalloutDecl(name: String, loc: NodeLocation) extends IrMemberDecl(loc) {
-    override def toString(): String = name;
+    override def toString(): String = "Callout: " + name;
 }   
 
 case class         IrFieldDecl(fieldType: IrType, fields: List[IrFieldDeclArg], loc: NodeLocation) extends IrMemberDecl(loc){
