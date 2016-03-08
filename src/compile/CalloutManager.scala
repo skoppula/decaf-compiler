@@ -19,6 +19,10 @@ class CalloutManager(exceptionGenie: ExceptionGenie) {
     }
   }
 
+  def isCallout(s : String) : Boolean = {
+    return calloutSet contains s
+  }
+
   def closeCallouts {
     closed = true;
   }

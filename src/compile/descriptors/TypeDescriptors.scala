@@ -12,6 +12,10 @@ class BoolTypeDescriptor extends BaseDescriptor {
   override val name = "BoolType"
 }
 
+class VoidTypeDescriptor extends BaseDescriptor {
+  override val name = "VoidType"
+}
+
 class IntArrayTypeDescriptor(val size : Int) extends ArrayBaseDescriptor(size) {
   override val name = "IntArrayType"
 }

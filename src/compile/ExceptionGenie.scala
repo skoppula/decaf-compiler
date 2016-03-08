@@ -6,7 +6,7 @@ class ExceptionGenie {
   var exceptions : ArrayBuffer[Exception] = ArrayBuffer.empty[Exception]
   def insert(e : Exception) {
     exceptions += e
-    println(e.getMessage)
+    println(e)
   }
 
   def mkString() : String = {

@@ -11,9 +11,9 @@ import scala.collection.mutable
   *   and the parameters of the corresponding method
   */
 class ParametersTable(
-     parentsSymbolTable : GlobalFieldTable,
-     tableInfo : String,
-     parametersTable : mutable.LinkedHashMap[String, BaseDescriptor])
+                       parentsSymbolTable : GlobalFieldTable,
+                       tableInfo : String,
+                       parametersMap : mutable.LinkedHashMap[String, BaseDescriptor])
   extends SymbolTable(parentsSymbolTable, tableInfo, scopeType = null) {
 
   if(CLI.irdebug)
@@ -24,7 +24,7 @@ class ParametersTable(
       * Attempts to insert identifier, descriptor pair into symbol table
       * Throws Exception if already identifier already exists
       */
-    if(symbolTableMap.contains(id) || parametersTable.contains(id)) {
+    if(symbolTableMap.contains(id) || parametersMap.contains(id)) {
       throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists in " + tableInfo)
     } else {
       symbolTableMap(id) = descriptor
@@ -39,14 +39,14 @@ class ParametersTable(
       */
     if(symbolTableMap.contains(id)) {
       symbolTableMap(id)
-    } else if (parametersTable.contains(id)) {
-      parametersTable(id)
+    } else if (parametersMap.contains(id)) {
+      parametersMap(id)
     } else {
       parentsSymbolTable.lookupID(id)
     }
   }
 
   def getParametersTable : mutable.LinkedHashMap[String, BaseDescriptor] = {
-    parametersTable
+    parametersMap
   }
 }

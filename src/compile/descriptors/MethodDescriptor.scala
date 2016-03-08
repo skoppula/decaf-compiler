@@ -4,13 +4,13 @@ import compile.symboltables.ParametersTable
 
 class MethodDescriptor(
     parameterTable : ParametersTable,
-    methodInfo: String,
+    methodName: String,
     returnType : BaseDescriptor)
   extends Descriptor {
   val name = "MethodType"
 
   override def toString: String = {
-    methodInfo
+    methodName
   }
 
   def validate(): Boolean = {
