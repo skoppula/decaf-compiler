@@ -469,10 +469,10 @@ object IrConstruction {
   }
 
   def getIntValue(s : String) : Int = {
-      if (s.substring(0, 2) == "0x") {
+      if (s.size > 2 && s.substring(0, 2) == "0x") {
         return Integer.parseInt(s.substring(2), 16)
       } else {
-        return Integer.parseInt(s.substring(2), 10)
+        return Integer.parseInt(s, 10)
       }
   }
 
@@ -486,13 +486,16 @@ object IrConstruction {
       case Token.INT_LITERAL => {
         var intVal = None: Option[Int];
         try {
+          println(nodeLoc)
           intVal = Some(getIntValue(child.getText))
         } catch {
           case nfa: NumberFormatException => {
             exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse in literal", nodeLoc))
           }
         }
-
+        println("here")
+        println(IrIntLiteral(intVal, child.getText(), nodeLoc).value.get)
+        println("endhere")
         return IrIntLiteral(intVal, child.getText(), nodeLoc)
       }
       case Token.CHAR_LITERAL => return charLiteralNodeToIrExpression(child, exceptionGenie)

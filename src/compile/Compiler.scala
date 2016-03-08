@@ -156,6 +156,7 @@ object Compiler {
 
     // Step 1
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
+    println(ir); println()
 
     // Step 2.a.
     // Toy example using callout manager
