@@ -1,3 +1,6 @@
+callout printf;
+callout printf;
+
 int A[10];
 void bar ( ) {
   int i;

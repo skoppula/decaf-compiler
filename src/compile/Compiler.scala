@@ -156,11 +156,11 @@ object Compiler {
 
     // Step 1
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
-    println(ir); println()
+    println("\nIR decomposition:"); println(ir); println()
 
     // Step 2.a.
     // Toy example using callout manager
-    val calloutManager : CalloutManager = new CalloutManager
+    val calloutManager : CalloutManager = new CalloutManager(exceptionGenie)
     for(callout <- ir.calloutDecls) {
       try {
         calloutManager.addCallout(callout.name)
@@ -174,6 +174,7 @@ object Compiler {
       }
     }
 
+    println(); println(calloutManager); println();
 
     // Step 2.b.
     calloutManager.closeCallouts
@@ -224,8 +225,6 @@ object Compiler {
     // Step Three
     methodsTable.validate()
     globalFieldTable.validate()
-
-    println(ir)
 
     /*******************************************************************/
 

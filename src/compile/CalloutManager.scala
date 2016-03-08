@@ -2,16 +2,18 @@ package compile
 
 import scala.collection.mutable
 
-class CalloutManager {
+class CalloutManager(exceptionGenie: ExceptionGenie) {
   var calloutSet : mutable.Set[String] = mutable.Set.empty[String]
   var closed = false;
 
   def addCallout(calloutName : String): Unit = {
+
     if(closed) {
-      throw new InvalidCalloutException("")
+      exceptionGenie.insert(new InvalidCalloutException("You cannot declare any callouts!"))
     }
+
     if(calloutSet contains calloutName) {
-      throw new CalloutAlreadyExistsException("")
+      exceptionGenie.insert(new CalloutAlreadyExistsException("Sorry, you have already defined that callout"))
     } else {
       calloutSet = calloutSet + calloutName
     }
@@ -19,6 +21,10 @@ class CalloutManager {
 
   def closeCallouts {
     closed = true;
+  }
+
+  override def toString : String = {
+    return "Callouts(" + calloutSet.mkString(",") + ")"
   }
 
 }

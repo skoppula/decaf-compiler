@@ -47,3 +47,5 @@ case class ConvertingCharLiteralTokenException(message: String, loc: NodeLocatio
 case class VoidCannotBeDeclarationTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class InvalidIntLiteralException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class InvalidArraySizeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)

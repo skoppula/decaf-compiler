@@ -78,7 +78,19 @@ object IrConstruction {
           val arrayFieldName = field.getFirstChild().getText()
           // TODO: On the pass through of the completed IR, the representation of the int literal
           // Needs to be checked and if valid, populates the value field of IrIntLiteral
-          val arrayFieldSize = IrIntLiteral(None, field.getFirstChild().getNextSibling().getText(), nodeLoc)
+          val arraySizeStr = field.getFirstChild().getNextSibling().getText()
+          var intVal = None: Option[Int];
+          try {
+            intVal = Some(getIntValue(arraySizeStr))
+            if (intVal.get < 1) {
+              throw new InvalidArraySizeException("You specified an array size less than 1", nodeLoc)
+            }
+          } catch {
+            case nfa: NumberFormatException => {
+              exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse in literal", nodeLoc))
+            }
+          }
+          val arrayFieldSize = IrIntLiteral(intVal, arraySizeStr, nodeLoc)
           fieldArgs :+= IrArrayFieldDecl(arrayFieldName, arrayFieldSize, nodeLoc)
         }
         case _ => {
@@ -486,16 +498,17 @@ object IrConstruction {
       case Token.INT_LITERAL => {
         var intVal = None: Option[Int];
         try {
-          println(nodeLoc)
           intVal = Some(getIntValue(child.getText))
+          if (intVal.toString.size > "9223372036854775807".size) {
+            throw new InvalidArraySizeException("You specified an array size less than 1 or greater than 9223372036854775807", nodeLoc)
+          } else if((intVal.toString.size == "9223372036854775807".size) && (intVal.toString > "9223372036854775807")) {
+            throw new InvalidArraySizeException("You specified an array size less than 1 or greater than 9223372036854775807", nodeLoc)
+          }
         } catch {
           case nfa: NumberFormatException => {
             exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse in literal", nodeLoc))
           }
         }
-        println("here")
-        println(IrIntLiteral(intVal, child.getText(), nodeLoc).value.get)
-        println("endhere")
         return IrIntLiteral(intVal, child.getText(), nodeLoc)
       }
       case Token.CHAR_LITERAL => return charLiteralNodeToIrExpression(child, exceptionGenie)
