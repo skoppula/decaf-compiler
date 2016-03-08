@@ -2,25 +2,27 @@ package compile.descriptors
 
 abstract class BaseDescriptor extends Descriptor {}
 
-abstract class ArrayBaseDescriptor(size : Int) extends BaseDescriptor {}
+abstract class PrimitiveBaseDescriptor extends BaseDescriptor
 
-class IntTypeDescriptor extends BaseDescriptor {
+case class IntTypeDescriptor() extends PrimitiveBaseDescriptor {
   override val name = "IntType"
 }
 
-class BoolTypeDescriptor extends BaseDescriptor {
+case class BoolTypeDescriptor() extends PrimitiveBaseDescriptor {
   override val name = "BoolType"
 }
 
-class VoidTypeDescriptor extends BaseDescriptor {
+case class VoidTypeDescriptor() extends PrimitiveBaseDescriptor {
   override val name = "VoidType"
 }
 
-class IntArrayTypeDescriptor(val size : Int) extends ArrayBaseDescriptor(size) {
+abstract class ArrayBaseDescriptor(size : Int) extends BaseDescriptor {}
+
+case class IntArrayTypeDescriptor(size : Int) extends ArrayBaseDescriptor(size) {
   override val name = "IntArrayType"
 }
 
-class BoolArrayTypeDescriptor(val size : Int) extends ArrayBaseDescriptor(size) {
+case class BoolArrayTypeDescriptor(size : Int) extends ArrayBaseDescriptor(size) {
   override val name = "BoolArrayType"
 }
 

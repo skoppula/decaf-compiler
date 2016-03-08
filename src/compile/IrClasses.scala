@@ -80,7 +80,7 @@ abstract class IrAssignStmt(irLoc: IrLocation, expr: IrExpression, loc: NodeLoca
     expr.parent = this
 }
 case class         IrEqualsAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
-    override def toString(): String = irLoc.toString() + " := " + expr.toString();
+    override def toString(): String = irLoc.toString() + " = " + expr.toString();
 }
 case class         IrMinusAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
     override def toString(): String = irLoc.toString() + " -= " + expr.toString(); 
@@ -147,7 +147,6 @@ case class             IrSingleLocation(name: String, loc: NodeLocation) extends
 }
 case class             IrArrayLocation(name: String, index: IrExpression, loc: NodeLocation) extends IrLocation(loc) {
     index.parent = this
-    //TODO: Check that index is in bounds of name
     override def toString(): String = name + "[" + index.toString() + "]";
 }
 // = Ternary Expression =
