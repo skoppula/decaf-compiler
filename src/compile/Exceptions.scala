@@ -51,3 +51,6 @@ case class InvalidIntLiteralException(message: String, loc: NodeLocation) extend
 case class InvalidArraySizeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class MethodParameterCannotBeVoidException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class DuplicateParameterNameException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+

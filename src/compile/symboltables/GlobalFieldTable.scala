@@ -4,9 +4,7 @@ import compile.descriptors.BaseDescriptor
 import util.CLI
 import compile.IdentifierNotFoundException
 
-class GlobalFieldTable(tableInfo : String) extends SymbolTable(parentSymbolTable = null, tableInfo, scopeType = null) {
-  if(CLI.irdebug)
-    println("Creating global field table")
+class GlobalFieldTable extends SymbolTable(parentSymbolTable = null, scopeType = null) {
 
   override def lookupID(id : String) : BaseDescriptor = {
     /**
@@ -17,11 +15,15 @@ class GlobalFieldTable(tableInfo : String) extends SymbolTable(parentSymbolTable
     if(symbolTableMap.contains(id)) {
       symbolTableMap(id)
     } else {
-      throw new IdentifierNotFoundException(id + " not found in " + tableInfo)
+      throw new IdentifierNotFoundException(id + " not found")
     }
   }
 
   override def validate() : Boolean = {
     true
+  }
+
+  override def toString : String = {
+    "GlobalFieldTable(" + symbolTableMap.mkString(",") + ")"
   }
 }

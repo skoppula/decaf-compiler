@@ -10,7 +10,7 @@ class MethodDescriptor(
   val name = "MethodType"
 
   override def toString: String = {
-    methodName
+    "Method(" + methodName + "," + returnType.toString + ")"
   }
 
   def validate(): Boolean = {

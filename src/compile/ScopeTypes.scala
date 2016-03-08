@@ -5,4 +5,5 @@ object ScopeTypes {
   case object FOR extends EnumVal
   case object WHILE extends EnumVal
   case object IF extends EnumVal
+  case object METHOD extends EnumVal
 }

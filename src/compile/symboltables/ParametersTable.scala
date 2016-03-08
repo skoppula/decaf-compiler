@@ -12,9 +12,8 @@ import scala.collection.mutable
   */
 class ParametersTable(
                        parentsSymbolTable : GlobalFieldTable,
-                       tableInfo : String,
                        parametersMap : mutable.LinkedHashMap[String, BaseDescriptor])
-  extends SymbolTable(parentsSymbolTable, tableInfo, scopeType = null) {
+  extends SymbolTable(parentsSymbolTable, scopeType = null) {
 
   if(CLI.irdebug)
     println("Creating parameters field table")
@@ -25,7 +24,7 @@ class ParametersTable(
       * Throws Exception if already identifier already exists
       */
     if(symbolTableMap.contains(id) || parametersMap.contains(id)) {
-      throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists in " + tableInfo)
+      throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists")
     } else {
       symbolTableMap(id) = descriptor
     }
@@ -48,5 +47,9 @@ class ParametersTable(
 
   def getParametersTable : mutable.LinkedHashMap[String, BaseDescriptor] = {
     parametersMap
+  }
+
+  override def toString : String = {
+    "ParameterTable(" + parametersMap.mkString(",") + "||" + symbolTableMap.mkString(",") + ")"
   }
 }

@@ -44,4 +44,8 @@ class MethodsTable {
     }
     return check
   }
+
+  override def toString : String = {
+    return "MethodTable(" + methodTable.mkString(",") + ")"
+  }
 }

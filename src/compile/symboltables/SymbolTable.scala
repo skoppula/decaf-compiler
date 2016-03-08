@@ -5,7 +5,7 @@ import util.CLI
 import scala.collection.mutable
 import compile.{ScopeTypes, IdentifierAlreadyExistsException}
 
-class SymbolTable(parentSymbolTable : SymbolTable, tableInfo : String, scopeType : ScopeTypes.EnumVal) {
+class SymbolTable(parentSymbolTable : SymbolTable, scopeType : ScopeTypes.EnumVal) {
   var symbolTableMap : mutable.HashMap[String, BaseDescriptor] = mutable.HashMap.empty[String, BaseDescriptor]
   var childrenSymbolTables : mutable.Set[SymbolTable] = mutable.Set.empty[SymbolTable]
 
@@ -22,7 +22,7 @@ class SymbolTable(parentSymbolTable : SymbolTable, tableInfo : String, scopeType
       * Throws Exception if already identifier already exists
       */
     if(symbolTableMap.contains(id)) {
-      throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists in " + tableInfo)
+      throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists")
     } else {
       symbolTableMap(id) = descriptor
     }
@@ -54,11 +54,6 @@ class SymbolTable(parentSymbolTable : SymbolTable, tableInfo : String, scopeType
   }
 
   override def toString : String = {
-    tableInfo
+    "SymbolTable" + scopeType.toString + "(" + symbolTableMap.mkString(",") + ")"
   }
-
-  def returnTableContents : String = {
-    symbolTableMap.mkString("\n")
-  }
-
 }

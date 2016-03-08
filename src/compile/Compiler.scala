@@ -98,7 +98,7 @@ object Compiler {
     } 
   }
 
-  def inter(fileName: String): (TokenAST, SymbolTable) = {
+  def inter(fileName: String): (IrProgram, SymbolTable, MethodsTable) = {
     /**
       * Create the intermediate AST representation + symbol table structures
       * Where all the identifier and semantic checking magic will happen
@@ -142,7 +142,7 @@ object Compiler {
     println("\nIR decomposition:"); println(ir); println()
 
     // Step 2.a.
-    // Toy example using callout manager
+    // Insert callouts into the callout manager
     val calloutManager : CalloutManager = new CalloutManager(exceptionGenie)
     for(callout <- ir.calloutDecls) {
       try {
@@ -160,11 +160,33 @@ object Compiler {
     println(); println(calloutManager); println();
 
     // Step 2.b.
+    // Adds field declaration statements to the global field table
     calloutManager.closeCallouts
-    val globalFieldTable : GlobalFieldTable = new GlobalFieldTable("the global field table")
+    val globalFieldTable : GlobalFieldTable = new GlobalFieldTable
+    insertFieldDecls(ir.fieldDecls, globalFieldTable, exceptionGenie)
+    println(); println(globalFieldTable); println();
 
-    // Iterates over each field declaration statement
-    for(fieldDecl <- ir.fieldDecls) {
+    // Step 2.c.
+    // Process all the defined methods
+    val methodsTable : MethodsTable = new MethodsTable
+    var scopeStack = new mutable.Stack[SymbolTable]
+
+    for(methodDecl <- ir.methodDecls) {
+      walkMethodIRNode(calloutManager, globalFieldTable, scopeStack, methodsTable, methodDecl, exceptionGenie)
+    }
+
+    println(); println(methodsTable); println();
+
+    // Step Three
+    // Any remaining semantic checks/validation
+    methodsTable.validate()
+    globalFieldTable.validate()
+
+    return (ir, globalFieldTable, methodsTable)
+  }
+
+  def insertFieldDecls(fieldDecls: List[IrFieldDecl], symbolTable : SymbolTable, exceptionGenie: ExceptionGenie)= {
+    for(fieldDecl <- fieldDecls) {
       var isInt: Boolean = false;
       if (fieldDecl.fieldType.isInstanceOf[IrVoidType])
         exceptionGenie.insert(new VoidCannotBeDeclarationTypeException("void can't be declaration type", fieldDecl.loc))
@@ -179,46 +201,30 @@ object Compiler {
           if (field.isInstanceOf[IrSingleFieldDecl]) {
             fieldName = field.asInstanceOf[IrSingleFieldDecl].name;
             if (isInt)
-              globalFieldTable.insert(fieldName, new IntTypeDescriptor())
+              symbolTable.insert(fieldName, new IntTypeDescriptor())
             else
-              globalFieldTable.insert(fieldName, new BoolTypeDescriptor())
+              symbolTable.insert(fieldName, new BoolTypeDescriptor())
           } else {
             if (isInt) {
               val intArr = field.asInstanceOf[IrArrayFieldDecl]
               fieldName = intArr.name
               val arrSize = intArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved :(", intArr.loc))
-              globalFieldTable.insert(fieldName, new IntArrayTypeDescriptor(arrSize))
+              symbolTable.insert(fieldName, new IntArrayTypeDescriptor(arrSize))
             } else {
               val boolArr = field.asInstanceOf[IrArrayFieldDecl]
               fieldName = boolArr.name
               val arrSize = boolArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved :(", boolArr.loc))
-              globalFieldTable.insert(fieldName, new BoolArrayTypeDescriptor(arrSize))
+              symbolTable.insert(fieldName, new BoolArrayTypeDescriptor(arrSize))
             }
           }
 
         } catch {
           case iae: IdentifierAlreadyExistsException => {
-            exceptionGenie.insert(new IdentifierAlreadyExistsWithLocException("Global field already exists: " + fieldName, field.nodeLoc))
+            exceptionGenie.insert(new IdentifierAlreadyExistsWithLocException("Field already exists: " + fieldName, field.nodeLoc))
           }
         }
       }
     }
-
-    println(); println(globalFieldTable.returnTableContents); println();
-
-    // Step 2.c.
-    val methodsTable : MethodsTable = new MethodsTable
-    var scopeStack = new mutable.Stack[SymbolTable]
-
-    for(methodDecl <- ir.methodDecls) {
-      walkMethodIRNode(calloutManager, globalFieldTable, scopeStack, methodsTable, methodDecl, exceptionGenie)
-    }
-
-    // Step Three
-    methodsTable.validate()
-    globalFieldTable.validate()
-
-    return (null, null)
   }
 
   def walkMethodIRNode(
@@ -251,8 +257,10 @@ object Compiler {
       if(arg.argType.isInstanceOf[IrVoidType]) {
         exceptionGenie.insert(new MethodParameterCannotBeVoidException("Method parameter cannot be void", methodLoc))
       } else {
+        if(parametersMap.contains(arg.name)) {
+          exceptionGenie.insert(new DuplicateParameterNameException("Duplicate parameter name " + arg.name, methodLoc))
+        }
         if(arg.argType.isInstanceOf[IrIntType]) {
-          // TODO check if parameter is already there
           parametersMap.put(arg.name, new IntTypeDescriptor)
         } else {
           parametersMap.put(arg.name, new BoolTypeDescriptor)
@@ -261,35 +269,38 @@ object Compiler {
     }
 
     // Set up ParametersTable and MethodDescriptor
-    val parametersTable = new ParametersTable(globalFieldTable, "Parameter table for method" + methodName, parametersMap)
-    var currMethodDescriptor : MethodDescriptor = new MethodDescriptor(parametersTable, methodName, returnType);
+    val parametersTable = new ParametersTable(globalFieldTable, parametersMap)
+    val currMethodDescriptor : MethodDescriptor = new MethodDescriptor(parametersTable, methodName, returnType);
 
-  }
+    println(); println(parametersTable; println();
 
-  def addNewMethod(
-                    scopeStack : mutable.Stack[SymbolTable],
-                    methodsTable : MethodsTable,
-                    globalFieldTable : GlobalFieldTable,
-                    currMethodDescriptor : MethodDescriptor,
-
-                    methodName : String,
-                    parameters : mutable.LinkedHashMap[String, BaseDescriptor],
-                    returnType : BaseDescriptor,
-                    nodeLoc : NodeLocation,
-
-                    exceptionGenie: ExceptionGenie) {
-
-    val parametersTable : ParametersTable = new ParametersTable(globalFieldTable, "parameter table", parameters)
-    val methodDescriptor = new MethodDescriptor(parametersTable, methodName, returnType)
+    // Add to methods table
     try {
-      methodsTable.insert(methodName, methodDescriptor)
+      methodsTable.insert(methodName, currMethodDescriptor)
     } catch {
       case mae: MethodAlreadyExistsException => {
         exceptionGenie.insert(new MethodAlreadyExistsException("Method with name already exists: " + methodName))
       }
     }
+
+    // Start analyzing method body
     scopeStack.push(parametersTable)
+    enterBlock(scopeStack, methodDecl.bodyBlock, exceptionGenie)
   }
 
+  def enterBlock(
+                scopeStack : mutable.Stack[SymbolTable],
+                block : IrBlock,
+                exceptionGenie: ExceptionGenie
+                ) = {
 
+    // IMPORTANT NOTE:
+    //    @emshen @aliew $srobin
+    //    CONVENTION IS THAT YOU PUSH THE NEW SCOPE ONTO STACK BEFORE NEXT RECURSIVE CALL to enterBlock()
+    //      (reason is that it makes pushing the parametersTable as the first scope in line 283 much easier)
+
+    insertFieldDecls(block.fieldDecls, scopeStack.top, exceptionGenie)
+
+
+  }
 }
