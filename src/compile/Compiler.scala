@@ -179,6 +179,7 @@ object Compiler {
 
     // Step Three
     // Any remaining semantic checks/validation
+    // very outdated may need restructuring/use of ExceptionGenie
     methodsTable.validate()
     globalFieldTable.validate()
 
@@ -272,7 +273,7 @@ object Compiler {
     val parametersTable = new ParametersTable(globalFieldTable, parametersMap)
     val currMethodDescriptor : MethodDescriptor = new MethodDescriptor(parametersTable, methodName, returnType);
 
-    println(); println(parametersTable; println();
+    println(); println(parametersTable); println();
 
     // Add to methods table
     try {
@@ -299,8 +300,27 @@ object Compiler {
     //    CONVENTION IS THAT YOU PUSH THE NEW SCOPE ONTO STACK BEFORE NEXT RECURSIVE CALL to enterBlock()
     //      (reason is that it makes pushing the parametersTable as the first scope in line 283 much easier)
 
+    // NONE OF THIS IS TESTED so far -_- below this comment
+
     insertFieldDecls(block.fieldDecls, scopeStack.top, exceptionGenie)
 
+    val currScope = scopeStack.top
 
+    for(statement <- block.stmts) {
+      statement match {
+        case IrEqualsAssignStmt(x, y, z) => {
+          val realStmt = statement.asInstanceOf[IrEqualsAssignStmt]
+          // val LHS = currScope.lookupID(realStmt.irLoc
+          // realStmt...
+          // going to bed now bye
+        }
+        case IrMinusAssignStmt(x, y, z) =>{
+
+        }
+        case IrPlusAssignStmt(x, y, z) =>{
+
+        }
+      }
+    }
   }
 }
