@@ -5,3 +5,4 @@ parser/dist/*
 .idea/*
 tests/test_output/*
 intellij-keyboard-freeze-fix.sh
+*.swp
