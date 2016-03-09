@@ -48,9 +48,38 @@ case class VoidCannotBeDeclarationTypeException(message: String, loc: NodeLocati
 
 case class InvalidIntLiteralException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class IdentifierIsNotArrayException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class OutOfBoundsArrayAccessException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
 case class InvalidArraySizeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class MethodParameterCannotBeVoidException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class DuplicateParameterNameException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class ArithOpIntOperandException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class RelOpIntOperandException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class EqOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class CondOpBoolOperandException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class NotOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class LengthOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class NegateOverflowException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class MinusOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class TernOpMatchTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class TernOpCondTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class InvalidMethodCallReturnException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class InvalidMethodCallArgumentException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
 

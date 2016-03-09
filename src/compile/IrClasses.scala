@@ -80,7 +80,7 @@ abstract class IrAssignStmt(irLoc: IrLocation, expr: IrExpression, loc: NodeLoca
     expr.parent = this
 }
 case class         IrEqualsAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
-    override def toString(): String = irLoc.toString() + " := " + expr.toString();
+    override def toString(): String = irLoc.toString() + " = " + expr.toString();
 }
 case class         IrMinusAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
     override def toString(): String = irLoc.toString() + " -= " + expr.toString(); 
@@ -118,8 +118,9 @@ case class         IrReturnStmt (value: Option[IrExpression], loc: NodeLocation)
 case class         IrBreakStmt (loc: NodeLocation) extends IrStatement(loc)
 case class         IrContinueStmt (loc: NodeLocation) extends IrStatement(loc)
 
-
+//
 // == Expressions ==
+//
 abstract class IrExpression(loc: NodeLocation) extends Ir {
     nodeLoc = loc
 }
@@ -127,7 +128,6 @@ abstract class IrExpression(loc: NodeLocation) extends Ir {
 // = Method Call or Callout =
 abstract class IrCallExpr(loc: NodeLocation) extends IrExpression(loc: NodeLocation)
 case class         IrMethodCallExpr(name: String, args: List[IrCallArg], loc: NodeLocation) extends IrCallExpr(loc)
-case class         IrCalloutExpr(name: String, args: List[IrCallArg], loc: NodeLocation) extends IrCallExpr(loc)
 abstract class IrCallArg(loc: NodeLocation)
 case class         IrCallExprArg(arg : IrExpression, loc: NodeLocation) extends IrCallArg(loc)
 case class         IrCallStringArg(arg : IrStringLiteral, loc: NodeLocation) extends IrCallArg(loc)
@@ -136,7 +136,7 @@ case class         IrCallStringArg(arg : IrStringLiteral, loc: NodeLocation) ext
 abstract class     IrLiteral(loc: NodeLocation) extends IrExpression(loc) {
     nodeLoc = loc
 }
-case class             IrIntLiteral(value: Option[Int], rep: String, loc: NodeLocation) extends IrLiteral(loc)
+case class             IrIntLiteral(value: Option[Long], rep: String, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrBooleanLiteral(value: Boolean, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrCharLiteral(value: Char, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrStringLiteral(value: String, loc: NodeLocation) extends IrLiteral(loc)
@@ -147,7 +147,6 @@ case class             IrSingleLocation(name: String, loc: NodeLocation) extends
 }
 case class             IrArrayLocation(name: String, index: IrExpression, loc: NodeLocation) extends IrLocation(loc) {
     index.parent = this
-    //TODO: Check that index is in bounds of name
     override def toString(): String = name + "[" + index.toString() + "]";
 }
 // = Ternary Expression =

@@ -79,7 +79,7 @@ object IrConstruction {
           // TODO: On the pass through of the completed IR, the representation of the int literal
           // Needs to be checked and if valid, populates the value field of IrIntLiteral
           val arraySizeStr = field.getFirstChild().getNextSibling().getText()
-          var intVal = None: Option[Int];
+          var intVal = None: Option[Long];
           try {
             intVal = Some(getIntValue(arraySizeStr))
             if (intVal.get < 1) {
@@ -87,7 +87,7 @@ object IrConstruction {
             }
           } catch {
             case nfa: NumberFormatException => {
-              exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse in literal", nodeLoc))
+              exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse int literal", nodeLoc))
             }
           }
           val arrayFieldSize = IrIntLiteral(intVal, arraySizeStr, nodeLoc)
@@ -493,20 +493,13 @@ object IrConstruction {
     val child = ast.getFirstChild()
     val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
     child.getType() match {
-      // TODO: On the pass through of the completed IR, the representation of the int literal
-      // Needs to be checked and if valid, populates the value field of IrIntLiteral
       case Token.INT_LITERAL => {
-        var intVal = None: Option[Int];
+        var intVal = None: Option[Long];
         try {
-          intVal = Some(getIntValue(child.getText))
-          if (intVal.toString.size > "9223372036854775807".size) {
-            throw new InvalidArraySizeException("You specified an array size less than 1 or greater than 9223372036854775807", nodeLoc)
-          } else if((intVal.toString.size == "9223372036854775807".size) && (intVal.toString > "9223372036854775807")) {
-            throw new InvalidArraySizeException("You specified an array size less than 1 or greater than 9223372036854775807", nodeLoc)
-          }
+          intVal = Some(child.getText.toLong)
         } catch {
           case nfa: NumberFormatException => {
-            exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse in literal", nodeLoc))
+            exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse int literal", nodeLoc))
           }
         }
         return IrIntLiteral(intVal, child.getText(), nodeLoc)

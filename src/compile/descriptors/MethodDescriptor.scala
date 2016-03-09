@@ -1,6 +1,8 @@
 package compile.descriptors
 
 import compile.symboltables.ParametersTable
+import compile.descriptors.TypeDescriptors
+import scala.collection.mutable
 
 class MethodDescriptor(
     parameterTable : ParametersTable,
@@ -16,4 +18,6 @@ class MethodDescriptor(
   def validate(): Boolean = {
     parameterTable.validate()
   }
+
+  def getParamTable : mutable.LinkedHashMap[String, BaseDescriptor]  = parameterTable.getParametersTable
 }

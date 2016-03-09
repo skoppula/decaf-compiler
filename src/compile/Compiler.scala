@@ -287,10 +287,11 @@ object Compiler {
 
     // Start analyzing method body
     scopeStack.push(parametersTable)
-    enterBlock(scopeStack, methodDecl.bodyBlock, exceptionGenie)
+    enterBlock(methodsTable, scopeStack, methodDecl.bodyBlock, exceptionGenie)
   }
 
   def enterBlock(
+                methodsTable: MethodsTable,
                 scopeStack : mutable.Stack[SymbolTable],
                 block : IrBlock,
                 exceptionGenie: ExceptionGenie
@@ -309,11 +310,8 @@ object Compiler {
 
     for(statement <- block.stmts) {
       statement match {
-        case IrEqualsAssignStmt(x, y, z) => {
-          val realStmt = statement.asInstanceOf[IrEqualsAssignStmt]
-          // val LHS = currScope.lookupID(realStmt.irLoc
-          // realStmt...
-          // going to bed now bye
+        case IrEqualsAssignStmt(irLocation, expression, location) => { // !!Rule 19!! loc and expr must have same type.
+        
         }
         case IrMinusAssignStmt(x, y, z) =>{
 
