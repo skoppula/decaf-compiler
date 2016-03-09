@@ -3,6 +3,7 @@ package compile
 import _root_.util.CLI
 import java.io._
 import compile.Ir._
+import sext._
 import compile.descriptors._
 import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
 
@@ -156,7 +157,7 @@ object Compiler {
 
     // Step 1
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
-    println("\nIR decomposition:"); println(ir); println()
+    println("\nIR decomposition:"); println(ir.treeString); println()
 
     // Step 2.a.
     // Toy example using callout manager

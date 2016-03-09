@@ -44,6 +44,7 @@
       <fileset dir="${scala.dir}">
         <include name="**/scala-parser-combinators*.jar"/>
         <include name="**/scala-library.jar"/>
+        <include name="**/scala-reflect.jar"/>
       </fileset>
       <pathelement location="${build-classes.dir}"/> <!-- used during recompilation -->
       <pathelement location="${test-classes.dir}"/> <!-- used during recompilation -->
