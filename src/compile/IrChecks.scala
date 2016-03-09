@@ -39,14 +39,84 @@ object Check {
             case binOpExpr: IrBinOpExpr => {
                 checkIrBinOpExpr(methodsTable, scopeStack, binOpExpr, genie)
             }
-            case IrUnOpExpr(unop, expr, loc) => {
-                (true, null, null)
+            case unOpExpr: IrUnOpExpr => {
+                checkIrUnOpExpr(methodsTable, scopeStack, unOpExpr, genie)
             }
-            case IrTernOpExpr(cond, leftExpr, rightExpr, loc) => {
-                (true, null, null)
+            case ternOpExpr: IrTernOpExpr => {
+                checkIrTernOpExpr(methodsTable, scopeStack, ternOpExpr, genie)
             }
         }   
         (false, null, null)
+    }
+
+    def checkIrTernOpExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], ternOpExpr: IrTernOpExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor, Any) = {
+        val (condSuccess, condType, condValue) = checkExpr(methodsTable, scopeStack, ternOpExpr.cond, genie)
+        val (leftSuccess, leftType, leftValue) = checkExpr(methodsTable, scopeStack, ternOpExpr.leftExpr, genie)
+        val (rightSuccess, rightType, rightValue) = checkExpr(methodsTable, scopeStack, ternOpExpr.rightExpr, genie) 
+        if (condSuccess && leftSuccess && rightSuccess) {
+            if (condType.isInstanceOf[BoolTypeDescriptor]) {
+                val boolValue = condValue.asInstanceOf[Boolean] 
+                if (leftType == rightType) { // TODO: might have to explicitly check they're not both void?
+                    if (boolValue) {
+                        (true, leftType, leftValue)
+                    } else {
+                        (true, rightType, rightValue)
+                    }    
+                } else {
+                    genie.insert(new TernOpMatchTypeException("The ternary expressions: " + ternOpExpr.leftExpr + " and " + ternOpExpr.rightExpr + " must have the same type.", ternOpExpr.nodeLoc))
+                    (false, null, null)
+                } 
+            } else {
+                genie.insert(new TernOpCondTypeException("The condition: " + ternOpExpr.cond + " must be a Boolean", ternOpExpr.nodeLoc))
+                (false, null, null)
+            }
+
+        } else {
+            (false, null, null)
+        }
+    }
+
+
+    def checkIrUnOpExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], unOpExpr: IrUnOpExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor, Any) = {
+        val (success, exprType, value) = checkExpr(methodsTable, scopeStack, unOpExpr.expr, genie)
+        if (success) {
+            val op = unOpExpr.unop
+            op match {
+                case IrMinusOp() => {
+                    if (exprType.isInstanceOf[IntTypeDescriptor]) {
+                        val intValue = value.asInstanceOf[Long] 
+                        if (intValue == -9223372036854775808L) {
+                            genie.insert(new NegateOverflowException("The value: " + intValue + " overflows when negated", unOpExpr.nodeLoc)) 
+                            (false, null, null)
+                        } else {
+                            (true, new IntTypeDescriptor, -intValue)
+                        }
+                    } else {
+                        genie.insert(new MinusOpTypeException("Expression: " + unOpExpr.expr + " is not an integer.", unOpExpr.nodeLoc))
+                        (false, null, null) 
+                    }
+                }   
+                case IrNotOp() => {
+                    if (exprType.isInstanceOf[BoolTypeDescriptor]) {
+                        val boolValue = value.asInstanceOf[Boolean] 
+                        (true, new BoolTypeDescriptor, !boolValue) 
+                    } else {
+                        genie.insert(new NotOpTypeException("Expression: " + unOpExpr.expr + " is not a Boolean.", unOpExpr.nodeLoc))
+                        (false, null, null)
+                    }
+                }
+                case IrArraySizeOp() => {
+                    if (exprType.isInstanceOf[ArrayBaseDescriptor]) {
+                        (true, new IntTypeDescriptor, exprType.asInstanceOf[ArrayBaseDescriptor].length)
+                    } else {
+                        genie.insert(new LengthOpTypeException("Expression: " + unOpExpr.expr + " is not an array.", unOpExpr.nodeLoc))
+                        (false, null, null)
+                    }
+                }
+            }
+        } else {
+            (false, null, null)
+        }
     }
 
     def checkIrBinOpExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], binOpExpr: IrBinOpExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor, Any) = { 
@@ -61,11 +131,11 @@ object Check {
                             val lV = leftValue.asInstanceOf[Long]
                             val rV = rightValue.asInstanceOf[Long]
                             arith match { 
-                                    case IrMulOp() => (true, new BoolTypeDescriptor, lV * rV) //TODO: check this doesn't overflow
-                                    case IrDivOp() => (true, new BoolTypeDescriptor, lV / rV) //TODO: divide by zero?
+                                    case IrMulOp() => (true, new BoolTypeDescriptor, lV * rV) 
+                                    case IrDivOp() => (true, new BoolTypeDescriptor, lV / rV)
                                     case IrModOp() => (true, new BoolTypeDescriptor, lV % rV)
-                                    case IrAddOp() => (true, new BoolTypeDescriptor, lV + rV) //TODO
-                                    case IrSubOp() => (true, new IntTypeDescriptor, lV - rV) // TODO
+                                    case IrAddOp() => (true, new BoolTypeDescriptor, lV + rV)
+                                    case IrSubOp() => (true, new IntTypeDescriptor, lV - rV)
                             }
                         } else {
                             genie.insert(new ArithOpIntOperandException("The right operand does not evaluate to integer", binOpExpr.rightExpr.nodeLoc))
@@ -203,12 +273,37 @@ object Check {
             genie.insert(new MethodNotFoundException("Method " + methodExpr.name + " was not found"))
             (false, null, null)
         } else {
-            val types = method.getParamTable.values // param types expected by the method decl 
-            (false, null, null) // TODO: match type of given arguments vs decl, check callout args             
+            val expectedTypes = method.getParamTable.values // param types expected by the method decl 
+            val providedTypes = new Array[BaseDescriptor](0) 
+            
+            // BIG TODO: Check method name against callouts as well? If it's a callout, then we don't have to verify the args, and the return type             // is int. 
+            /*
+            for (args <- methodExpr.args) {
+                arg match { 
+                    case exprArg: IrCallExprArg {
+                        val (valid, typeOf, value) = checkExpr(methodsTable, scopeStack, exprArg, genie)
+                        if (valid) { 
+                            providedTypes +: typeOf
+                        } else {
+                            (false, null, null)
+                        }
+                    }
+                } 
+            }
+            if (providedTypes == expectedTypes) {
+                if (!method.returnType.isInstanceOf[VoidTypeDescriptor]) {
+                    (true, method.returnType, null) 
+                } else { 
+                    genie.insert(new InvalidMethodCallReturnException("Method " + methodExpr.name + " does not return a value, methodExpr.nodeLoc))
+                }
+            } else {
+                genie.insert(new InvalidMethodCallArgumentException("Method " + methodExpr.name + " has an incorrect argument", methodExpr.nodeLoc))
+            }
+            */
+            (false, null, null)
         }
     }
     
-    // TODO: in theory, for every positive usage of int literal, we have to check elsewhere that it doesn't exceed 2^63 - 1.
     def checkIrIntLiteral(intLit: IrIntLiteral, genie: ExceptionGenie) : (Boolean, BaseDescriptor, Long) = {
         if (intLit.rep.size > "9223372036854775808".size) { 
             genie.insert(new InvalidArraySizeException("You specified an array size less than 1 or greater than 2^63", intLit.loc))

@@ -66,8 +66,20 @@ case class EqOpTypeException(message: String, loc: NodeLocation) extends Excepti
 
 case class CondOpBoolOperandException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class NotOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class LengthOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class NegateOverflowException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class MinusOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class TernOpMatchTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class TernOpCondTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class InvalidMethodCallReturnException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class InvalidMethodCallArgumentException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 
