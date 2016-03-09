@@ -58,3 +58,16 @@ case class MethodParameterCannotBeVoidException(message: String, loc: NodeLocati
 
 case class DuplicateParameterNameException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class ArithOpIntOperandException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class RelOpIntOperandException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class EqOpTypeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class CondOpBoolOperandException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+
+
+
+
+

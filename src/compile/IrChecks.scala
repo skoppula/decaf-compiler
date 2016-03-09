@@ -36,8 +36,8 @@ object Check {
             case IrBooleanLiteral(value, loc) => { 
                 (true, new BoolTypeDescriptor, value)
             }
-            case IrBinOpExpr(binOp, leftExpr, rightExpr, loc) => {
-                (true, null, null)
+            case binOpExpr: IrBinOpExpr => {
+                checkIrBinOpExpr(methodsTable, scopeStack, binOpExpr, genie)
             }
             case IrUnOpExpr(unop, expr, loc) => {
                 (true, null, null)
@@ -47,6 +47,100 @@ object Check {
             }
         }   
         (false, null, null)
+    }
+
+    def checkIrBinOpExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], binOpExpr: IrBinOpExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor, Any) = { 
+        val (leftSuccess, leftType, leftValue) = checkExpr(methodsTable, scopeStack, binOpExpr.leftExpr, genie)
+        val (rightSuccess, rightType, rightValue) = checkExpr(methodsTable, scopeStack, binOpExpr.rightExpr, genie)
+        val op = binOpExpr.binOp 
+        op match {
+            case arith: IrArithOp => {
+                if (leftSuccess && rightSuccess) { 
+                    if (leftType.isInstanceOf[IntTypeDescriptor]) {
+                        if (rightType.isInstanceOf[IntTypeDescriptor]) {
+                            val lV = leftValue.asInstanceOf[Long]
+                            val rV = rightValue.asInstanceOf[Long]
+                            arith match { 
+                                    case IrMulOp() => (true, new BoolTypeDescriptor, lV * rV) //TODO: check this doesn't overflow
+                                    case IrDivOp() => (true, new BoolTypeDescriptor, lV / rV) //TODO: divide by zero?
+                                    case IrModOp() => (true, new BoolTypeDescriptor, lV % rV)
+                                    case IrAddOp() => (true, new BoolTypeDescriptor, lV + rV) //TODO
+                                    case IrSubOp() => (true, new IntTypeDescriptor, lV - rV) // TODO
+                            }
+                        } else {
+                            genie.insert(new ArithOpIntOperandException("The right operand does not evaluate to integer", binOpExpr.rightExpr.nodeLoc))
+                            (false, null, null)
+                        }
+                    } else {
+                        genie.insert(new ArithOpIntOperandException("The left operand does not evaluate to integer", binOpExpr.leftExpr.nodeLoc))
+                        (false, null, null)
+                    }
+                } else { // one or more of left/rightExpr didn't evaluate correctly. Already generated an error
+                    (false, null, null)
+                }
+            }
+            case rel: IrRelOp => {
+                if (leftSuccess && rightSuccess) {
+                    if (leftType.isInstanceOf[IntTypeDescriptor]) {
+                        if (rightType.isInstanceOf[IntTypeDescriptor]) {
+                                val lV = leftValue.asInstanceOf[Long]
+                                val rV = leftValue.asInstanceOf[Long]
+                                rel match {
+                                    case IrLtOp() => (true, new BoolTypeDescriptor, lV < rV)
+                                    case IrLteOp() => (true, new BoolTypeDescriptor, lV <= rV)
+                                    case IrGtOp() => (true, new BoolTypeDescriptor, lV > rV)
+                                    case IrGteOp() => (true, new BoolTypeDescriptor, lV >= rV)
+                                }
+                        } else {
+                            genie.insert(new ArithOpIntOperandException("The right operand does not evaluate to integer", binOpExpr.rightExpr.nodeLoc))
+                            (false, null, null)
+                        }
+                    } else {
+                        genie.insert(new ArithOpIntOperandException("The left operand does not evaluate to integer", binOpExpr.leftExpr.nodeLoc))
+                        (false, null, null)
+                    }
+                } else { // one or more of left/rightExpr didn't evaluate correctly. Already generated an error
+                    (false, null, null)
+                }
+            }            
+            case eq: IrEqOp => {
+                if (leftSuccess && rightSuccess) { 
+                    if (leftType == rightType) {
+                        if (leftValue == rightValue) {
+                            (true, new BoolTypeDescriptor, true)
+                        } else {
+                            (true, new BoolTypeDescriptor, false)
+                        }
+                    } else {
+                        genie.insert(new EqOpTypeException("Left operand has type: " + leftType + " different from right operand of type " + rightType, binOpExpr.leftExpr.nodeLoc)) 
+                        (false, null, null)
+                    }
+                }
+                (false, null, null)        
+            }
+            case cond: IrCondOp => {
+                if (leftSuccess && rightSuccess) {
+                    if (leftType.isInstanceOf[BoolTypeDescriptor]) {
+                        if (rightType.isInstanceOf[BoolTypeDescriptor]) {
+                                val lV = leftValue.asInstanceOf[Boolean]
+                                val rV = leftValue.asInstanceOf[Boolean]
+                                cond match {
+                                    case IrAndOp() => (true, new BoolTypeDescriptor, lV && rV)
+                                    case IrOrOp() => (true, new BoolTypeDescriptor, lV || rV)
+                                }   
+                        } else {
+                            genie.insert(new CondOpBoolOperandException("The right operand does not evaluate to integer", binOpExpr.rightExpr.nodeLoc))                           
+                            (false, null, null)
+                        }       
+                    } else {
+                        genie.insert(new CondOpBoolOperandException("The left operand does not evaluate to integer", binOpExpr.leftExpr.nodeLoc))
+                        (false, null, null)
+                    }       
+                } else { // one or more of left/rightExpr didn't evaluate correctly. Already generated an error
+                    (false, null, null)
+                }       
+            }
+        }
     }
 
     def checkIrSingleLocation(scopeStack: mutable.Stack[SymbolTable], singleLoc: IrSingleLocation, genie: ExceptionGenie) : (Boolean, BaseDescriptor, Any) = {
