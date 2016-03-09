@@ -118,8 +118,9 @@ case class         IrReturnStmt (value: Option[IrExpression], loc: NodeLocation)
 case class         IrBreakStmt (loc: NodeLocation) extends IrStatement(loc)
 case class         IrContinueStmt (loc: NodeLocation) extends IrStatement(loc)
 
-
+//
 // == Expressions ==
+//
 abstract class IrExpression(loc: NodeLocation) extends Ir {
     nodeLoc = loc
 }
@@ -127,7 +128,6 @@ abstract class IrExpression(loc: NodeLocation) extends Ir {
 // = Method Call or Callout =
 abstract class IrCallExpr(loc: NodeLocation) extends IrExpression(loc: NodeLocation)
 case class         IrMethodCallExpr(name: String, args: List[IrCallArg], loc: NodeLocation) extends IrCallExpr(loc)
-case class         IrCalloutExpr(name: String, args: List[IrCallArg], loc: NodeLocation) extends IrCallExpr(loc)
 abstract class IrCallArg(loc: NodeLocation)
 case class         IrCallExprArg(arg : IrExpression, loc: NodeLocation) extends IrCallArg(loc)
 case class         IrCallStringArg(arg : IrStringLiteral, loc: NodeLocation) extends IrCallArg(loc)
@@ -136,7 +136,7 @@ case class         IrCallStringArg(arg : IrStringLiteral, loc: NodeLocation) ext
 abstract class     IrLiteral(loc: NodeLocation) extends IrExpression(loc) {
     nodeLoc = loc
 }
-case class             IrIntLiteral(value: Option[Int], rep: String, loc: NodeLocation) extends IrLiteral(loc)
+case class             IrIntLiteral(value: Option[Long], rep: String, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrBooleanLiteral(value: Boolean, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrCharLiteral(value: Char, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrStringLiteral(value: String, loc: NodeLocation) extends IrLiteral(loc)
