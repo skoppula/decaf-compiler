@@ -13,7 +13,7 @@ import scala.collection.mutable
 class ParametersTable(
                        parentsSymbolTable : GlobalFieldTable,
                        parametersMap : mutable.LinkedHashMap[String, BaseDescriptor])
-  extends SymbolTable(parentsSymbolTable, scopeType = null) {
+  extends SymbolTable(parentsSymbolTable, null) {
 
   if(CLI.irdebug)
     println("Creating parameters field table")

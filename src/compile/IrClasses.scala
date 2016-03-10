@@ -12,23 +12,22 @@ class NodeLocation(ln: Int, cn: Int) {
 }
 
 abstract class Ir {
-    var nodeLoc : NodeLocation = null //TODO: null for now to suppress warnings
+    //var nodeLoc : NodeLocation = null //TODO: null for now to suppress warnings
     var errors : List[Any] = null //TODO: make an IrError class
     var parent : Ir = null
 }
 
 object Ir {
 
-case class IrProgram(calloutDecls: List[IrCalloutDecl], fieldDecls: List[IrFieldDecl], methodDecls: List[IrMethodDecl], loc: NodeLocation) extends Ir {
-    nodeLoc = loc
-    calloutDecls.foreach(c => c.parent = this)
-    fieldDecls.foreach(d => d.parent = this)
-    methodDecls.foreach(m => m.parent = this)
+case class IrProgram(calloutDecls: List[IrCalloutDecl], fieldDecls: List[IrFieldDecl], methodDecls: List[IrMethodDecl]) extends Ir {
+  calloutDecls.foreach(c => c.parent = this)
+  fieldDecls.foreach(d => d.parent = this)
+  methodDecls.foreach(m => m.parent = this)
 }
 
 // == Declarations ==
 abstract class IrMemberDecl(loc : NodeLocation) extends Ir {
-    nodeLoc = loc
+  val nodeLoc = loc
 }
 case class         IrCalloutDecl(name: String, loc: NodeLocation) extends IrMemberDecl(loc) {
     override def toString(): String = "Callout: " + name;
@@ -42,25 +41,24 @@ case class         IrMethodDecl(methodType: IrType, name: String, args: List[IrM
 }
 
 abstract class IrFieldDeclArg(loc : NodeLocation) {
-    var nodeLoc = loc
+  val nodeLoc = loc
 }
 case class         IrSingleFieldDecl(name: String, loc: NodeLocation) extends IrFieldDeclArg(loc)
 case class         IrArrayFieldDecl(name: String, size: IrIntLiteral, loc: NodeLocation) extends IrFieldDeclArg(loc)
 
 case class IrMethodDeclArg(argType: IrType, name: String, loc : NodeLocation) {
-    var nodeLoc = loc
+  val nodeLoc = loc
 }
 
 // == Block ==
-case class IrBlock(fieldDecls: List[IrFieldDecl], stmts: List[IrStatement], loc: NodeLocation) extends Ir {
-    nodeLoc = loc
+case class IrBlock(fieldDecls: List[IrFieldDecl], stmts: List[IrStatement]) extends Ir {
     fieldDecls.foreach(f => f.parent = this)
     stmts.foreach(s => s.parent = this)    
 }
 
 // == Types ==
 abstract class IrType(loc: NodeLocation) extends Ir {
-    nodeLoc = loc
+  val nodeLoc = loc
 }
 case class         IrIntType(loc: NodeLocation) extends IrType(loc) {
     override def toString(): String = "int";
@@ -74,18 +72,20 @@ case class         IrVoidType(loc: NodeLocation) extends IrType(loc) {
 
 // == Statements ==
 abstract class IrStatement(loc: NodeLocation) extends Ir {
-    nodeLoc = loc
+  val nodeLoc = loc
 }
-abstract class IrAssignStmt(irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrStatement(loc) {
-    expr.parent = this
+abstract class IrAssignStmt(loc: NodeLocation) extends IrStatement(loc) {
+  val irLoc : IrLocation = null
+  val expr : IrExpression = null
+  expr.parent = this
 }
-case class         IrEqualsAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
+case class         IrEqualsAssignStmt (override val irLoc: IrLocation, override val expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(loc) {
     override def toString(): String = irLoc.toString() + " = " + expr.toString();
 }
-case class         IrMinusAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
+case class         IrMinusAssignStmt (override val irLoc: IrLocation, override val expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(loc) {
     override def toString(): String = irLoc.toString() + " -= " + expr.toString(); 
 }
-case class         IrPlusAssignStmt (irLoc: IrLocation, expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(irLoc, expr, loc) {
+case class         IrPlusAssignStmt (override val irLoc: IrLocation, override val expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(loc) {
     override def toString(): String = irLoc.toString() + " += " + expr.toString();
 }
 
@@ -122,7 +122,7 @@ case class         IrContinueStmt (loc: NodeLocation) extends IrStatement(loc)
 // == Expressions ==
 //
 abstract class IrExpression(loc: NodeLocation) extends Ir {
-    nodeLoc = loc
+  val nodeLoc = loc
 }
 
 // = Method Call or Callout =
@@ -133,21 +133,21 @@ case class         IrCallExprArg(arg : IrExpression, loc: NodeLocation) extends 
 case class         IrCallStringArg(arg : IrStringLiteral, loc: NodeLocation) extends IrCallArg(loc)
 
 // = Literals =
-abstract class     IrLiteral(loc: NodeLocation) extends IrExpression(loc) {
-    nodeLoc = loc
-}
-case class             IrIntLiteral(value: Option[Long], rep: String, loc: NodeLocation) extends IrLiteral(loc)
+abstract class     IrLiteral(loc: NodeLocation) extends IrExpression(loc)
+case class             IrIntLiteral(value: Option[BigInt], rep: String, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrBooleanLiteral(value: Boolean, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrCharLiteral(value: Char, loc: NodeLocation) extends IrLiteral(loc)
 case class             IrStringLiteral(value: String, loc: NodeLocation) extends IrLiteral(loc)
 // = Location =
-abstract class     IrLocation(loc: NodeLocation) extends IrExpression(loc)
-case class             IrSingleLocation(name: String, loc: NodeLocation) extends IrLocation(loc) {
-    override def toString(): String = name;
+abstract class     IrLocation(loc: NodeLocation) extends IrExpression(loc) {
+  val name : String = null
 }
-case class             IrArrayLocation(name: String, index: IrExpression, loc: NodeLocation) extends IrLocation(loc) {
-    index.parent = this
-    override def toString(): String = name + "[" + index.toString() + "]";
+case class             IrSingleLocation(override val name: String, loc: NodeLocation) extends IrLocation(loc) {
+  override def toString(): String = name;
+}
+case class             IrArrayLocation(override val name: String, index: IrExpression, loc: NodeLocation) extends IrLocation(loc) {
+  index.parent = this
+  override def toString(): String = name + "[" + index.toString() + "]";
 }
 // = Ternary Expression =
 case class          IrTernOpExpr(cond: IrExpression, leftExpr: IrExpression, rightExpr: IrExpression, loc: NodeLocation) extends IrExpression(loc) {

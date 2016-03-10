@@ -23,7 +23,7 @@ public class CLI {
 "  -d                      --debug                    print debugging information\n" +
 "\n" +
 "Long description of options:\n" +
-"  -t <stage>          <stage> is one of \"scan\", \"parse\", \"inter\", or \"assembly\".\n" +
+"  -t <stage>          <stage> is one of \"scan\", \"parse\", \"construct\", \"inter\", or \"assembly\".\n" +
 "  --target=<stage>    Compilation will proceed to the given stage and halt there.\n" +
 "\n" +
 "  -d                  Print debugging information.  If this option is not given,\n" +
@@ -49,9 +49,10 @@ public class CLI {
    * INTER: produce a high-level intermediate representation from the input,
    *        and stop. This is not one of the segment targets for Fall 2006,
    *        but you may wish to use it for your own purposes.
+   * CONSTRUCT: produce and print out a high level IR.
    * ASSEMBLY: produce assembly from the input.
    */
-  public enum Action {DEFAULT, SCAN, PARSE, INTER, ASSEMBLY};
+    public enum Action {DEFAULT, SCAN, PARSE, CONSTRUCT, INTER, ASSEMBLY};
 
   /**
    * Array indicating which optimizations should be performed.  If
@@ -112,6 +113,7 @@ public class CLI {
    * on the <I>target</I> specified. <BR>
    * <TT>scan</TT> or <TT>scanner</TT> specifies Action.SCAN
    * <TT>parse</TT> specifies Action.PARSE
+   * <TT>construct</TT> specifies Action.CONSTRUCT
    * <TT>inter</TT> specifies Action.INTER
    * <TT>assembly</TT> or <TT>codegen</TT> specifies Action.ASSEMBLY
    *
@@ -191,6 +193,7 @@ public class CLI {
       targetStr = targetStr.toLowerCase();
       if (targetStr.equals("scan")) target = Action.SCAN;
       else if (targetStr.equals("parse")) target = Action.PARSE;
+      else if (targetStr.equals("construct")) target = Action.CONSTRUCT;
       else if (targetStr.equals("inter")) target = Action.INTER;
       else if (targetStr.equals("assembly")) target = Action.ASSEMBLY;
       else if (targetStr.equals("about")) {

@@ -6,6 +6,7 @@ import compile.Ir._
 import sext._
 import compile.descriptors._
 import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
+import compile.Check._
 
 import scala.Console
 import compile.util.GraphUtil.{walkExperimental, visualize}
@@ -31,6 +32,11 @@ object Compiler {
           System.exit(1)
         }
         System.exit(0)
+    } else if (CLI.target == CLI.Action.CONSTRUCT) {
+      if(inter(CLI.infile) == null) {
+        System.exit(1)
+      }
+      System.exit(0)
     } else if (CLI.target == CLI.Action.INTER) {
       if(inter(CLI.infile) == null) {
         System.exit(1)
@@ -97,6 +103,16 @@ object Compiler {
       case e: Exception => Console.err.println(CLI.infile + " " + e)
       null
     } 
+  }
+
+  def construct(fileName: String) = {
+    /** Testing function to try IR construction
+      */
+    val exceptionGenie : ExceptionGenie = new ExceptionGenie
+
+    val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
+    println("== IR decomposition =="); println(ir.treeString); println()
+
   }
 
   def inter(fileName: String): (IrProgram, SymbolTable, MethodsTable) = {
@@ -287,18 +303,19 @@ object Compiler {
 
     // Start analyzing method body
     scopeStack.push(parametersTable)
-    enterBlock(methodsTable, scopeStack, methodDecl.bodyBlock, exceptionGenie)
+    enterBlock(methodsTable, scopeStack, methodDecl.bodyBlock, methodName, exceptionGenie)
   }
 
   def enterBlock(
                 methodsTable: MethodsTable,
                 scopeStack : mutable.Stack[SymbolTable],
                 block : IrBlock,
+                topMethodName: String,
                 exceptionGenie: ExceptionGenie
                 ) = {
 
     // IMPORTANT NOTE:
-    //    @emshen @aliew $srobin
+    //    @emshen @aliew @srobin
     //    CONVENTION IS THAT YOU PUSH THE NEW SCOPE ONTO STACK BEFORE NEXT RECURSIVE CALL to enterBlock()
     //      (reason is that it makes pushing the parametersTable as the first scope in line 283 much easier)
 
@@ -308,18 +325,9 @@ object Compiler {
 
     val currScope = scopeStack.top
 
-    for(statement <- block.stmts) {
-      statement match {
-        case IrEqualsAssignStmt(irLocation, expression, location) => { // !!Rule 19!! loc and expr must have same type.
-        
-        }
-        case IrMinusAssignStmt(x, y, z) =>{
-
-        }
-        case IrPlusAssignStmt(x, y, z) =>{
-
-        }
-      }
+    // TODO Needs to do pushing, popping, and modification of scopes accordingly
+    for(stmt <- block.stmts) {
+      checkStmt(methodsTable, scopeStack, stmt, topMethodName, exceptionGenie)
     }
   }
 }

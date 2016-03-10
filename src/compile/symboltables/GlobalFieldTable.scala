@@ -4,7 +4,7 @@ import compile.descriptors.BaseDescriptor
 import util.CLI
 import compile.IdentifierNotFoundException
 
-class GlobalFieldTable extends SymbolTable(parentSymbolTable = null, scopeType = null) {
+class GlobalFieldTable extends SymbolTable(null, null) {
 
   override def lookupID(id : String) : BaseDescriptor = {
     /**

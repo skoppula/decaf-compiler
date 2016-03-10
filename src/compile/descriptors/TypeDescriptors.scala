@@ -16,15 +16,15 @@ case class VoidTypeDescriptor() extends PrimitiveBaseDescriptor {
   override val name = "VoidType"
 }
 
-abstract class ArrayBaseDescriptor(size : Long) extends BaseDescriptor {
+abstract class ArrayBaseDescriptor(size : BigInt) extends BaseDescriptor {
     val length = size
 }
 
-case class IntArrayTypeDescriptor(size : Long) extends ArrayBaseDescriptor(size) {
+case class IntArrayTypeDescriptor(size : BigInt) extends ArrayBaseDescriptor(size) {
   override val name = "IntArrayType"
 }
 
-case class BoolArrayTypeDescriptor(size : Long) extends ArrayBaseDescriptor(size) {
+case class BoolArrayTypeDescriptor(size : BigInt) extends ArrayBaseDescriptor(size) {
   override val name = "BoolArrayType"
 }
 

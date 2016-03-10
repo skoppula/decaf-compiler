@@ -5,9 +5,10 @@ import util.CLI
 import scala.collection.mutable
 import compile.{ScopeTypes, IdentifierAlreadyExistsException}
 
-class SymbolTable(parentSymbolTable : SymbolTable, scopeType : ScopeTypes.EnumVal) {
+class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
   var symbolTableMap : mutable.HashMap[String, BaseDescriptor] = mutable.HashMap.empty[String, BaseDescriptor]
   var childrenSymbolTables : mutable.Set[SymbolTable] = mutable.Set.empty[SymbolTable]
+  val scopeType = sType
 
   if(CLI.irdebug)
     println("Creating symbol field table")

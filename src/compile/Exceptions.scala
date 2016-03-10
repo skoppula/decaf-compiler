@@ -50,6 +50,8 @@ case class InvalidIntLiteralException(message: String, loc: NodeLocation) extend
 
 case class IdentifierIsNotArrayException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class IdentifierIsArrayButIndexIsNotIntException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
 case class OutOfBoundsArrayAccessException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class InvalidArraySizeException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
@@ -82,4 +84,23 @@ case class InvalidMethodCallReturnException(message: String, loc: NodeLocation) 
 
 case class InvalidMethodCallArgumentException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+// Statement exceptions
+
+case class AssignEqStmtTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+case class AssignPlusEqStmtTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+case class AssignMinusEqStmtTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class IfStmtCondTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class ForStmtIterLocTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+case class ForStmtInitExprTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+case class ForStmtEndExprTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+case class ForStmtIncValMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class WhileStmtCondTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class ReturnStmtTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class BreakStmtInvalidScope(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+case class ContinueStmtInvalidScope(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 

@@ -9,7 +9,8 @@ class MethodDescriptor(
     methodName: String,
     returnType : BaseDescriptor)
   extends Descriptor {
-  val name = "MethodType"
+  val name = methodName
+  val methodType = returnType
 
   override def toString: String = {
     "Method(" + methodName + "," + returnType.toString + ")"

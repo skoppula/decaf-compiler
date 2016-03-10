@@ -9,8 +9,6 @@ object IrConstruction {
   def constructIR(ast : TokenAST, exceptionGenie: ExceptionGenie) : IrProgram = {
     /** Expects TokenAST from ANTLR
       */
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
-
     val numChild = ast.getNumberOfChildren()
     var child = ast.getFirstChild()
 
@@ -33,7 +31,7 @@ object IrConstruction {
       child = child.getNextSibling()
     }
 
-    return IrProgram(calloutDecls, fieldDecls, methodDecls, nodeLoc)
+    return IrProgram(calloutDecls, fieldDecls, methodDecls)
   }
 
   // Expects a AST rooted at Token.CALLOUT node
@@ -54,14 +52,14 @@ object IrConstruction {
 
   // Expects a AST rooted at Token.FIELD_DECL node
   def fieldDeclNodeToIrFieldDecl(ast: AST, exceptionGenie: ExceptionGenie) : IrFieldDecl = {
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
-
     if (ast.getType() != Token.FIELD_DECL) {
-      exceptionGenie.insert(new ExpectingFieldDeclTokenException("Error: Failed FIELD_DECL node conversion", nodeLoc))
+      // Should not reach here unless someone misused this method
+      exceptionGenie.insert(new ExpectingFieldDeclTokenException("Error: Failed FIELD_DECL node conversion", new NodeLocation(0,0)))
     }
 
     // Process field type node
     val fieldType = typeNodeToIrType(ast.getFirstChild(), exceptionGenie)
+    val nodeLoc = fieldType.nodeLoc
 
     // Process field declaration argument ndoes
     var fieldArgs : List[IrFieldDeclArg] = List()
@@ -76,12 +74,10 @@ object IrConstruction {
         }
         case Token.ARRAY_ID => {
           val arrayFieldName = field.getFirstChild().getText()
-          // TODO: On the pass through of the completed IR, the representation of the int literal
-          // Needs to be checked and if valid, populates the value field of IrIntLiteral
           val arraySizeStr = field.getFirstChild().getNextSibling().getText()
-          var intVal = None: Option[Long];
+          var intVal = None: Option[BigInt];
           try {
-            intVal = Some(getIntValue(arraySizeStr))
+            intVal = Some(getBigIntValue(arraySizeStr))
             if (intVal.get < 1) {
               throw new InvalidArraySizeException("You specified an array size less than 1", nodeLoc)
             }
@@ -105,12 +101,11 @@ object IrConstruction {
     return IrFieldDecl(fieldType, fieldArgs, nodeLoc)
   }
 
-  // Expects an AST rooted atToken.METHOD_DECL node
+  // Expects an AST rooted at Token.METHOD_DECL node
   def methodDeclNodeToIrMethodDecl(ast: AST, exceptionGenie: ExceptionGenie) : IrMethodDecl = {
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
-
     if (ast.getType() != Token.METHOD_DECL) {
-      exceptionGenie.insert(new ExpectingFieldDeclTokenException("Error: Failed METHOD_DECL node conversion", nodeLoc))
+      // Should not reach here unless someone misused this method
+      exceptionGenie.insert(new ExpectingFieldDeclTokenException("Error: Failed METHOD_DECL node conversion", new NodeLocation(0,0)))
     }
 
     // Process method type node
@@ -118,9 +113,12 @@ object IrConstruction {
     val methodType = {
       ast.getFirstChild().getType() match {
         case Token.TYPE => typeNodeToIrType(methodTypeNode, exceptionGenie)
-        case Token.VOID => IrVoidType(nodeLoc)
+        case Token.VOID => IrVoidType(new NodeLocation(ast.getFirstChild().getLine(), ast.getFirstChild().getColumn()))
       }
     }
+
+    val nodeLoc = methodType.nodeLoc
+
 
     // Process method name node
     val methodNameNode = methodTypeNode.getNextSibling()
@@ -148,12 +146,13 @@ object IrConstruction {
   // Expects an AST rooted at a Token.TYPE node
   def typeNodeToIrType(ast: AST, exceptionGenie: ExceptionGenie) : IrType = {
     val child = ast.getFirstChild()
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
+    val nodeLoc = new NodeLocation(child.getLine(), child.getColumn())
 
     child.getType() match {
       case Token.INT => return IrIntType(nodeLoc)
       case Token.BOOLEAN => return IrBoolType(nodeLoc)
       case _ => {
+        // Should not reach here unless someone misused this method
         exceptionGenie.insert(new ConvertingToIrTypeException("Error converting to IrType", nodeLoc))
         return null
       }
@@ -166,21 +165,20 @@ object IrConstruction {
     var stmts : List[IrStatement] = List()
 
     val numChildren = ast.getNumberOfChildren()
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
-
     var child = ast.getFirstChild()
     for ( _ <- 0 until numChildren) {
       child.getType() match {
         case Token.FIELD_DECL => fieldDecls :+= fieldDeclNodeToIrFieldDecl(child, exceptionGenie)
         case Token.STATEMENT => stmts :+= statementNodeToIrStatement(child, exceptionGenie)
         case _ => {
-          exceptionGenie.insert(new ConvertingToBlockIrException("Error converting block child node", nodeLoc))
+          // This should be impossible to reach
+          exceptionGenie.insert(new ConvertingToBlockIrException("Error converting block child node", new NodeLocation(0,0)))
         }
       }
       child = child.getNextSibling()
     }
 
-    return IrBlock(fieldDecls, stmts, nodeLoc)
+    return IrBlock(fieldDecls, stmts)
   }
 
   // Expects an AST rooted at a Token.STATEMENT node
@@ -200,6 +198,7 @@ object IrConstruction {
       case Token.BREAK => return IrBreakStmt(nodeLoc)
       case Token.CONTINUE => return IrContinueStmt(nodeLoc)
       case _ => {
+        // Should not reach here unless someone misused this method
         exceptionGenie.insert(new ConvertingToStatementException("Error converting statement node", nodeLoc))
         return null
       }
@@ -227,17 +226,21 @@ object IrConstruction {
 
   // Expects AST rooted at a Token.LOCATION node
   def locationNodeToIrLocation(ast: AST, exceptionGenie : ExceptionGenie) : IrLocation = {
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
     val child = ast.getFirstChild()
     child.getType() match {
-      case Token.ID => return IrSingleLocation(child.getText(), nodeLoc)
+      case Token.ID => {
+        val nodeLoc = new NodeLocation(child.getLine(), child.getColumn())
+        return IrSingleLocation(child.getText(), nodeLoc)
+      }
       case Token.ARRAY_ACCESS => {
         val idNode = child.getFirstChild()
         val exprNode = idNode.getNextSibling()
+        val nodeLoc = new NodeLocation(idNode.getLine(), idNode.getColumn())
         return IrArrayLocation(idNode.getText(), exprNodeToIrExpression(exprNode, exceptionGenie), nodeLoc)
       }
       case _ => {
-        exceptionGenie.insert(new ConvertingToVariableLocException("Error converting location node", nodeLoc));
+        // It should be impossible to reach this
+        exceptionGenie.insert(new ConvertingToVariableLocException("Error converting location node", new NodeLocation(0,0)));
         return null
       }
     }
@@ -265,7 +268,8 @@ object IrConstruction {
         case Token.STRING_LITERAL => {
           var text = argNode.getText()
           text = text.substring(1, text.length - 1) // trim off double quotes
-          args :+= IrCallStringArg(IrStringLiteral(text, nodeLoc), nodeLoc)
+          val strNodeLoc = new NodeLocation(argNode.getLine(), argNode.getColumn())
+          args :+= IrCallStringArg(IrStringLiteral(text, strNodeLoc), nodeLoc)
         }
         case _ => println("Error converting method call argument node")
       }
@@ -312,12 +316,10 @@ object IrConstruction {
 
     var incVal : Option[IrIntLiteral] = None
 
-    var bodyBlock : IrBlock = IrBlock(List(), List(), nodeLoc)
+    var bodyBlock : IrBlock = IrBlock(List(), List())
 
     if (numChild == 5) {
       val incValNode = endValNode.getNextSibling()
-      // TODO: On the pass through of the completed IR, the representation of the int literal
-      // Needs to be checked and if valid, populates the value field of IrIntLiteral
       incVal = Option(IrIntLiteral(None, incValNode.getText(), nodeLoc))
 
       val bodyBlockNode = incValNode.getNextSibling()
@@ -359,7 +361,7 @@ object IrConstruction {
   // Expects AST rooted at a Token.EXPR
   def exprNodeToIrExpression(ast: AST, exceptionGenie: ExceptionGenie) : IrExpression = {
     val child = ast.getFirstChild()
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
+    val nodeLoc = new NodeLocation(child.getLine(), child.getColumn())
     child.getType() match {
       case Token.QUESTION => {
         val condNode = child.getFirstChild()
@@ -370,7 +372,7 @@ object IrConstruction {
         val rightExpr = exprNodeToIrExpression(rightNode, exceptionGenie)
         return IrTernOpExpr(condExpr, leftExpr, rightExpr, nodeLoc)
       }
-      case Token.OR => { //case class          IrBinOpExpr(binOp: IrBinOp, leftExpr: IrExpression, rightExpr: IrExpression) extends IrExpression
+      case Token.OR => {
       val leftNode = child.getFirstChild()
         val leftExpr = exprNodeToIrExpression(makeChildOfExprNode(leftNode), exceptionGenie)
         val rightNode = leftNode.getNextSibling()
@@ -426,7 +428,19 @@ object IrConstruction {
           case 1 => {
             val node = child.getFirstChild()
             val expr = exprNodeToIrExpression(makeChildOfExprNode(node), exceptionGenie)
-            return IrUnOpExpr(IrMinusOp(), expr, nodeLoc)
+
+            expr match {
+              case IrIntLiteral(v, r, l) => {
+                v match {
+                  case Some(i) => {
+                    // Preserve all the unary minuses in representation
+                    return IrIntLiteral(Some(-i), "-" + r, nodeLoc)
+                  }
+                  case None => {return IrUnOpExpr(IrMinusOp(), expr, nodeLoc)}
+                }
+              }
+              case _ => {return IrUnOpExpr(IrMinusOp(), expr, nodeLoc)}
+            }
           }
           // Binary minus
           case 2 => {
@@ -474,29 +488,30 @@ object IrConstruction {
       case Token.LITERAL => return literalNodeToIrExpression(child, exceptionGenie)
       case Token.EXPR => return exprNodeToIrExpression(child, exceptionGenie)
       case _ => {
+        // It should be impossible to reach this
         exceptionGenie.insert(new ConvertingExprTokenException("Error converting expr node", nodeLoc))
         return null
       }
     }
   }
 
-  def getIntValue(s : String) : Int = {
+  def getBigIntValue(s : String) : BigInt = {
       if (s.size > 2 && s.substring(0, 2) == "0x") {
-        return Integer.parseInt(s.substring(2), 16)
+        return BigInt(s.substring(2), 16)
       } else {
-        return Integer.parseInt(s, 10)
+        return BigInt(s)
       }
   }
 
   // Expects AST rooted at a Token.LITERAL node
   def literalNodeToIrExpression(ast: AST, exceptionGenie: ExceptionGenie) : IrLiteral = {
     val child = ast.getFirstChild()
-    val nodeLoc = new NodeLocation(ast.getLine(), ast.getColumn())
+    val nodeLoc = new NodeLocation(child.getLine(), child.getColumn())
     child.getType() match {
       case Token.INT_LITERAL => {
-        var intVal = None: Option[Long];
+        var intVal = None: Option[BigInt];
         try {
-          intVal = Some(child.getText.toLong)
+          intVal = Some(getBigIntValue(child.getText()))
         } catch {
           case nfa: NumberFormatException => {
             exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse int literal", nodeLoc))
@@ -539,9 +554,14 @@ object IrConstruction {
     }
   }
 
+  class myAST(line: Int, col: Int) extends TokenAST {
+    override def getLine = {line}
+    override def getColumn = {col}
+  }
+
   // This returns an expr node with the input ast as its only child
   def makeChildOfExprNode(ast: AST) : AST = {
-    val parent = new TokenAST()
+    val parent = new myAST(ast.getLine(), ast.getColumn())
     parent.setType(Token.EXPR)
     parent.setText("expr")
     parent.addChild(ast)
