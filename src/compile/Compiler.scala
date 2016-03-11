@@ -174,7 +174,7 @@ object Compiler {
       }
     }
 
-    println(); println(calloutManager); println();
+    println(); println(calloutManager);
 
     // Step 2.b.
     // Adds field declaration statements to the global field table
@@ -192,7 +192,7 @@ object Compiler {
       walkMethodIRNode(calloutManager, globalFieldTable, scopeStack, methodsTable, methodDecl, exceptionGenie)
     }
 
-    println(); println(methodsTable); println();
+    println(methodsTable); println()
 
     // Step Three
     // Any remaining semantic checks/validation
@@ -264,10 +264,10 @@ object Compiler {
     }
 
     // Get method name
-    var methodName = methodDecl.name
+    val methodName = methodDecl.name
 
     // Get method location
-    var methodLoc = methodDecl.loc
+    val methodLoc = methodDecl.loc
 
     // Get the method args
     val parametersMap = new mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]
@@ -290,7 +290,7 @@ object Compiler {
     val parametersTable = new ParametersTable(globalFieldTable, parametersMap)
     val currMethodDescriptor : MethodDescriptor = new MethodDescriptor(parametersTable, methodName, returnType);
 
-    println(); println(parametersTable); println();
+    println(methodName + ": " + parametersTable);
 
     // Add to methods table
     try {

@@ -7,6 +7,7 @@ class ExceptionGenie {
   def insert(e : Exception) {
     exceptions += e
     println(e)
+    sys.exit(1)
   }
 
   def mkString() : String = {

@@ -50,6 +50,6 @@ class ParametersTable(
   }
 
   override def toString : String = {
-    "ParameterTable(" + parametersMap.mkString(",") + "||" + symbolTableMap.mkString(",") + ")"
+    "ParameterTable(ParamMap:" + parametersMap.mkString(",") + ", FieldTable:" + symbolTableMap.mkString(",") + ")"
   }
 }

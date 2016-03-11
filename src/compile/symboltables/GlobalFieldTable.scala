@@ -19,6 +19,15 @@ class GlobalFieldTable extends SymbolTable(null, null) {
     }
   }
 
+  override def lookupIDOnlyInLocalScope(id : String) : BaseDescriptor = {
+    /**
+      * Recursively finds the identifier in this symbol table,
+      * or parent symbol table(s), stopping before the global/parameter scope.
+      * Since this is the global scope, return null (not found)
+      */
+    null
+  }
+
   override def validate() : Boolean = {
     true
   }

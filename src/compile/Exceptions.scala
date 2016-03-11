@@ -109,3 +109,5 @@ case class IncorrectNumberOfArgsException(message: String, loc: NodeLocation) ex
 
 case class CompilerProblem(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class MethodCallIsShadowedByLocalVariable(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+

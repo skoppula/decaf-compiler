@@ -321,6 +321,12 @@ object Check {
                          genie: ExceptionGenie,
                          checkVoid: Boolean
                        ) : (Boolean, BaseDescriptor) =  {
+
+    if(scopeStack.top.lookupIDOnlyInLocalScope(methodExpr.name) != null) {
+      genie.insert(new MethodCallIsShadowedByLocalVariable("Method call to " + methodExpr.name + " is shadowed by a variable of the same name", methodExpr.loc))
+      return (false, null)
+    }
+
     val method = methodsTable.lookupID(methodExpr.name)
     if (method == null) {
       if(methodsTable.isCallout(methodExpr.name)) {

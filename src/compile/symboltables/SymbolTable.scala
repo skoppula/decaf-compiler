@@ -46,6 +46,19 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     }
   }
 
+  def lookupIDOnlyInLocalScope(id : String) : BaseDescriptor = {
+    /**
+      * Recursively finds the identifier in this symbol table,
+      * or parent symbol table(s), stopping before the global/parameter scope.
+      * Returns descriptor or null if identifier not found.
+      */
+    if(symbolTableMap.contains(id)) {
+      symbolTableMap(id)
+    } else {
+      parentSymbolTable.lookupID(id)
+    }
+  }
+
   def validate() : Boolean = {
     var check : Boolean = true
     for(table <- childrenSymbolTables.toIterator) {
