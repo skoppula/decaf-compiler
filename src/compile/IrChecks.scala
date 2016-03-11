@@ -314,67 +314,83 @@ object Check {
     }
   }
 
+  def checkMethodHelper(
+                         methodsTable: MethodsTable,
+                         scopeStack: mutable.Stack[SymbolTable],
+                         methodExpr: IrMethodCallExpr,
+                         genie: ExceptionGenie,
+                         checkVoid: Boolean
+                       ) : (Boolean, BaseDescriptor) =  {
+    val method = methodsTable.lookupID(methodExpr.name)
+    if (method == null) {
+      if(methodsTable.isCallout(methodExpr.name)) {
+        return (false, new IntTypeDescriptor)
+      } else {
+        genie.insert(new MethodNotFoundException("Method " + methodExpr.name + " was not found"))
+        (false, null)
+      }
+    } else {
+      val expectedTypes = method.getParamTable.values.toSeq // param types expected by the method decl
+
+      if(expectedTypes.size != methodExpr.args.size) {
+        genie.insert(new IncorrectNumberOfArgsException("Incorrect number of arguments in " + methodExpr.name, methodExpr.loc))
+      }
+
+      if(checkVoid) {
+        if (method.methodType.isInstanceOf[VoidTypeDescriptor]) {
+          genie.insert(new VoidCannotBeDeclarationTypeException("Method referenced returns void, but used in non-void setting", methodExpr.loc))
+          return (false, null)
+        }
+      }
+
+      var argCheck : Boolean = true
+      var i : Integer = 0
+      while (argCheck && i < expectedTypes.size) {
+        val arg = methodExpr.args(i)
+        val expectedArgType = expectedTypes(i)
+
+        if(arg.isInstanceOf[IrCallStringArg]) {
+          genie.insert(new StringArgInMethodCallException("String argument found in method call to " + methodExpr.name, methodExpr.loc))
+        }
+
+        val argExpr = arg.asInstanceOf[IrCallExprArg].arg
+        val (argIsValid, argType) = checkExpr(methodsTable, scopeStack, argExpr, genie)
+
+        if(!argIsValid) {
+          return (false, null)
+        }
+
+        if(expectedArgType.isInstanceOf[IntTypeDescriptor]) {
+          if(!argType.isInstanceOf[IntTypeDescriptor]) {
+            argCheck = false
+          }
+        } else if (expectedArgType.isInstanceOf[BoolTypeDescriptor]) {
+          if(!argType.isInstanceOf[IntTypeDescriptor]) {
+            argCheck = false
+          }
+        }
+
+        i += 1
+      }
+
+      i -= 1
+      if(argCheck) {
+        return (true, method.methodType)
+      } else {
+        genie.insert(new InvalidMethodCallArgumentException("Method " + methodExpr.name + " has an incorrect argument", methodExpr.nodeLoc))
+        return (false, null)
+      }
+    }
+
+  }
+
   def checkIrMethodCallExpr(
                              methodsTable: MethodsTable,
                              scopeStack: mutable.Stack[SymbolTable],
                              methodExpr: IrMethodCallExpr,
                              genie: ExceptionGenie
                            ) : (Boolean, BaseDescriptor) =  {
-    val currScope = scopeStack.top
-    val method = methodsTable.lookupID(methodExpr.name)
-    if (method == null) {
-      genie.insert(new MethodNotFoundException("Method " + methodExpr.name + " was not found"))
-      (false, null)
-    } else {
-      if(methodsTable.isCallout(methodExpr.name)) {
-        return (false, new IntTypeDescriptor)
-      } else {
-        val expectedTypes = method.getParamTable.values.toSeq // param types expected by the method decl
-        val providedTypes = new Array[BaseDescriptor](0)
-
-        if(expectedTypes.size != methodExpr.args.size) {
-          genie.insert(new IncorrectNumberOfArgsException("Incorrect number of arguments in " + methodExpr.name, methodExpr.loc))
-        }
-
-        var argCheck : Boolean = true
-        var i : Integer = 0
-        while (argCheck && i < expectedTypes.size) {
-          val arg = methodExpr.args(i)
-          val expectedArgType = expectedTypes(i)
-
-          if(arg.isInstanceOf[IrCallStringArg]) {
-            genie.insert(new StringArgInMethodCallException("String argument found in method call to " + methodExpr.name, methodExpr.loc))
-          }
-
-          val argExpr = arg.asInstanceOf[IrCallExprArg].arg
-          val (argIsValid, argType) = checkExpr(methodsTable, scopeStack, argExpr, genie)
-
-          if(!argIsValid) {
-            return (false, null)
-          }
-
-          if(expectedArgType.isInstanceOf[IntTypeDescriptor]) {
-            if(!argType.isInstanceOf[IntTypeDescriptor]) {
-              argCheck = false
-            }
-          } else if (expectedArgType.isInstanceOf[BoolTypeDescriptor]) {
-            if(!argType.isInstanceOf[IntTypeDescriptor]) {
-              argCheck = false
-            }
-          }
-
-          i += 1
-        }
-
-        i -= 1
-        if(argCheck) {
-          return (true, method.methodType)
-        } else {
-          genie.insert(new InvalidMethodCallArgumentException("Method " + methodExpr.name + " has an incorrect argument", methodExpr.nodeLoc))
-          return (false, null)
-        }
-      }
-    }
+    checkMethodHelper(methodsTable, scopeStack, methodExpr, genie, true)
   }
 
   def checkIrIntLiteral(
@@ -519,11 +535,9 @@ object Check {
     stmt: IrMethodCallStmt,
     genie: ExceptionGenie
   ) : Boolean = {
-    // Big TODO - implementing method call stmt.
-    // Note that the difference here is that it is okay if the method call is of type void
-    // whereas method calls used in expr must be of type int or bool
-
-    false
+    val methodCallExpr : IrMethodCallExpr = stmt.methCall.asInstanceOf[IrMethodCallExpr]
+    val (valid, _) = checkMethodHelper(methodsTable, scopeStack, methodCallExpr, genie, false)
+    valid
   }
 
   def checkIrIfStmt(
@@ -640,6 +654,9 @@ object Check {
   ) : Boolean = {
     try {
       val methodType = methodsTable.lookupID(topMethodName).methodType
+      if(methodType == null) {
+        throw new MethodNotFoundException("Method not found exception when compiler was checking a return statement")
+      }
 
       stmt.value match {
         case Some(expr) => {

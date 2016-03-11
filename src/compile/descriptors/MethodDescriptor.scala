@@ -9,6 +9,7 @@ class MethodDescriptor(
     methodName: String,
     returnType : PrimitiveBaseDescriptor)
   extends Descriptor {
+
   val name = methodName
   val methodType = returnType
 

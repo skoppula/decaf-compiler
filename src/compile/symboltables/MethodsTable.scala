@@ -2,7 +2,7 @@ package compile.symboltables
 
 import compile.descriptors.MethodDescriptor
 import scala.collection.mutable.HashMap
-import compile.{CalloutAlreadyExistsException, CalloutManager, MethodAlreadyExistsException, MethodNotFoundException}
+import compile.{CalloutAlreadyExistsException, CalloutManager, MethodAlreadyExistsException}
 
 class MethodsTable(calloutManager : CalloutManager) {
   var methodTable: HashMap[String, MethodDescriptor] = HashMap.empty[String, MethodDescriptor];
@@ -26,12 +26,12 @@ class MethodsTable(calloutManager : CalloutManager) {
   def lookupID(id : String) : MethodDescriptor = {
     /**
       * Finds the method identifier in method symbol table,
-      * Returns descriptor or throws exception if identifier not found.
+      * Returns descriptor or null if identifier not found.
       */
     if(methodTable.contains((id))) {
-      return methodTable(id)
+      methodTable(id)
     } else {
-      throw new MethodNotFoundException("Method " + id + " not found in methods table")
+      null
     }
   }
 
