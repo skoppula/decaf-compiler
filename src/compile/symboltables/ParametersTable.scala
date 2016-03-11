@@ -1,7 +1,7 @@
 package compile.symboltables
 
 import compile.IdentifierAlreadyExistsException
-import compile.descriptors.{IntTypeDescriptor, BoolArrayTypeDescriptor, BaseDescriptor}
+import compile.descriptors.{PrimitiveBaseDescriptor, IntTypeDescriptor, BoolArrayTypeDescriptor, BaseDescriptor}
 import util.CLI
 
 import scala.collection.mutable
@@ -12,7 +12,7 @@ import scala.collection.mutable
   */
 class ParametersTable(
                        parentsSymbolTable : GlobalFieldTable,
-                       parametersMap : mutable.LinkedHashMap[String, BaseDescriptor])
+                       parametersMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor])
   extends SymbolTable(parentsSymbolTable, null) {
 
   if(CLI.irdebug)
@@ -45,7 +45,7 @@ class ParametersTable(
     }
   }
 
-  def getParametersTable : mutable.LinkedHashMap[String, BaseDescriptor] = {
+  def getParametersTable : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor] = {
     parametersMap
   }
 

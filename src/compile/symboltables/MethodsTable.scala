@@ -2,9 +2,9 @@ package compile.symboltables
 
 import compile.descriptors.MethodDescriptor
 import scala.collection.mutable.HashMap
-import compile.{MethodAlreadyExistsException, MethodNotFoundException}
+import compile.{CalloutAlreadyExistsException, CalloutManager, MethodAlreadyExistsException, MethodNotFoundException}
 
-class MethodsTable {
+class MethodsTable(calloutManager : CalloutManager) {
   var methodTable: HashMap[String, MethodDescriptor] = HashMap.empty[String, MethodDescriptor];
 
   def insert(name : String, methodDescriptor: MethodDescriptor): Unit = {
@@ -14,6 +14,10 @@ class MethodsTable {
       */
     if(methodTable.contains(name)) {
       throw new MethodAlreadyExistsException("Method " + name + " already exists")
+
+    } else if(this.isCallout(name)) {
+      throw new CalloutAlreadyExistsException("Callout with name " + name + "already exists")
+
     } else {
       methodTable(name) = methodDescriptor
     }
@@ -44,6 +48,11 @@ class MethodsTable {
     }
     return check
   }
+
+  def isCallout(name: String): Boolean  = {
+    calloutManager.isCallout(name)
+  }
+
 
   override def toString : String = {
     return "MethodTable(" + methodTable.mkString(",") + ")"

@@ -102,5 +102,10 @@ case class WhileStmtCondTypeMismatch(message: String, loc: NodeLocation) extends
 case class ReturnStmtTypeMismatch(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class BreakStmtInvalidScope(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
-case class ContinueStmtInvalidScope(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class StringArgInMethodCallException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class IncorrectNumberOfArgsException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
+
+case class CompilerProblem(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 

@@ -185,7 +185,7 @@ object Compiler {
 
     // Step 2.c.
     // Process all the defined methods
-    val methodsTable : MethodsTable = new MethodsTable
+    val methodsTable : MethodsTable = new MethodsTable(calloutManager)
     var scopeStack = new mutable.Stack[SymbolTable]
 
     for(methodDecl <- ir.methodDecls) {
@@ -254,7 +254,7 @@ object Compiler {
                         exceptionGenie : ExceptionGenie
                       ) {
     // Check return type
-    var returnType : BaseDescriptor = null;
+    var returnType : PrimitiveBaseDescriptor = null;
     if(methodDecl.methodType.isInstanceOf[IrIntType]) {
       returnType = new IntTypeDescriptor;
     } else if(methodDecl.methodType.isInstanceOf[IrBoolType]) {
@@ -270,7 +270,7 @@ object Compiler {
     var methodLoc = methodDecl.loc
 
     // Get the method args
-    val parametersMap = new mutable.LinkedHashMap[String, BaseDescriptor]
+    val parametersMap = new mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]
     for(arg <- methodDecl.args) {
       if(arg.argType.isInstanceOf[IrVoidType]) {
         exceptionGenie.insert(new MethodParameterCannotBeVoidException("Method parameter cannot be void", methodLoc))

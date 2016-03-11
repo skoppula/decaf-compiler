@@ -7,7 +7,7 @@ import scala.collection.mutable
 class MethodDescriptor(
     parameterTable : ParametersTable,
     methodName: String,
-    returnType : BaseDescriptor)
+    returnType : PrimitiveBaseDescriptor)
   extends Descriptor {
   val name = methodName
   val methodType = returnType
@@ -20,5 +20,5 @@ class MethodDescriptor(
     parameterTable.validate()
   }
 
-  def getParamTable : mutable.LinkedHashMap[String, BaseDescriptor]  = parameterTable.getParametersTable
+  def getParamTable : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]  = parameterTable.getParametersTable
 }

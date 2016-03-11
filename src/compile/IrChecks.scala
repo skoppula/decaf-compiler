@@ -81,7 +81,12 @@ object Check {
     (false, null)
   }
 
-  def checkIrTernOpExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], ternOpExpr: IrTernOpExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
+  def checkIrTernOpExpr(
+                         methodsTable: MethodsTable,
+                         scopeStack: mutable.Stack[SymbolTable],
+                         ternOpExpr: IrTernOpExpr,
+                         genie: ExceptionGenie
+                       ) : (Boolean, BaseDescriptor) = {
     val (condSuccess, condType) = checkExpr(methodsTable, scopeStack, ternOpExpr.cond, genie)
     val (leftSuccess, leftType) = checkExpr(methodsTable, scopeStack, ternOpExpr.leftExpr, genie)
     val (rightSuccess, rightType) = checkExpr(methodsTable, scopeStack, ternOpExpr.rightExpr, genie)
@@ -104,7 +109,12 @@ object Check {
   }
 
 
-  def checkIrUnOpExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], unOpExpr: IrUnOpExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
+  def checkIrUnOpExpr(
+                      methodsTable: MethodsTable,
+                      scopeStack: mutable.Stack[SymbolTable],
+                      unOpExpr: IrUnOpExpr,
+                      genie: ExceptionGenie
+                     ) : (Boolean, BaseDescriptor) = {
     val (success, exprType) = checkExpr(methodsTable, scopeStack, unOpExpr.expr, genie)
     if (success) {
       val op = unOpExpr.unop
@@ -139,7 +149,12 @@ object Check {
     }
   }
 
-  def checkIrBinOpExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], binOpExpr: IrBinOpExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
+  def checkIrBinOpExpr(
+                        methodsTable: MethodsTable,
+                        scopeStack: mutable.Stack[SymbolTable],
+                        binOpExpr: IrBinOpExpr,
+                        genie: ExceptionGenie
+                      ) : (Boolean, BaseDescriptor) = {
     val (leftSuccess, leftType) = checkExpr(methodsTable, scopeStack, binOpExpr.leftExpr, genie)
     val (rightSuccess, rightType) = checkExpr(methodsTable, scopeStack, binOpExpr.rightExpr, genie)
     val op = binOpExpr.binOp
@@ -223,7 +238,12 @@ object Check {
     }
   }
 
-  def checkIrLocation(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], irLoc: IrLocation, genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
+  def checkIrLocation(
+                       methodsTable: MethodsTable,
+                       scopeStack: mutable.Stack[SymbolTable],
+                       irLoc: IrLocation,
+                       genie: ExceptionGenie
+                     ) : (Boolean, BaseDescriptor) = {
     irLoc match {
       case l: IrSingleLocation => {
         checkIrSingleLocation(scopeStack, l, genie)
@@ -235,7 +255,10 @@ object Check {
 
   }
 
-  def checkIrSingleLocation(scopeStack: mutable.Stack[SymbolTable], singleLoc: IrSingleLocation, genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
+  def checkIrSingleLocation(
+                             scopeStack: mutable.Stack[SymbolTable],
+                             singleLoc: IrSingleLocation,
+                             genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
     val currScope = scopeStack.top
     val id = currScope.lookupID(singleLoc.name)
     if (id == null) {
@@ -245,7 +268,12 @@ object Check {
     (true, id)
   }
 
-  def checkIrArrayLocation(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], arrayLoc: IrArrayLocation, genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
+  def checkIrArrayLocation(
+                            methodsTable: MethodsTable,
+                            scopeStack: mutable.Stack[SymbolTable],
+                            arrayLoc: IrArrayLocation,
+                            genie: ExceptionGenie
+                          ) : (Boolean, BaseDescriptor) = {
     val currScope = scopeStack.top
     val id = currScope.lookupID(arrayLoc.name)
     id match {
@@ -286,45 +314,73 @@ object Check {
     }
   }
 
-  def checkIrMethodCallExpr(methodsTable: MethodsTable, scopeStack: mutable.Stack[SymbolTable], methodExpr: IrMethodCallExpr, genie: ExceptionGenie) : (Boolean, BaseDescriptor) =  {
+  def checkIrMethodCallExpr(
+                             methodsTable: MethodsTable,
+                             scopeStack: mutable.Stack[SymbolTable],
+                             methodExpr: IrMethodCallExpr,
+                             genie: ExceptionGenie
+                           ) : (Boolean, BaseDescriptor) =  {
     val currScope = scopeStack.top
     val method = methodsTable.lookupID(methodExpr.name)
     if (method == null) {
       genie.insert(new MethodNotFoundException("Method " + methodExpr.name + " was not found"))
       (false, null)
     } else {
-      val expectedTypes = method.getParamTable.values // param types expected by the method decl
-      val providedTypes = new Array[BaseDescriptor](0)
-      
-      // BIG TODO: Check method name against callouts as well? If it's a callout, then we don't have to verify the args, and the return type             // is int.
-      /*
-       for (args <- methodExpr.args) {
-       arg match { 
-       case exprArg: IrCallExprArg {
-       val (valid, typeOf, value) = checkExpr(methodsTable, scopeStack, exprArg, genie)
-       if (valid) { 
-       providedTypes +: typeOf
-       } else {
-       (false, null, null)
-       }
-       }
-       } 
-       }
-       if (providedTypes == expectedTypes) {
-       if (!method.returnType.isInstanceOf[VoidTypeDescriptor]) {
-       (true, method.returnType, null) 
-       } else { 
-       genie.insert(new InvalidMethodCallReturnException("Method " + methodExpr.name + " does not return a value, methodExpr.nodeLoc))
-       }
-       } else {
-       genie.insert(new InvalidMethodCallArgumentException("Method " + methodExpr.name + " has an incorrect argument", methodExpr.nodeLoc))
-       }
-       */
-      (false, null)
+      if(methodsTable.isCallout(methodExpr.name)) {
+        return (false, new IntTypeDescriptor)
+      } else {
+        val expectedTypes = method.getParamTable.values.toSeq // param types expected by the method decl
+        val providedTypes = new Array[BaseDescriptor](0)
+
+        if(expectedTypes.size != methodExpr.args.size) {
+          genie.insert(new IncorrectNumberOfArgsException("Incorrect number of arguments in " + methodExpr.name, methodExpr.loc))
+        }
+
+        var argCheck : Boolean = true
+        var i : Integer = 0
+        while (argCheck && i < expectedTypes.size) {
+          val arg = methodExpr.args(i)
+          val expectedArgType = expectedTypes(i)
+
+          if(arg.isInstanceOf[IrCallStringArg]) {
+            genie.insert(new StringArgInMethodCallException("String argument found in method call to " + methodExpr.name, methodExpr.loc))
+          }
+
+          val argExpr = arg.asInstanceOf[IrCallExprArg].arg
+          val (argIsValid, argType) = checkExpr(methodsTable, scopeStack, argExpr, genie)
+
+          if(!argIsValid) {
+            return (false, null)
+          }
+
+          if(expectedArgType.isInstanceOf[IntTypeDescriptor]) {
+            if(!argType.isInstanceOf[IntTypeDescriptor]) {
+              argCheck = false
+            }
+          } else if (expectedArgType.isInstanceOf[BoolTypeDescriptor]) {
+            if(!argType.isInstanceOf[IntTypeDescriptor]) {
+              argCheck = false
+            }
+          }
+
+          i += 1
+        }
+
+        i -= 1
+        if(argCheck) {
+          return (true, method.methodType)
+        } else {
+          genie.insert(new InvalidMethodCallArgumentException("Method " + methodExpr.name + " has an incorrect argument", methodExpr.nodeLoc))
+          return (false, null)
+        }
+      }
     }
   }
 
-  def checkIrIntLiteral(intLit: IrIntLiteral, genie: ExceptionGenie) : (Boolean, BaseDescriptor) = {
+  def checkIrIntLiteral(
+                         intLit: IrIntLiteral,
+                         genie: ExceptionGenie
+                       ) : (Boolean, BaseDescriptor) = {
     intLit.value match {
       case Some(v) => {
         if (v > Long.MaxValue) {
