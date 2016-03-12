@@ -28,10 +28,6 @@ class GlobalFieldTable extends SymbolTable(null, null) {
     null
   }
 
-  override def validate() : Boolean = {
-    true
-  }
-
   override def toString : String = {
     "GlobalFieldTable(" + symbolTableMap.mkString(",") + ")"
   }

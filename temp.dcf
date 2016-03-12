@@ -13,7 +13,11 @@ void bar ( int p, int t ) {
   for ( i = 0, 10 ) {
     A[i] = i;
   }
+
+  if ( 9 > 8 ) {
+    c = true;
+  }
 }
 void main ( ) {
-  bar ( 5, true );
+  bar ( 5, 7 );
 }

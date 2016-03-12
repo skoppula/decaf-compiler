@@ -111,3 +111,5 @@ case class CompilerProblem(message: String, loc: NodeLocation) extends Exception
 
 case class MethodCallIsShadowedByLocalVariable(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
+case class NoMainMethodException(message: String) extends Exception(message)
+

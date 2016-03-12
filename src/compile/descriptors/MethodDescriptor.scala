@@ -17,9 +17,5 @@ class MethodDescriptor(
     "Method(" + methodName + "," + returnType.toString + ")"
   }
 
-  def validate(): Boolean = {
-    parameterTable.validate()
-  }
-
   def getParamTable : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]  = parameterTable.getParametersTable
 }

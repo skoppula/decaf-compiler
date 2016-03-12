@@ -35,24 +35,9 @@ class MethodsTable(calloutManager : CalloutManager) {
     }
   }
 
-  def validate() : Boolean = {
-    /**
-      *  - Checks for a main method
-      *  - Recursively calls validate on each method entry/descriptor
-      */
-    if(!methodTable.contains("main")) return false
-
-    var check : Boolean = true
-    for((id, methodDescriptor) <- methodTable) {
-      check &= methodDescriptor.validate()
-    }
-    return check
-  }
-
   def isCallout(name: String): Boolean  = {
     calloutManager.isCallout(name)
   }
-
 
   override def toString : String = {
     return "MethodTable(" + methodTable.mkString(",") + ")"

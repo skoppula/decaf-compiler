@@ -9,11 +9,9 @@ import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, Sy
 import compile.Check._
 
 import scala.Console
-import compile.util.GraphUtil.{walkExperimental, visualize}
 import scala.collection.mutable
 
 // Begin parser/scanner imports
-import antlr.ASTFactory
 import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenTypes }
 
 object Compiler {
@@ -196,9 +194,9 @@ object Compiler {
 
     // Step Three
     // Any remaining semantic checks/validation
-    // very outdated may need restructuring/use of ExceptionGenie
-    methodsTable.validate()
-    globalFieldTable.validate()
+    if(methodsTable.lookupID("main") == null) {
+      exceptionGenie.insert(new NoMainMethodException("You don't have a main() method! >:("))
+    }
 
     return (ir, globalFieldTable, methodsTable)
   }
@@ -306,29 +304,54 @@ object Compiler {
     enterBlock(methodsTable, scopeStack, methodDecl.bodyBlock, methodName, exceptionGenie)
   }
 
+  // TODO
+  //    negative integer literals
+  //    ensure that method has return statement
+  //    array locations are not valid for loop index variables
+  //      declare var inside for loop?
+  //    convert char to int?
   def enterBlock(
                 methodsTable: MethodsTable,
                 scopeStack : mutable.Stack[SymbolTable],
                 block : IrBlock,
                 topMethodName: String,
                 exceptionGenie: ExceptionGenie
-                ) = {
-
-    // IMPORTANT NOTE:
-    //    @emshen @aliew @srobin
-    //    CONVENTION IS THAT YOU PUSH THE NEW SCOPE ONTO STACK BEFORE NEXT RECURSIVE CALL to enterBlock()
-    //      (reason is that it makes pushing the parametersTable as the first scope in line 283 much easier)
-
-    // NONE OF THIS IS TESTED so far -_- below this comment
+                ) {
 
     insertFieldDecls(block.fieldDecls, scopeStack.top, exceptionGenie)
 
     val currScope = scopeStack.top
 
-    // TODO Needs to do pushing, popping, and modification of scopes accordingly
     for(stmt <- block.stmts) {
-      println(stmt)
       checkStmt(methodsTable, scopeStack, stmt, topMethodName, exceptionGenie)
+      stmt match {
+        case s: IrIfStmt => {
+          val newScope : SymbolTable = new SymbolTable(currScope, ScopeTypes.IF)
+          scopeStack.push(newScope)
+          enterBlock(methodsTable, scopeStack, s.ifBlock, topMethodName, exceptionGenie)
+          scopeStack.pop()
+          if(s.elseBlock.isDefined) {
+            val newScope : SymbolTable = new SymbolTable(currScope, ScopeTypes.IF)
+            scopeStack.push(newScope)
+            enterBlock(methodsTable, scopeStack, s.elseBlock.get, topMethodName, exceptionGenie)
+            scopeStack.pop()
+          }
+        }
+        case s: IrForStmt => {
+          val newScope : SymbolTable = new SymbolTable(currScope, ScopeTypes.FOR)
+          scopeStack.push(newScope)
+          enterBlock(methodsTable, scopeStack, s.bodyBlock, topMethodName, exceptionGenie)
+          scopeStack.pop()
+        }
+        case s: IrWhileStmt => {
+          val newScope : SymbolTable = new SymbolTable(currScope, ScopeTypes.WHILE)
+          scopeStack.push(newScope)
+          enterBlock(methodsTable, scopeStack, s.bodyBlock, topMethodName, exceptionGenie)
+          scopeStack.pop()
+        }
+
+        case _ => ;
+      }
     }
   }
 }

@@ -79,7 +79,7 @@ object IrConstruction {
           try {
             intVal = Some(getBigIntValue(arraySizeStr))
             if (intVal.get < 1) {
-              throw new InvalidArraySizeException("You specified an array size less than 1", nodeLoc)
+              exceptionGenie.insert(new InvalidArraySizeException("You specified an array size less than 1", nodeLoc))
             }
           } catch {
             case nfa: NumberFormatException => {

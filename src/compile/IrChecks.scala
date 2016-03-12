@@ -285,7 +285,7 @@ object Check {
         val (valid, typeOf) = checkExpr(methodsTable, scopeStack, arrayLoc.index, genie)
         if (valid) {
           if (typeOf.isInstanceOf[IntTypeDescriptor]) {
-            return (true, id)
+            return (true, new IntTypeDescriptor)
           } else {
             genie.insert(new IdentifierIsArrayButIndexIsNotIntException("Identifier " + arrayLoc.name + " with Expr is not of type int", arrayLoc.loc))
             return (false, null)
@@ -298,7 +298,7 @@ object Check {
         val (valid, typeOf) = checkExpr(methodsTable, scopeStack, arrayLoc.index, genie)
         if (valid) {
           if (typeOf.isInstanceOf[IntTypeDescriptor]) {
-            (true, id)
+            (true, new BoolTypeDescriptor)
           } else {
             genie.insert(new IdentifierIsArrayButIndexIsNotIntException("Identifier " + arrayLoc.name + " with Expr is not of type int", arrayLoc.loc))
             return (false, null)
@@ -361,6 +361,7 @@ object Check {
 
         val argExpr = arg.asInstanceOf[IrCallExprArg].arg
         val (argIsValid, argType) = checkExpr(methodsTable, scopeStack, argExpr, genie)
+        println("\t" + argType.toString + " " + expectedArgType.toString)
 
         if(!argIsValid) {
           return (false, null)
@@ -371,7 +372,7 @@ object Check {
             argCheck = false
           }
         } else if (expectedArgType.isInstanceOf[BoolTypeDescriptor]) {
-          if(!argType.isInstanceOf[IntTypeDescriptor]) {
+          if(!argType.isInstanceOf[BoolTypeDescriptor]) {
             argCheck = false
           }
         }
@@ -543,7 +544,7 @@ object Check {
   ) : Boolean = {
     val methodCallExpr : IrMethodCallExpr = stmt.methCall.asInstanceOf[IrMethodCallExpr]
     val (valid, _) = checkMethodHelper(methodsTable, scopeStack, methodCallExpr, genie, false)
-    valid
+    return valid
   }
 
   def checkIrIfStmt(

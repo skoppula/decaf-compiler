@@ -59,14 +59,6 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     }
   }
 
-  def validate() : Boolean = {
-    var check : Boolean = true
-    for(table <- childrenSymbolTables.toIterator) {
-      check &= table.validate()
-    }
-    check
-  }
-
   override def toString : String = {
     "SymbolTable" + scopeType.toString + "(" + symbolTableMap.mkString(",") + ")"
   }
