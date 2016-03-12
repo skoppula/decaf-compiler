@@ -2,9 +2,9 @@ package compile.symboltables
 
 import compile.descriptors.MethodDescriptor
 import scala.collection.mutable.HashMap
-import compile.{CalloutAlreadyExistsException, CalloutManager, MethodAlreadyExistsException}
+import compile.{IdentifierAlreadyExistsException, CalloutAlreadyExistsException, CalloutManager, MethodAlreadyExistsException}
 
-class MethodsTable(calloutManager : CalloutManager) {
+class MethodsTable(calloutManager : CalloutManager, globalFieldTable: GlobalFieldTable) {
   var methodTable: HashMap[String, MethodDescriptor] = HashMap.empty[String, MethodDescriptor];
 
   def insert(name : String, methodDescriptor: MethodDescriptor): Unit = {
@@ -17,6 +17,9 @@ class MethodsTable(calloutManager : CalloutManager) {
 
     } else if(this.isCallout(name)) {
       throw new CalloutAlreadyExistsException("Callout with name " + name + "already exists")
+
+    } else if(globalFieldTable.lookupID(name) != null) {
+      throw new IdentifierAlreadyExistsException("Method name conflicts with global field identifier with same name" + name)
 
     } else {
       methodTable(name) = methodDescriptor

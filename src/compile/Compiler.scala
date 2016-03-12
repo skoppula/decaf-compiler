@@ -103,7 +103,7 @@ object Compiler {
     } 
   }
 
-  def inter(fileName: String): (IrProgram, SymbolTable, MethodsTable) = {
+  def inter(fileName: String): (IrProgram, MethodsTable) = {
     /**
       * Create the intermediate AST representation + symbol table structures
       * Where all the identifier and semantic checking magic will happen
@@ -184,8 +184,8 @@ object Compiler {
 
     // Step 2.c.
     // Process all the defined methods
-    val methodsTable : MethodsTable = new MethodsTable(calloutManager)
-    var scopeStack = new mutable.Stack[SymbolTable]
+    val methodsTable : MethodsTable = new MethodsTable(calloutManager, globalFieldTable)
+    val scopeStack = new mutable.Stack[SymbolTable]
 
     for(methodDecl <- ir.methodDecls) {
       walkMethodIRNode(calloutManager, globalFieldTable, scopeStack, methodsTable, methodDecl, exceptionGenie)
@@ -208,7 +208,7 @@ object Compiler {
       exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
     }
 
-    return (ir, globalFieldTable, methodsTable)
+    return (ir, methodsTable)
   }
 
   def insertFieldDecls(fieldDecls: List[IrFieldDecl], symbolTable : SymbolTable, exceptionGenie: ExceptionGenie)= {
@@ -307,7 +307,13 @@ object Compiler {
       methodsTable.insert(methodName, currMethodDescriptor)
     } catch {
       case mae: MethodAlreadyExistsException => {
-        exceptionGenie.insert(new MethodAlreadyExistsException("Method with name already exists: " + methodName))
+        exceptionGenie.insert(mae)
+      }
+      case iae: IdentifierAlreadyExistsException => {
+        exceptionGenie.insert(iae)
+      }
+      case cae: CalloutAlreadyExistsException => {
+        exceptionGenie.insert(cae)
       }
     }
 
