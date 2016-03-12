@@ -197,9 +197,15 @@ object Compiler {
     }
 
     // Step Three
-    // Any remaining semantic checks/validation
-    if(methodsTable.lookupID("main") == null) {
+    // Any remaining semantic checks/validation:
+    //  - Checks if main() method with correct signature is present
+    val mainMethodDescriptor = methodsTable.lookupID("main")
+    if(mainMethodDescriptor == null) {
       exceptionGenie.insert(new NoMainMethodException("You don't have a main() method! >:("))
+    }
+
+    if(mainMethodDescriptor.getParamTable.size != 0) {
+      exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
     }
 
     return (ir, globalFieldTable, methodsTable)
@@ -318,6 +324,8 @@ object Compiler {
   //    convert char to int?
   //    pretty print data structure
   //    documentation
+  //
+  //    hidden tests: illegal 4, 24, 53, method_shadowing2
   def enterBlock(
                 methodsTable: MethodsTable,
                 scopeStack : mutable.Stack[SymbolTable],

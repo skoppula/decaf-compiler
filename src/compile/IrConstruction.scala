@@ -325,7 +325,16 @@ object IrConstruction {
 
     if (numChild == 5) {
       val incValNode = endValNode.getNextSibling()
-      incVal = Option(IrIntLiteral(None, incValNode.getText(), nodeLoc))
+
+      var intVal = None: Option[BigInt];
+      try {
+        intVal = Some(getBigIntValue(incValNode.getText()))
+      } catch {
+        case nfa: NumberFormatException => {
+          exceptionGenie.insert(new InvalidIntLiteralException("Cannot parse int literal", nodeLoc))
+        }
+      }
+      incVal = Option(IrIntLiteral(intVal, incValNode.getText(), nodeLoc))
 
       val bodyBlockNode = incValNode.getNextSibling()
       bodyBlock = blockNodeToIrBlock(bodyBlockNode, exceptionGenie)

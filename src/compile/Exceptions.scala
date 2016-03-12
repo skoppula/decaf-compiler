@@ -113,3 +113,5 @@ case class MethodCallIsShadowedByLocalVariable(message: String, loc: NodeLocatio
 
 case class NoMainMethodException(message: String) extends Exception(message)
 
+case class MainMethodHasParametersException(message: String) extends Exception(message)
+

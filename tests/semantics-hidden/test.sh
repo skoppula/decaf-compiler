@@ -7,6 +7,7 @@ runsemantics() {
 fail=0
 
 for file in `dirname $0`/illegal/*; do
+  echo "Running $file"
   if runsemantics $file > /dev/null 2>&1; then
     echo "Illegal file $file semantic checked successfully.";
     fail=1
@@ -14,6 +15,7 @@ for file in `dirname $0`/illegal/*; do
 done
 
 for file in `dirname $0`/legal/*; do
+  echo "Running $file"
   if ! runsemantics $file; then
     echo "Legal file $file failed to pass semantic checks.";
     fail=1

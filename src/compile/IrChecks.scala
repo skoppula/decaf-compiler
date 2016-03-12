@@ -459,7 +459,7 @@ object Check {
         return checkIrReturnStmt(methodsTable, scopeStack, s, topMethodName, genie)
       }
       case s: IrBreakStmt => {
-        val scopeFilter = scopeStack.toList.filter((s:SymbolTable) => !(s.scopeType == FOR || s.scopeType == WHILE))
+        val scopeFilter = scopeStack.toList.filter((s:SymbolTable) => (s.scopeType == FOR || s.scopeType == WHILE))
         if (scopeFilter.length > 0) {
           return true
         } else {
@@ -468,11 +468,12 @@ object Check {
         }
       }
       case s: IrContinueStmt => {
-        val scopeFilter = scopeStack.toList.filter((s:SymbolTable) => !(s.scopeType == FOR || s.scopeType == WHILE))
+        val scopeFilter = scopeStack.toList.filter((s:SymbolTable) => (s.scopeType == FOR || s.scopeType == WHILE))
+        println(scopeFilter)
         if (scopeFilter.length > 0) {
           return true
         } else {
-          genie.insert(new BreakStmtInvalidScope("Break statement not contained in a FOR or WHILE block", loc))
+          genie.insert(new BreakStmtInvalidScope("Continue statement not contained in a FOR or WHILE block", loc))
           return false
         }
       }
