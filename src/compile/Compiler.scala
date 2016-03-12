@@ -327,6 +327,7 @@ object Compiler {
 
     // TODO Needs to do pushing, popping, and modification of scopes accordingly
     for(stmt <- block.stmts) {
+      println(stmt)
       checkStmt(methodsTable, scopeStack, stmt, topMethodName, exceptionGenie)
     }
   }

@@ -2,14 +2,18 @@ callout printf;
 
 int b;
 int A[10];
+
 void bar ( int p, int t ) {
   int i;
   int b;
-  int b;
+  boolean c;
+
+  b = 9 + 10;
+  c = true;
   for ( i = 0, 10 ) {
     A[i] = i;
   }
 }
 void main ( ) {
-  bar ( 5, 6 );
+  bar ( 5, true );
 }

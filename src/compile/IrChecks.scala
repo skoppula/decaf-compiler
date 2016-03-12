@@ -48,34 +48,34 @@ object Check {
     expr: IrExpression,
     genie: ExceptionGenie
   ) : (Boolean, BaseDescriptor) = {
-    
+
     expr match {
       case singleLoc: IrSingleLocation => {
-        checkIrSingleLocation(scopeStack, singleLoc, genie)
+        return checkIrSingleLocation(scopeStack, singleLoc, genie)
       }
       case arrayLoc: IrArrayLocation => {
-        checkIrArrayLocation(methodsTable, scopeStack, arrayLoc, genie)
+        return checkIrArrayLocation(methodsTable, scopeStack, arrayLoc, genie)
       }
       case methodCall: IrMethodCallExpr => {
-        checkIrMethodCallExpr(methodsTable, scopeStack, methodCall, genie)
+        return checkIrMethodCallExpr(methodsTable, scopeStack, methodCall, genie)
       }
       case intLit: IrIntLiteral => {
-        checkIrIntLiteral(intLit, genie)
+        return checkIrIntLiteral(intLit, genie)
       }
       case charLit: IrCharLiteral => {
-        checkIrCharLiteral(charLit)
+        return checkIrCharLiteral(charLit)
       }
       case IrBooleanLiteral(value, loc) => {
-        (true, new BoolTypeDescriptor)
+        return (true, new BoolTypeDescriptor)
       }
       case binOpExpr: IrBinOpExpr => {
-        checkIrBinOpExpr(methodsTable, scopeStack, binOpExpr, genie)
+        return checkIrBinOpExpr(methodsTable, scopeStack, binOpExpr, genie)
       }
       case unOpExpr: IrUnOpExpr => {
-        checkIrUnOpExpr(methodsTable, scopeStack, unOpExpr, genie)
+        return checkIrUnOpExpr(methodsTable, scopeStack, unOpExpr, genie)
       }
       case ternOpExpr: IrTernOpExpr => {
-        checkIrTernOpExpr(methodsTable, scopeStack, ternOpExpr, genie)
+        return checkIrTernOpExpr(methodsTable, scopeStack, ternOpExpr, genie)
       }
     }
     (false, null)
@@ -121,26 +121,26 @@ object Check {
       op match {
         case IrMinusOp() => {
           if (exprType.isInstanceOf[IntTypeDescriptor]) {
-            (true, new IntTypeDescriptor)
+            return (true, new IntTypeDescriptor)
           } else {
             genie.insert(new MinusOpTypeException("Expression: " + unOpExpr.expr + " is not an integer.", unOpExpr.nodeLoc))
-            (false, null)
+            return (false, null)
           }
         }
         case IrNotOp() => {
           if (exprType.isInstanceOf[BoolTypeDescriptor]) {
-            (true, new BoolTypeDescriptor)
+            return (true, new BoolTypeDescriptor)
           } else {
             genie.insert(new NotOpTypeException("Expression: " + unOpExpr.expr + " is not a Boolean.", unOpExpr.nodeLoc))
-            (false, null)
+            return (false, null)
           }
         }
         case IrArraySizeOp() => {
           if (exprType.isInstanceOf[ArrayBaseDescriptor]) {
-            (true, new IntTypeDescriptor)
+            return (true, new IntTypeDescriptor)
           } else {
             genie.insert(new LengthOpTypeException("Expression: " + unOpExpr.expr + " is not an array.", unOpExpr.nodeLoc))
-            (false, null)
+            return (false, null)
           }
         }
       }
@@ -164,11 +164,11 @@ object Check {
           if (leftType.isInstanceOf[IntTypeDescriptor]) {
             if (rightType.isInstanceOf[IntTypeDescriptor]) {
               arith match {
-                case IrMulOp() => (true, new IntTypeDescriptor)
-                case IrDivOp() => (true, new IntTypeDescriptor)
-                case IrModOp() => (true, new IntTypeDescriptor)
-                case IrAddOp() => (true, new IntTypeDescriptor)
-                case IrSubOp() => (true, new IntTypeDescriptor)
+                case IrMulOp() => return (true, new IntTypeDescriptor)
+                case IrDivOp() => return (true, new IntTypeDescriptor)
+                case IrModOp() => return (true, new IntTypeDescriptor)
+                case IrAddOp() => return (true, new IntTypeDescriptor)
+                case IrSubOp() => return (true, new IntTypeDescriptor)
               }
             } else {
               genie.insert(new ArithOpIntOperandException("The right operand does not evaluate to integer", binOpExpr.rightExpr.nodeLoc))
@@ -187,21 +187,21 @@ object Check {
           if (leftType.isInstanceOf[IntTypeDescriptor]) {
             if (rightType.isInstanceOf[IntTypeDescriptor]) {
               rel match {
-                case IrLtOp() => (true, new BoolTypeDescriptor)
-                case IrLteOp() => (true, new BoolTypeDescriptor)
-                case IrGtOp() => (true, new BoolTypeDescriptor)
-                case IrGteOp() => (true, new BoolTypeDescriptor)
+                case IrLtOp() => return (true, new BoolTypeDescriptor)
+                case IrLteOp() => return (true, new BoolTypeDescriptor)
+                case IrGtOp() => return (true, new BoolTypeDescriptor)
+                case IrGteOp() => return (true, new BoolTypeDescriptor)
               }
             } else {
               genie.insert(new ArithOpIntOperandException("The right operand does not evaluate to integer", binOpExpr.rightExpr.nodeLoc))
-              (false, null)
+              return (false, null)
             }
           } else {
             genie.insert(new ArithOpIntOperandException("The left operand does not evaluate to integer", binOpExpr.leftExpr.nodeLoc))
-            (false, null)
+            return (false, null)
           }
         } else { // one or more of left/rightExpr didn't evaluate correctly. Already generated an error
-          (false, null)
+          return (false, null)
         }
       }
       case eq: IrEqOp => {
@@ -210,7 +210,7 @@ object Check {
             (true, new BoolTypeDescriptor)
           } else {
             genie.insert(new EqOpTypeException("Left operand has type: " + leftType + " different from right operand of type " + rightType, binOpExpr.leftExpr.nodeLoc))
-            (false, null)
+            return (false, null)
           }
         }
         (false, null)
@@ -225,14 +225,14 @@ object Check {
               }
             } else {
               genie.insert(new CondOpBoolOperandException("The right operand does not evaluate to a boolean", binOpExpr.rightExpr.nodeLoc))
-              (false, null)
+              return (false, null)
             }
           } else {
             genie.insert(new CondOpBoolOperandException("The left operand does not evaluate to a boolean", binOpExpr.leftExpr.nodeLoc))
-            (false, null)
+            return (false, null)
           }
         } else { // one or more of left/rightExpr didn't evaluate correctly. Already generated an error
-          (false, null)
+          return (false, null)
         }
       }
     }
@@ -246,10 +246,10 @@ object Check {
                      ) : (Boolean, BaseDescriptor) = {
     irLoc match {
       case l: IrSingleLocation => {
-        checkIrSingleLocation(scopeStack, l, genie)
+        return checkIrSingleLocation(scopeStack, l, genie)
       }
       case l: IrArrayLocation => {
-        checkIrArrayLocation(methodsTable, scopeStack, l, genie)
+        return checkIrArrayLocation(methodsTable, scopeStack, l, genie)
       }
     }
 
@@ -279,19 +279,19 @@ object Check {
     id match {
       case null => {
         genie.insert(new IdentifierNotFoundException("Identifier with name and loc: " + arrayLoc.name + arrayLoc.loc + " not found."))
-        (false, null)
+        return (false, null)
       }
       case IntArrayTypeDescriptor(size) =>  {
         val (valid, typeOf) = checkExpr(methodsTable, scopeStack, arrayLoc.index, genie)
         if (valid) {
           if (typeOf.isInstanceOf[IntTypeDescriptor]) {
-            (true, id)
+            return (true, id)
           } else {
             genie.insert(new IdentifierIsArrayButIndexIsNotIntException("Identifier " + arrayLoc.name + " with Expr is not of type int", arrayLoc.loc))
-            (false, null)
+            return (false, null)
           }
         } else {
-          (false, null)
+          return (false, null)
         }
       }
       case BoolArrayTypeDescriptor(size) => {
@@ -301,15 +301,15 @@ object Check {
             (true, id)
           } else {
             genie.insert(new IdentifierIsArrayButIndexIsNotIntException("Identifier " + arrayLoc.name + " with Expr is not of type int", arrayLoc.loc))
-            (false, null)
+            return (false, null)
           }
         } else {
-          (false, null)
+          return (false, null)
         }
       }
       case _ => {
         genie.insert(new IdentifierIsNotArrayException("Identifier is not an array: " + arrayLoc.name, arrayLoc.loc))
-        (false, null)
+        return (false, null)
       }
     }
   }
@@ -407,16 +407,16 @@ object Check {
       case Some(v) => {
         if (v > Long.MaxValue) {
           genie.insert(new InvalidIntLiteralException("Integer literal greater than maximum 2^63 - 1", intLit.loc))
-          (false, null)
+          return (false, null)
         } else if (v < Long.MinValue) {
           genie.insert(new InvalidIntLiteralException("Integer literal lower than minimum 2^63", intLit.loc))
-          (false, null)
+          return (false, null)
         } else {
-          (true, new IntTypeDescriptor)
+          return (true, new IntTypeDescriptor)
         }
       }
       case None => {
-        (false, null)
+        return (false, null)
       }
     }
   }
@@ -441,43 +441,43 @@ object Check {
 
     stmt match {
       case s: IrAssignStmt => {
-        checkIrAssignStmt(methodsTable, scopeStack, s, genie)
+        return checkIrAssignStmt(methodsTable, scopeStack, s, genie)
       }
       case s: IrMethodCallStmt => {
-        checkIrMethodCallStmt(methodsTable, scopeStack, s, genie)
+        return checkIrMethodCallStmt(methodsTable, scopeStack, s, genie)
       }
       case s: IrIfStmt => {
-        checkIrIfStmt(methodsTable, scopeStack, s, genie)
+        return checkIrIfStmt(methodsTable, scopeStack, s, genie)
       }
       case s: IrForStmt => {
-        checkIrForStmt(methodsTable, scopeStack, s, genie)
+        return checkIrForStmt(methodsTable, scopeStack, s, genie)
       }
       case s: IrWhileStmt => {
-        checkIrWhileStmt(methodsTable, scopeStack, s, genie)
+        return checkIrWhileStmt(methodsTable, scopeStack, s, genie)
       }
       case s: IrReturnStmt => {
-        checkIrReturnStmt(methodsTable, scopeStack, s, topMethodName, genie)
+        return checkIrReturnStmt(methodsTable, scopeStack, s, topMethodName, genie)
       }
       case s: IrBreakStmt => {
         val scopeFilter = scopeStack.toList.filter((s:SymbolTable) => !(s.scopeType == FOR || s.scopeType == WHILE))
         if (scopeFilter.length > 0) {
-          true
+          return true
         } else {
           genie.insert(new BreakStmtInvalidScope("Break statement not contained in a FOR or WHILE block", loc))
-          false
+          return false
         }
       }
       case s: IrContinueStmt => {
         val scopeFilter = scopeStack.toList.filter((s:SymbolTable) => !(s.scopeType == FOR || s.scopeType == WHILE))
         if (scopeFilter.length > 0) {
-          true
+          return true
         } else {
           genie.insert(new BreakStmtInvalidScope("Break statement not contained in a FOR or WHILE block", loc))
-          false
+          return false
         }
       }
     }
-    false
+    return false
   }
 
   def checkIrAssignStmt(
@@ -495,15 +495,15 @@ object Check {
       stmt match {
         case IrEqualsAssignStmt(_,_,_) => {
           if (irLocType == exprType) {
-            true
+            return true
           } else {
             genie.insert(new AssignEqStmtTypeMismatch("The type of location " + irLoc.name + " with type " + irLocType +  " and expr " + expr + " with type " + exprType + "do not match" , loc))
-            false
+            return false
           }
         }
         case IrMinusAssignStmt(_,_,_) => {
           if (irLocType.isInstanceOf[IntTypeDescriptor] && exprType.isInstanceOf[IntTypeDescriptor]) {
-            true
+            return true
           } else {
             if (!irLocType.isInstanceOf[IntTypeDescriptor]) {
               genie.insert(new AssignMinusEqStmtTypeMismatch("The type of location " + irLoc.name + " with type " + irLocType + " is not of type int", irLoc.nodeLoc))
@@ -511,12 +511,12 @@ object Check {
             if (!exprType.isInstanceOf[IntTypeDescriptor]) {
               genie.insert(new AssignMinusEqStmtTypeMismatch("Expr " + expr + " with type " + irLocType + " is not of type int", expr.nodeLoc))
             }
-            false
+            return false
           }
         }
         case IrPlusAssignStmt(_,_,_) => {
           if (irLocType.isInstanceOf[IntTypeDescriptor] && exprType.isInstanceOf[IntTypeDescriptor]) {
-            true
+            return true
           } else {
             if (!irLocType.isInstanceOf[IntTypeDescriptor]) {
               genie.insert(new AssignPlusEqStmtTypeMismatch("The type of location " + irLoc.name + " with type " + irLocType + " is not of type int", irLoc.nodeLoc))
@@ -524,13 +524,13 @@ object Check {
             if (!exprType.isInstanceOf[IntTypeDescriptor]) {
               genie.insert(new AssignPlusEqStmtTypeMismatch("Expr " + expr + " with type " + irLocType + " is not of type int", expr.nodeLoc))
             }
-            false
+            return false
           }
         }
       }
 
     } else { // Error already generated upon checking location or expr or both
-      false
+      return false
     }
 
   }
@@ -624,9 +624,9 @@ object Check {
     }
 
     if (isError) {
-      false
+      return false
     } else {
-      true
+      return true
     }
 
   }
@@ -669,21 +669,21 @@ object Check {
           val (exprSuccess, exprType) = checkExpr(methodsTable, scopeStack, expr, genie)
           if (exprSuccess) {
             if (exprType == methodType) {
-              true
+              return true
             } else {
               genie.insert(new ReturnStmtTypeMismatch("Return stmt has expr " + expr + " with type " + exprType + "when method " + topMethodName + " has type " + methodType, stmt.nodeLoc))
-              false
+              return false
             }
           } else {
-            false
+            return false
           }
         }
         case None => {
           if (methodType.isInstanceOf[VoidTypeDescriptor]) {
-            true
+            return true
           } else {
             genie.insert(new ReturnStmtTypeMismatch("Return stmt has no return expr when method type is void", stmt.nodeLoc))
-            false
+            return false
           }
         }
       }
