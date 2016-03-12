@@ -1,5 +1,6 @@
 package compile
 
+import _root_.util.CLI
 import edu.mit.compilers.grammar.{DecafParserTokenTypes => Token}
 import antlr.collections.AST
 import compile.Ir._
@@ -45,7 +46,9 @@ object IrConstruction {
     // Process callout node
     val calloutId = ast.getFirstChild().getText()
 
-    println("Callout Declaration: " + calloutId)
+    if(CLI.irdebug) {
+      println("Callout Declaration: " + calloutId)
+    }
 
     return IrCalloutDecl(calloutId, nodeLoc)
   }
@@ -96,7 +99,9 @@ object IrConstruction {
       fieldArgNode = fieldArgNode.getNextSibling()
     }
 
-    println("Field Declaration: type: " + fieldType + " args: " + fieldArgs)
+    if(CLI.irdebug) {
+      println("Field Declaration: type: " + fieldType + " args: " + fieldArgs)
+    }
 
     return IrFieldDecl(fieldType, fieldArgs, nodeLoc)
   }

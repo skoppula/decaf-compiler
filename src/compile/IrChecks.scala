@@ -361,7 +361,6 @@ object Check {
 
         val argExpr = arg.asInstanceOf[IrCallExprArg].arg
         val (argIsValid, argType) = checkExpr(methodsTable, scopeStack, argExpr, genie)
-        println("\t" + argType.toString + " " + expectedArgType.toString)
 
         if(!argIsValid) {
           return (false, null)

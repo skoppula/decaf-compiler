@@ -103,16 +103,6 @@ object Compiler {
     } 
   }
 
-  def construct(fileName: String) = {
-    /** Testing function to try IR construction
-      */
-    val exceptionGenie : ExceptionGenie = new ExceptionGenie
-
-    val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
-    println("== IR decomposition =="); println(ir.treeString); println()
-
-  }
-
   def inter(fileName: String): (IrProgram, SymbolTable, MethodsTable) = {
     /**
       * Create the intermediate AST representation + symbol table structures
@@ -154,7 +144,11 @@ object Compiler {
 
     // Step 1
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
-    println("\nIR decomposition:"); println(ir.treeString); println()
+    if(CLI.irdebug) {
+      println("\nIR decomposition:")
+      println(ir.treeString)
+      println()
+    }
 
     // Step 2.a.
     // Insert callouts into the callout manager
@@ -172,14 +166,21 @@ object Compiler {
       }
     }
 
-    println(); println(calloutManager);
+    if(CLI.irdebug) {
+      println()
+      println(calloutManager)
+    }
 
     // Step 2.b.
     // Adds field declaration statements to the global field table
     calloutManager.closeCallouts
     val globalFieldTable : GlobalFieldTable = new GlobalFieldTable
     insertFieldDecls(ir.fieldDecls, globalFieldTable, exceptionGenie)
-    println(); println(globalFieldTable); println();
+    if(CLI.irdebug) {
+      println()
+      println(globalFieldTable)
+      println()
+    }
 
     // Step 2.c.
     // Process all the defined methods
@@ -190,7 +191,10 @@ object Compiler {
       walkMethodIRNode(calloutManager, globalFieldTable, scopeStack, methodsTable, methodDecl, exceptionGenie)
     }
 
-    println(methodsTable); println()
+    if(CLI.irdebug) {
+      println(methodsTable)
+      println()
+    }
 
     // Step Three
     // Any remaining semantic checks/validation
@@ -288,7 +292,9 @@ object Compiler {
     val parametersTable = new ParametersTable(globalFieldTable, parametersMap)
     val currMethodDescriptor : MethodDescriptor = new MethodDescriptor(parametersTable, methodName, returnType);
 
-    println(methodName + ": " + parametersTable);
+    if(CLI.irdebug) {
+      println(methodName + ": " + parametersTable);
+    }
 
     // Add to methods table
     try {
@@ -310,6 +316,8 @@ object Compiler {
   //    array locations are not valid for loop index variables
   //      declare var inside for loop?
   //    convert char to int?
+  //    pretty print data structure
+  //    documentation
   def enterBlock(
                 methodsTable: MethodsTable,
                 scopeStack : mutable.Stack[SymbolTable],
