@@ -1,4 +1,4 @@
-package compile.threesAddrStructure
+package compile.threeAddrStructure
 
 object OpTypes {
   sealed trait EnumVal

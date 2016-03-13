@@ -1,8 +1,8 @@
-package compile.threesAddrStructure
+package compile.threeAddrStructure
 
 import scala.collection.mutable
 
-object TempVariableManager {
+object TempVariableGenie {
 
   val names = mutable.Set.empty[String]
 
