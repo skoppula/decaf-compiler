@@ -5,12 +5,13 @@ import scala.collection.mutable
 object TempVariableGenie {
 
   val names = mutable.Set.empty[String]
-
-  def generateName() = {
-
+  val count = 0
+  def generateName() : String  = {
+    count++
+    return "#t" + count
   }
 
-  def isName(name : String) = {
+  def isName(name : String) : Boolean = {
     names contains name
   }
 
