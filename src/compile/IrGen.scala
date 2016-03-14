@@ -3,8 +3,9 @@ package compile
 import compile.Ir._
 import compile.Compiler._
 
-import compile.threeAddrStructure.OpTypes._
-import compile.threeAddrStructure.Tac._
+import compile.tac.OpTypes._
+import compile.tac._
+import compile.tac.ThreeAddressCode._
 
 import scala.collection.mutable.ArrayBuffer
 import compile.descriptors._
@@ -12,6 +13,12 @@ import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, Sy
 import compile.ScopeTypes._
 
 object Gen {
+
+  def gen(program: IrProgram, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
+    return ("", null)
+  }
+
+
   // == Expr gening ==
 
   //returns (temp_var, code) where temp_var is where the expression is allocated, and code is the list of TACs.
@@ -57,11 +64,11 @@ object Gen {
     val (leftTemp, leftCode) = genExpr(ternOpExpr.leftExpr, tempGenie)
     val (rightTemp, rightCode) = genExpr(ternOpExpr.rightExpr, tempGenie)
     
-    val tac = new IfFalse(condTemp, elseLabel)
+    val tac = new TacIfFalse(condTemp, elseLabel)
     buf ++= condCode
-    buf ++= tac
+    buf += tac
     buf ++= leftCode
-    buf ++= new Label(elseLabel)
+    buf += new TacLabel(elseLabel)
     buf ++= rightCode
     
     return (temp, buf)
@@ -71,7 +78,7 @@ object Gen {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val (exprTemp, exprCode) = genExpr(unOpExpr.expr, tempGenie)
-    var op: OpEnumVal = _
+    var op: OpEnumVal = null
     unOpExpr.unop match {
       case minus: IrMinusOp => {
         op = MINUS
@@ -86,7 +93,7 @@ object Gen {
 
     val tac = new TacUnaryOp(temp, op, exprTemp)
     buf ++= exprCode 
-    buf ++= tac
+    buf += tac
     return (temp, buf)
   }
 
@@ -114,16 +121,17 @@ object Gen {
     val tac = new TacBinOp(temp, leftTemp, op, rightTemp)
     buf ++= leftCode
     buf ++= rightCode
-    buf ++= tac
+    buf += tac
+    return (temp, buf)
   }
 
   def genIrLocation(irLoc: IrLocation, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
     irLoc match {
       case l: IrSingleLocation => {
-        return genIrSingleLocation(l)
+        return genIrSingleLocation(l, tempGenie)
       }
       case l: IrArrayLocation => {
-        return genIrArrayLocation(l)
+        return genIrArrayLocation(l, tempGenie)
       }
     }
   }
@@ -132,7 +140,7 @@ object Gen {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val tac = new TacCopy(temp, singleLoc.name)
-    buf ++= tac
+    buf += tac
     return (temp, buf)  
   }
 
@@ -141,7 +149,7 @@ object Gen {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val index = genExpr(arrayLoc.index, tempGenie)
     val tac = new TacCopy(temp, arrayLoc.name + "[" + index + "]")
-    buf ++= tac
+    buf += tac
     return (temp, buf) 
   }
 
@@ -149,7 +157,7 @@ object Gen {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val tac = new TacCopy(temp, methodExpr.name + "(FILLER)") //TODO: this is kind of tricky; ignored for now
-    buf ++= tac
+    buf += tac
     return (temp, buf)
   }
 
@@ -157,7 +165,7 @@ object Gen {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val tac = new TacCopy(temp, intLit.rep) //TODO: should this be the repr or value?
-    buf ++= tac
+    buf += tac
     return (temp, buf)
   }
 
@@ -166,12 +174,16 @@ object Gen {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val tac = new TacCopy(temp, charLit.value.toInt.toString) //hideous...
-    buf ++= tac
+    buf += tac
     return (temp, buf)
   }
 
-  def genIrBooleanLiteral(boolLit: IrBoolLiteral, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
-    //TODO
+  def genIrBooleanLiteral(boolLit: IrBooleanLiteral, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
+    val temp: String = tempGenie.generateName()
+    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    val tac = new TacCopy(temp, boolLit.value.toString)
+    buf += tac
+    return (temp, buf)
   }
 /*
   //  == Statement Checking ==

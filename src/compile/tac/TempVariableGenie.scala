@@ -2,7 +2,7 @@ package compile.tac
 
 import scala.collection.mutable
 
-object TempVariableGenie {
+class TempVariableGenie {
 
   val varNames = mutable.Set.empty[String]
   val labelNames = mutable.Set.empty[String]
