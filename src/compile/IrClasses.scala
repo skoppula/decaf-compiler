@@ -151,15 +151,15 @@ case class             IrArrayLocation(override val name: String, index: IrExpre
 }
 // = Ternary Expression =
 case class          IrTernOpExpr(cond: IrExpression, leftExpr: IrExpression, rightExpr: IrExpression, loc: NodeLocation) extends IrExpression(loc) {
-    cond.parent = this
-    leftExpr.parent = this
-    rightExpr.parent = this
-    override def toString(): String = cond.toString() + "?" + leftExpr.toString() + ":" + rightExpr.toString();
+  cond.parent = this
+  leftExpr.parent = this
+  rightExpr.parent = this
+  override def toString(): String = cond.toString() + "?" + leftExpr.toString() + ":" + rightExpr.toString();
 }
 // = Binary Expression =
 case class          IrBinOpExpr(binOp: IrBinOp, leftExpr: IrExpression, rightExpr: IrExpression, loc: NodeLocation) extends IrExpression(loc) {
-    leftExpr.parent = this
-    rightExpr.parent = this
+  leftExpr.parent = this
+  rightExpr.parent = this
 }
 
 // = Binary Operators =
