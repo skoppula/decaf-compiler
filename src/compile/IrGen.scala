@@ -18,7 +18,6 @@ object Gen {
     return ("", null)
   }
 
-
   // == Expr gening ==
 
   //returns (temp_var, code) where temp_var is where the expression is allocated, and code is the list of TACs.
@@ -127,11 +126,11 @@ object Gen {
 
   def genIrLocation(irLoc: IrLocation, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
     irLoc match {
-      case l: IrSingleLocation => {
-        return genIrSingleLocation(l, tempGenie)
+      case sl: IrSingleLocation => {
+        return genIrSingleLocation(sl, tempGenie)
       }
-      case l: IrArrayLocation => {
-        return genIrArrayLocation(l, tempGenie)
+      case al: IrArrayLocation => {
+        return genIrArrayLocation(al, tempGenie)
       }
     }
   }
@@ -147,8 +146,9 @@ object Gen {
   def genIrArrayLocation(arrayLoc: IrArrayLocation, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    val index = genExpr(arrayLoc.index, tempGenie)
-    val tac = new TacCopy(temp, arrayLoc.name + "[" + index + "]")
+    val (index, indexCode) = genExpr(arrayLoc.index, tempGenie)
+    val tac = new TacExprArray(temp, arrayLoc.name, index)
+    buf ++= indexCode
     buf += tac
     return (temp, buf) 
   }
@@ -156,7 +156,7 @@ object Gen {
   def genIrMethodCallExpr(methodExpr: IrMethodCallExpr, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) =  {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    val tac = new TacCopy(temp, methodExpr.name + "(FILLER)") //TODO: this is kind of tricky; ignored for now
+    val tac = new TacMethodCall(temp, methodExpr.name, methodExpr.args)
     buf += tac
     return (temp, buf)
   }

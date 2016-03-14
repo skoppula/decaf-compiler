@@ -12,8 +12,7 @@ class NodeLocation(ln: Int, cn: Int) {
 }
 
 abstract class Ir {
-    //var nodeLoc : NodeLocation = null //TODO: null for now to suppress warnings
-    var errors : List[Any] = null //TODO: make an IrError class
+    var errors : List[Any] = null
     var parent : Ir = null
 }
 

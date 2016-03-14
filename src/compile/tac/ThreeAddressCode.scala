@@ -1,5 +1,7 @@
 package compile.tac
 
+import compile.Ir._
+
 abstract class ThreeAddressCode{}
 
 object ThreeAddressCode {
@@ -9,4 +11,6 @@ object ThreeAddressCode {
   case class TacIfFalse(addr1: String, label: String) extends Tac{} // ifFalse addr1 goto label
   case class TacLabel(label: String) extends Tac{} // foo:
   case class TacCopy(addr1: String, addr2: String) extends Tac{} // x = y
+  case class TacMethodCall(addr1: String, method: String, args: List[IrCallArg]) extends Tac{} // x = foo(args*)
+  case class TacExprArray(addr1: String, addr2: String, index: String) extends Tac{} // x = y[index] (index is a temp variable as well)
 }
