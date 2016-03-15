@@ -2,7 +2,7 @@ package compile.symboltables
 
 import compile.descriptors.MethodDescriptor
 import scala.collection.mutable.HashMap
-import compile.{IdentifierAlreadyExistsException, CalloutAlreadyExistsException, CalloutManager, MethodAlreadyExistsException}
+import compile._
 
 class MethodsTable(calloutManager : CalloutManager, globalFieldTable: GlobalFieldTable) {
   var methodTable: HashMap[String, MethodDescriptor] = HashMap.empty[String, MethodDescriptor];
@@ -23,6 +23,20 @@ class MethodsTable(calloutManager : CalloutManager, globalFieldTable: GlobalFiel
 
     } else {
       methodTable(name) = methodDescriptor
+    }
+  }
+
+  def computeOffsets() {
+    for((name, methodDescriptor) <- methodTable) {
+      methodDescriptor.computeOffsets()
+    }
+  }
+
+  def getTotalByteSize(methodName : String) : Int = {
+    if(methodTable.contains(methodName)) {
+      return methodTable(methodName).getTotalByteSize()
+    } else {
+      throw new MethodDoesNotExistException("Method you requested does not exist!")
     }
   }
 

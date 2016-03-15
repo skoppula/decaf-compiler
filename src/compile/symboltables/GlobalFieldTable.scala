@@ -2,7 +2,7 @@ package compile.symboltables
 
 import compile.descriptors.BaseDescriptor
 import util.CLI
-import compile.IdentifierNotFoundException
+import compile.{InvalidGlobalFieldTableMethodException, IdentifierNotFoundException}
 
 class GlobalFieldTable extends SymbolTable(null, null) {
 
@@ -17,6 +17,20 @@ class GlobalFieldTable extends SymbolTable(null, null) {
     } else {
       null
     }
+  }
+
+  // Not a valid function for GFT
+  override def getTotalByteSize(): Int = {
+    throw new InvalidGlobalFieldTableMethodException("You shouldn't be calculating total byte size for GFT!")
+  }
+
+  // Not a valid function for GFT
+  override def computeOffsets() {
+    throw new InvalidGlobalFieldTableMethodException("You shouldn't be calculating offsets for GFT!")
+  }
+
+  override def isGlobal(id : String) : Boolean = {
+    return symbolTableMap contains id
   }
 
   override def lookupIDOnlyInLocalScope(id : String) : BaseDescriptor = {
