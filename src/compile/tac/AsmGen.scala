@@ -5,6 +5,7 @@ import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
 import compile.symboltables.{SymbolTable}
 import scala.collection.mutable
+import compile.descriptors._
 
 // Austin Note:
 // From the 6.035 x86-64 architecture guide
@@ -163,15 +164,13 @@ class AsmGen{
 
     // addr1 = op addr2
     op match {
-      // Match arith ops
-      case SIZE => { // TODO
+      case SIZE => { // TODO: Done but untested
         // 1. Get ArrayTypeDescriptor from lookupID(addr2)
         // 2. Get size = ArrayTypeDescriptor.length
         // 3. movq $size, %r10
         // 4. movq %r10, dest
         val descriptor = table.lookupID(addr2)
 
-/*
         descriptor match {
           case d:ArrayBaseDescriptor => {
             val size = "$%d".format(d.length.longValue())
@@ -184,8 +183,6 @@ class AsmGen{
             return null
           }
         }
- */
-        return List()
       }
       case MINUS => { // TODO: Done but untested
         // 1. Lookup rbp offsets for addr1, addr2
@@ -320,6 +317,7 @@ class AsmGen{
   def methodCallStmtToAsm(t: TacMethodCallStmt, table: SymbolTable) : List[String] = { // TODO
     val (method, args) = (t.method, t.args)
     // foo(args*) (void return type)
+    // Same as methodCallExprToAsm excepting steps 1 and 5
 
     return List()
   }
@@ -351,6 +349,15 @@ class AsmGen{
   def arrayLeftToAsm(t: TacArrayLeft, table: SymbolTable) : List[String] = {
     val (addr1, addr2, index) = (t.addr1, t.addr2, t.index)
     // x = y[index]
+    // 1. Get rbp offset of addr1
+    // 2. Get rbp offset of addr2 (array)
+    // 3. Get rbp offset of index
+    // 4. movq [offset2](%rbp) %r10
+    // 5. movq [indexoffset](%rbp) %r11
+    // 6. imul $-(arrayTypeSize) %r11
+    // 7. addq %r10, %r11 // mem addr of y[index] now in %r11
+    // 8. movq (%r11), %r11 // val of y[index] now in %r11
+    // 9. movq %r11, [offset1](%rbp)
 
     return List()
   }
@@ -358,15 +365,15 @@ class AsmGen{
   def arrayRightToAsm(t: TacArrayRight, table: SymbolTable) : List[String] = { // TODO
     val (addr1, index, addr2) = (t.addr1, t.index, t.addr2)
     // x[index] = y (index is a temp variable as well)
-    // 1. Get rbp offset of addr1
-    // 2. Get rbp offset of addr2
-    // 3. Get rbp offset of index
-    // 4. movq [index_offset](%rbp) index_temp_register
-    // 5. imul $8 index_temp_register
-    // 3. Calculate rbp offset of array element, new_offset = addr2_offset - index_temp_register
-    //    (Runtime errors)?
-    // 4. movq new_offset(%rbp) temp_register
-    // 5. movq temp_register addr1_offset(%rbp)
+    // 1. Get rbp offset of addr1 (array)
+    // 2. Get rbp offset of index
+    // 3. Get rbp offset of addr2
+    // 4. movq [addr1offset](%rbp) %r10
+    // 5. movq [indexoffset](%rbp) %r11
+    // 6. imul $-(arrayTypeSize) %r11
+    // 7. addq %r11 %r10 // mem addr of x[index] is now in %r10
+    // 8. movq [addr2offset](%rbp) %r11 // y is now in %r11
+    // 9. movq %11 (%10)
 
     return List()
   }
@@ -375,14 +382,12 @@ class AsmGen{
     /* A global variable reference will be of the form: name(%rip)
      * A local variable reference will be of the form: offset(%rbp)
      */
-    // TODO
+    // TODO : Done but untested
 
     if (table.isGlobal(name)) {
       return "%s(%%rip)".format(name)
     } else {
-      // TODO fix offset lookup
-      //val offset = table.lookupID(name).offsetBytes
-      val offset = 0
+      val offset = table.lookupID(name).offsetBytes
       return "%d(%%rbp)".format(offset)
     }
   }
