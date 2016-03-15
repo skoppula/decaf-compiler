@@ -49,6 +49,16 @@ class ParametersTable(
     parametersMap
   }
 
+  override def getTotalByteSize(): Int = {
+    // TODO
+    return 0
+  }
+
+  override def computeOffsets() {
+    // TODO
+  }
+
+
   override def toString : String = {
     "ParameterTable(ParamMap:" + parametersMap.mkString(",") + ", FieldTable:" + symbolTableMap.mkString(",") + ")"
   }

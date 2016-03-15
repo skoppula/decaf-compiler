@@ -33,6 +33,23 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
       childrenSymbolTables.add(symbolTable)
   }
 
+  def isGlobal(id : String) : Boolean = {
+    if(symbolTableMap contains id) {
+      return false
+    } else {
+      return parentSymbolTable.isGlobal(id)
+    }
+  }
+
+  def computeOffsets() {
+    // TODO
+  }
+
+  def getTotalByteSize(): Int = {
+    // TODO
+    return 0
+  }
+
   def lookupID(id : String) : BaseDescriptor = {
     /**
       * Recursively finds the identifier in this symbol table,
