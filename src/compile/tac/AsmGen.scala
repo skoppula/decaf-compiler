@@ -222,10 +222,18 @@ class AsmGen{
   }
 
   def addrToAsm(name: String, table: SymbolTable) : String = {
-    // TODO
-    // This will take care of whether or not we're trying to reference
-    // A global variable or a local variable.
-    return ""
+    /* A global variable reference will be of the form: name(%rip)
+     * A local variable reference will be of the form: offset(%rbp)
+     */
+    // TODO : Done but untested
+
+    if (table.isGlobal(name)) {
+      return "%s(%%rip)".format(name)
+    } else {
+      val offset = table.lookupID(name).offsetBytes
+      return "%d(%%rbp)".format(offset)
+    }
+
   }
 
 }
