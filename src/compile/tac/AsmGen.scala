@@ -24,10 +24,10 @@ class AsmGen{
       case t:TacUnOp => { // TODO: Done but untested
         return unaryOpToAsm(t, table)
       }
-      case t:TacIf => { // TODO
+      case t:TacIf => { // TODO: Done, but untested
         return ifToAsm(t, table)
       }
-      case t:TacIfFalse => { // TODO
+      case t:TacIfFalse => { // TODO: Done, but untested
         return ifFalseToAsm(t, table)
       }
       case t:TacGoto => { // TODO: Done but untested
@@ -213,18 +213,36 @@ class AsmGen{
     }
   }
 
-  def ifToAsm(t: TacIf, table: SymbolTable) : List[String] = { // TODO
+  def ifToAsm(t: TacIf, table: SymbolTable) : List[String] = {
+    // TODO: Done, but untested
     // if addr1 goto label
+    // 1. Get  offset of addr1
+    // 2. cmp $1 [offset1](%rbp)
+    // 3. je label
+    var instrs : List[String] = List()
     val (addr1, label) = (t.addr1, t.label)
+    val dest = addrToAsm(addr1, table)
 
-    return List()
+    instrs :+= "\t%s\t%s, %s\n".format("cmp", "$1", dest)
+    instrs :+= "\t%s\t%s\n".format("je", label)
+
+    return instrs
   }
 
-  def ifFalseToAsm(t: TacIfFalse, table: SymbolTable) : List[String] = { // TODO
-   // ifFalse addr1 goto label
+  def ifFalseToAsm(t: TacIfFalse, table: SymbolTable) : List[String] = {
+    // TODO: Done, but untested
+    // ifFalse addr1 goto label
+    // 1. Get offset of addr1
+    // 2. cmp $1 [offset1](%rbp)
+    // 3. jne label
+    var instrs : List[String] = List()
     val (addr1, label) = (t.addr1, t.label)
+    val dest = addrToAsm(addr1, table)
 
-    return List()
+    instrs :+= "\t%s\t%s, %s\n".format("cmp", "$1", dest)
+    instrs :+= "\t%s\t%s\n".format("jne", label)
+
+    return instrs
   }
 
   def gotoToAsm(t: TacGoto, table: SymbolTable) : List[String] = {
