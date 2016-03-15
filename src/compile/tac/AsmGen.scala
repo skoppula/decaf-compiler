@@ -192,6 +192,11 @@ class AsmGen{
     return List(t.label + ":\n")
   }
 
+//  //ret doesn't change, but we may want this for consistency
+//  def retToAsm(t: TacRet, table: SymbolTable) : List[String] = {
+//    return List("ret")
+//  }
+
   def copyToAsm(t: TacCopy, table: SymbolTable) : List[String] = { //TODO
     val (addr1, addr2) = (t.addr1, t.addr2)
     // 1. get %rbp offset of addr 1 and addr 2
