@@ -4,26 +4,26 @@ package compile.tac
 object OpTypes {
   sealed trait OpEnumVal
   
-  abstract class BinOpEnumVal extends OpEnumVal
-  case object ADD extends OpEnumVal // x = y + z, etc.
-  case object SUB extends OpEnumVal
-  case object MULT extends OpEnumVal
-  case object DIV extends OpEnumVal
+  sealed trait BinOpEnumVal extends OpEnumVal
+  case object ADD extends BinOpEnumVal // x = y + z, etc.
+  case object SUB extends BinOpEnumVal
+  case object MULT extends BinOpEnumVal
+  case object DIV extends BinOpEnumVal
   
-  case object AND extends OpEnumVal // x = y && z, etc.
-  case object OR extends OpEnumVal
+  case object AND extends BinOpEnumVal // x = y && z, etc.
+  case object OR extends BinOpEnumVal
 
-  case object LT extends OpEnumVal // x = y < z, etc.
-  case object LTE extends OpEnumVal
-  case object GT extends OpEnumVal
-  case object GTE extends OpEnumVal
+  case object LT extends BinOpEnumVal // x = y < z, etc.
+  case object LTE extends BinOpEnumVal
+  case object GT extends BinOpEnumVal
+  case object GTE extends BinOpEnumVal
 
-  case object EQ extends OpEnumVal // x = y == z, etc.
-  case object NEQ extends OpEnumVal
+  case object EQ extends BinOpEnumVal // x = y == z, etc.
+  case object NEQ extends BinOpEnumVal
 
-  abstract class UnOpEnumVal extends OpEnumVal
+  sealed trait UnOpEnumVal extends OpEnumVal
 
-  case object SIZE extends OpEnumVal // x = @y
-  case object MINUS extends OpEnumVal // x = -y  (Note this is unary minus, not subtraction)
-  case object NOT extends OpEnumVal // x = !y
+  case object SIZE extends UnOpEnumVal // x = @y
+  case object MINUS extends UnOpEnumVal // x = -y  (Note this is unary minus, not subtraction)
+  case object NOT extends UnOpEnumVal // x = !y
 }

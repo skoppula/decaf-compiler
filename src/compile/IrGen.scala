@@ -80,7 +80,7 @@ object Gen {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val (exprTemp, exprCode) = genExpr(unOpExpr.expr, tempGenie)
-    var op: OpEnumVal = null
+    var op: UnOpEnumVal = null
     unOpExpr.unop match {
       case minus: IrMinusOp => {
         op = MINUS
@@ -105,7 +105,7 @@ object Gen {
 
     val (leftTemp, leftCode) = genExpr(binOpExpr.leftExpr, tempGenie)
     val (rightTemp, rightCode) = genExpr(binOpExpr.rightExpr, tempGenie)
-    var op : OpEnumVal = null
+    var op : BinOpEnumVal = null
     binOpExpr.binOp match {
       case IrMulOp() => op = MULT
       case IrDivOp() => op = DIV

@@ -12,7 +12,7 @@ class AsmGen{
         return binOpToAsm(tac)
       }
       case tac:TacUnaryOp => {
-        return unOpToAsm(tac)
+        return unaryOpToAsm(tac)
       }
       case tac:TacIfFalse => {
         return List()
@@ -139,39 +139,3 @@ class AsmGen{
   }
 
 }
-
-/*
-  case object ADD extends OpEnumVal // x = y + z, etc.
-  case object SUB extends OpEnumVal
-  case object MULT extends OpEnumVal
-  case object DIV extends OpEnumVal
-
-  case object SIZE extends OpEnumVal // x = @y
-  case object MINUS extends OpEnumVal // x = -y  (Note this is unary minus, not subtraction)
-  case object NOT extends OpEnumVal // x = !y
-  
-  case object AND extends OpEnumVal // x = y && z, etc.
-  case object OR extends OpEnumVal
-
-  case object LT extends OpEnumVal // x = y < z, etc.
-  case object LTE extends OpEnumVal
-  case object GT extends OpEnumVal
-  case object GTE extends OpEnumVal
-
-  case object EQ extends OpEnumVal // x = y == z, etc.
-  case object NEQ extends OpEnumVal
- */
-
-
-/*
-object ThreeAddressCode {
-  abstract class Tac{}
-  case class TacBinOp(addr1: String, addr2: String, op: OpTypes.OpEnumVal, addr3: String) extends Tac{} // addr1 = addr2 op addr3
-  case class TacUnaryOp(addr1: String, op: OpTypes.OpEnumVal, addr2: String) extends Tac{} // addr1 = op addr2
-  case class TacIfFalse(addr1: String, label: String) extends Tac{} // ifFalse addr1 goto label
-  case class TacLabel(label: String) extends Tac{} // foo:
-  case class TacCopy(addr1: String, addr2: String) extends Tac{} // x = y
-  case class TacMethodCall(addr1: String, method: String, args: List[IrCallArg]) extends Tac{} // x = foo(args*)
-  case class TacExprArray(addr1: String, addr2: String, index: String) extends Tac{} // x = y[index] (index is a temp variable as well)
-}
- */
