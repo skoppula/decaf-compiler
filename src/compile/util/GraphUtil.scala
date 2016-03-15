@@ -43,6 +43,7 @@ object GraphUtil {
     child match {
       case Some(c:TokenAST) => walk(c, funcPre, funcPost)
       case None => {}
+      case _ => {}
     }
 
     funcPost(ast)
@@ -54,6 +55,7 @@ object GraphUtil {
         walk(s, funcPre, funcPost)
       }
       case None => {}
+      case _ => {}
     }
   }
 
@@ -71,6 +73,7 @@ object GraphUtil {
     child match {
       case Some(c:TokenAST) => walkPreOrder(c, funcPre)
       case None => {}
+      case _ => {}
     }
 
     // recursive call on the next sibling
@@ -80,6 +83,7 @@ object GraphUtil {
         walkPreOrder(s, funcPre)
       }
       case None => {}
+      case _ => {}
     }
   }
 
@@ -95,6 +99,7 @@ object GraphUtil {
     child match {
       case Some(c:TokenAST) => walkPostOrder(c, funcPost)
       case None => {}
+      case _ => {}
     }
 
     funcPost(ast)
@@ -106,6 +111,7 @@ object GraphUtil {
         walkPostOrder(s, funcPost)
       }
       case None => {}
+      case _ => {}
     }
   }
 
@@ -123,6 +129,7 @@ object GraphUtil {
     child match {
       case Some(c:TokenAST) => walkExperimental(c, funcPre, funcPost, resultPre)
       case None => {}
+      case _ => {}
     }
 
     val resultPost = funcPost(ast, resultPre)
@@ -134,6 +141,7 @@ object GraphUtil {
         walkExperimental(s, funcPre, funcPost, arg)
       }
       case None => {}
+      case _ => {}
     }
 
     return resultPost
