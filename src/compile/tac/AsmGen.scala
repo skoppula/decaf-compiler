@@ -29,13 +29,13 @@ class AsmGen{
       case t:TacIfFalse => { // TODO
         return ifFalseToAsm(t, table)
       }
-      case t:TacGoto => { 
+      case t:TacGoto => { // TODO: Done but untested
         return gotoToAsm(t, table)
       }
-      case t:TacLabel => {
+      case t:TacLabel => { // TODO: Done but untested
         return labelToAsm(t, table)
       }
-      case t:TacCopy => { // TODO
+      case t:TacCopy => { // TODO: Done but untested
         return copyToAsm(t, table)
       }
       case t:TacMethodCallExpr => { // TODO
@@ -105,6 +105,11 @@ class AsmGen{
 
   def unaryOpToAsm(t: TacUnOp, table: SymbolTable) : List[String] = { // TODO
     val (addr1, op, addr2) = (t.addr1, t.op, t.addr2)
+    var instrs = new List[String]
+    val dest = addrToAsm(addr1, table)
+    val src = addrToAsm(addr2, table)
+    val reg = "%r10"
+
     // addr1 = op addr2
     op match {
       // Match arith ops
@@ -115,22 +120,31 @@ class AsmGen{
         // 3. movq $(x.toString) [offset1](%rbp)
         return List()
       }
-      case MINUS => { // TODO
+      case MINUS => { // TODO: Done but untested
         // 1. Lookup rbp offsets for addr1, addr2
         // 2. movq [offset2](%rbp) %r10
-        // 3. movq $0 %r11
-        // 4. subq %r10 %r11
-        // alternatively, negq %r10
-        // 5. movq %r11 [offset1](%rbp)
-        return List()
+        // 3. negq %r10
+        // 5. movq %r10 [offset1](%rbp)
+
+        instrs :+ "\t%s\t%s, %s\n".format("movq", src, reg)
+        instrs :+ "\t%s\t%s\n".format("negq", reg)
+        instrs :+ "\t%s\t%s, %s\n".format("movq", reg, dest)
+
+        return instrs
       }
-      case NOT => { // TODO
+      case NOT => { // TODO: Done but untested
         // 1. Lookup rbp offset for addr1, addr2
         // 2. movq [offset2](%rbp) %r10
         // 3. notq %r10
         // 4. andq $1 %r10
         // 5. movq %r10 [offset1](%rbp)
-        return List()
+
+        instrs :+ "\t%s\t%s, %s\n".format("movq", src, reg)
+        instrs :+ "\t%s\t%s\n".format("notq", reg)
+        instrs :+ "\t%s\t%s, %s\n".format("andq", src, reg)
+        instrs :+ "\t%s\t%s, %s\n".format("movq", reg, dest)
+
+        return instrs
       }
     }
   }
@@ -157,13 +171,21 @@ class AsmGen{
     return List(t.label + ":\n")
   }
 
-  def copyToAsm(t: TacCopy, table: SymbolTable) : List[String] = { //TODO
+  def copyToAsm(t: TacCopy, table: SymbolTable) : List[String] = {
     val (addr1, addr2) = (t.addr1, t.addr2)
+    // TODO Completed but needs to be tested
     // 1. get %rbp offset of addr 1 and addr 2
     // 2. load from addr2 into some register
     // 3. movq into addr1
+    var instrs = new List[String]
+    val dest = addrToAsm(addr1, table)
+    val src = addrToAsm(addr2, table)
+    val reg = "%r10"
 
-    return List()
+    instrs :+ "\t%s\t%s, %s\n".format("movq", src, reg)
+    instrs :+ "\t%s\t%s, %s\n".format("movq", reg, dest)
+
+    return instrs
   }
 
   def methodCallToAsm(t: TacMethodCallExpr, table: SymbolTable) : List[String] = { // TODO
