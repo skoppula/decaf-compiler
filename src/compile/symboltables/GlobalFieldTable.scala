@@ -25,7 +25,7 @@ class GlobalFieldTable extends SymbolTable(null, null) {
   }
 
   // Not a valid function for GFT
-  override def computeOffsets() {
+  override def computeOffsets(baseOffset : Int) : Int = {
     throw new InvalidGlobalFieldTableMethodException("You shouldn't be calculating offsets for GFT!")
   }
 
