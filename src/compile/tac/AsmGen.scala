@@ -233,7 +233,14 @@ class AsmGen{
       val offset = table.lookupID(name).offsetBytes
       return "%d(%%rbp)".format(offset)
     }
-
   }
+
+  def arrayAddrToAsm(name: String, index: String, table: SymbolTable) : String = {
+    /* A global array variable reference will be of the form: [name+offset](%rip)
+     * A local array variable reference will be of the form: [offset+index*size](%rbp)
+     */
+    // TODO
+  }
+
 
 }
