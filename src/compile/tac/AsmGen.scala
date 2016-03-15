@@ -3,6 +3,8 @@ package compile.tac
 import compile.Ir._
 import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
+import compile.symboltables.{SymbolTable}
+
 
 // Austin Note:
 // From the 6.035 x86-64 architecture guide
@@ -13,39 +15,39 @@ import compile.tac.ThreeAddressCode._
 // I chose this format because that's how gcc spits out the instructions.
 
 class AsmGen{
-  def asmGen(tac: Tac) : List[String] = {
+  def asmGen(tac: Tac, table: SymbolTable) : List[String] = {
     tac match {
       case t:TacBinOp => { // TODO
-        return binOpToAsm(t)
+        return binOpToAsm(t, table)
       }
       case t:TacUnaryOp => { // TODO
-        return unaryOpToAsm(t)
+        return unaryOpToAsm(t, table)
       }
       case t:TacIf => { // TODO
-        return ifToAsm(t)
+        return ifToAsm(t, table)
       }
       case t:TacIfFalse => { // TODO
-        return ifFalseToAsm(t)
+        return ifFalseToAsm(t, table)
       }
       case t:TacGoto => { 
-        return gotoToAsm(t)
+        return gotoToAsm(t, table)
       }
       case t:TacLabel => {
-        return labelToAsm(t)
+        return labelToAsm(t, table)
       }
       case t:TacCopy => { // TODO
-        return copyToAsm(t)
+        return copyToAsm(t, table)
       }
       case t:TacMethodCall => { // TODO
-        return methodCallToAsm(t)
+        return methodCallToAsm(t, table)
       }
       case t:TacExprArray => { // TODO
-        return exprArrayToAsm(t)
+        return exprArrayToAsm(t, table)
       }
     }
   }
 
-  def binOpToAsm(t: TacBinOp) : List[String] = { // TODO
+  def binOpToAsm(t: TacBinOp, table: SymbolTable) : List[String] = { // TODO
     val (addr1, addr2, op, addr3) = (t.addr1, t.addr2, t.op, t.addr3)
     // addr1 = addr2 op addr3
     // The general template of these are going to be something as follows:
@@ -101,7 +103,7 @@ class AsmGen{
     }
   }
 
-  def unaryOpToAsm(t: TacUnaryOp) : List[String] = { // TODO
+  def unaryOpToAsm(t: TacUnaryOp, table: SymbolTable) : List[String] = { // TODO
     val (addr1, op, addr2) = (t.addr1, t.op, t.addr2)
     // addr1 = op addr2
     op match {
@@ -133,29 +135,29 @@ class AsmGen{
     }
   }
 
-  def ifToAsm(t: TacIf) : List[String] = { // TODO
+  def ifToAsm(t: TacIf, table: SymbolTable) : List[String] = { // TODO
     // if addr1 goto label
     val (addr1, label) = (t.addr1, t.label)
 
     return List()
   }
 
-  def ifFalseToAsm(t: TacIfFalse) : List[String] = { // TODO
+  def ifFalseToAsm(t: TacIfFalse, table: SymbolTable) : List[String] = { // TODO
    // ifFalse addr1 goto label
     val (addr1, label) = (t.addr1, t.label)
 
     return List()
   }
 
-  def gotoToAsm(t: TacGoto) : List[String] = {
+  def gotoToAsm(t: TacGoto, table: SymbolTable) : List[String] = {
     return List("\t%s\t%s\n".format("jmp", t.label))
   }
 
-  def labelToAsm(t: TacLabel) : List[String] = {
+  def labelToAsm(t: TacLabel, table: SymbolTable) : List[String] = {
     return List(t.label + ":\n")
   }
 
-  def copyToAsm(t: TacCopy) : List[String] = { //TODO
+  def copyToAsm(t: TacCopy, table: SymbolTable) : List[String] = { //TODO
     val (addr1, addr2) = (t.addr1, t.addr2)
     // 1. get %rbp offset of addr 1 and addr 2
     // 2. load from addr2 into some register
@@ -164,7 +166,7 @@ class AsmGen{
     return List()
   }
 
-  def methodCallToAsm(t: TacMethodCall) : List[String] = { // TODO
+  def methodCallToAsm(t: TacMethodCall, table: SymbolTable) : List[String] = { // TODO
     val (addr1, method, args) = (t.addr1, t.method, t.args)
     // 1. Get rbp offset of addr1
     // 2. For each arg in args (iterating from the end to the beginning),
@@ -181,7 +183,7 @@ class AsmGen{
     return List()
   }
 
-  def exprArrayToAsm(t: TacExprArray) : List[String] = { // TODO
+  def exprArrayToAsm(t: TacExprArray, table: SymbolTable) : List[String] = { // TODO
     val (addr1, addr2, index) = (t.addr1, t.addr2, t.index)
     // x = y[index] (index is a temp variable as well)
     // 1. Get rbp offset of addr1
