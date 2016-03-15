@@ -5,6 +5,8 @@ import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
 import compile.symboltables.{SymbolTable}
 
+import scala.collection.mutable
+
 
 // Austin Note:
 // From the 6.035 x86-64 architecture guide
@@ -59,14 +61,47 @@ class AsmGen{
     // You'll likely have to use a few more instructions for the boolean ops
     op match {
       // Match arith ops
-      case ADD => { // TODO
-        return List()
+      case ADD => {
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("addq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+
+        asmCommands.toList
       }
       case SUB => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("subq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+
+        asmCommands.toList
       }
       case MULT => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("addq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("imulq", "%r11", addr1asm)
+
+        asmCommands.toList
       }
       case DIV => { // TODO
         // Take care here
