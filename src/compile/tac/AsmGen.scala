@@ -199,4 +199,11 @@ class AsmGen{
     return List()
   }
 
+  def addrToAsm(name: String, table: SymbolTable) : String = {
+    // TODO
+    // This will take care of whether or not we're trying to reference
+    // A global variable or a local variable.
+    return ""
+  }
+
 }
