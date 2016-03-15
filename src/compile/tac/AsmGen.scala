@@ -38,11 +38,29 @@ class AsmGen{
       case t:TacCopy => { // TODO: Done but untested
         return copyToAsm(t, table)
       }
+      case t:TacCopyInt => { // TODO
+        return copyIntToAsm(t, table)
+      }
+      case t:TacCopyBoolean => { // TODO
+        return copyBooleanToAsm(t, table)
+      }
       case t:TacMethodCallExpr => { // TODO
-        return methodCallToAsm(t, table)
+        return methodCallExprToAsm(t, table)
+      }
+      case t:TacMethodCallStmt => { // TODO
+        return methodCallStmtToAsm(t, table)
+      }
+      case t:TacReturnValue => { // TODO
+        return returnValueToAsm(t, table)
+      }
+      case t:TacReturn => { // TODO
+        return returnToAsm(t, table)
+      }
+      case t:TacArrayLeft => { // TODO
+        return arrayLeftToAsm(t, table)
       }
       case t:TacArrayRight => { // TODO
-        return exprArrayToAsm(t, table)
+        return arrayRightToAsm(t, table)
       }
     }
   }
@@ -105,7 +123,7 @@ class AsmGen{
 
   def unaryOpToAsm(t: TacUnOp, table: SymbolTable) : List[String] = { // TODO
     val (addr1, op, addr2) = (t.addr1, t.op, t.addr2)
-    var instrs = new List[String]
+    var instrs = List()
     val dest = addrToAsm(addr1, table)
     val src = addrToAsm(addr2, table)
     val reg = "%r10"
@@ -177,7 +195,7 @@ class AsmGen{
     // 1. get %rbp offset of addr 1 and addr 2
     // 2. load from addr2 into some register
     // 3. movq into addr1
-    var instrs = new List[String]
+    var instrs = List()
     val dest = addrToAsm(addr1, table)
     val src = addrToAsm(addr2, table)
     val reg = "%r10"
@@ -188,8 +206,23 @@ class AsmGen{
     return instrs
   }
 
-  def methodCallToAsm(t: TacMethodCallExpr, table: SymbolTable) : List[String] = { // TODO
+  def copyIntToAsm(t: TacCopyInt, table: SymbolTable) : List[String] = {
+    val (addr1, int) = (t.addr1, t.int)
+    // x = 5
+    // TODO
+    return List()
+  }
+
+  def copyBooleanToAsm(t: TacCopyBoolean, table: SymbolTable) : List[String] = {
+    val (addr1, bool) = (t.addr1, t.bool)
+    // x = true
+    // TODO
+    return List()
+  }
+
+  def methodCallExprToAsm(t: TacMethodCallExpr, table: SymbolTable) : List[String] = { // TODO
     val (addr1, method, args) = (t.addr1, t.method, t.args)
+    // x = foo(args*)
     // 1. Get rbp offset of addr1
     // 2. For each arg in args (iterating from the end to the beginning),
     //    get rbp offset of arg
@@ -205,9 +238,33 @@ class AsmGen{
     return List()
   }
 
-  def exprArrayToAsm(t: TacArrayRight, table: SymbolTable) : List[String] = { // TODO
+  def methodCallStmtToAsm(t: TacMethodCallStmt, table: SymbolTable) : List[String] = { // TODO
+    val (method, args) = (t.method, t.args)
+    // foo(args*) (void return type)
+
+    return List()
+  }
+
+  def returnValueToAsm(t: TacReturnValue, table: SymbolTable) : List[String] = {
+    // addr1 is the variable where the return value is stored
+    return List()
+  }
+
+  def returnToAsm(t: TacReturn, table: SymbolTable) : List[String] = {
+    // indicator to leave, ret the method call
+    return List()
+  }
+
+  def arrayLeftToAsm(t: TacArrayLeft, table: SymbolTable) : List[String] = {
     val (addr1, addr2, index) = (t.addr1, t.addr2, t.index)
-    // x = y[index] (index is a temp variable as well)
+    // x = y[index]
+
+    return List()
+  }
+
+  def arrayRightToAsm(t: TacArrayRight, table: SymbolTable) : List[String] = { // TODO
+    val (addr1, index, addr2) = (t.addr1, t.index, t.addr2)
+    // x[index] = y (index is a temp variable as well)
     // 1. Get rbp offset of addr1
     // 2. Get rbp offset of addr2
     // 3. Get rbp offset of index
@@ -240,6 +297,8 @@ class AsmGen{
      * A local array variable reference will be of the form: [offset+index*size](%rbp)
      */
     // TODO
+    // Note: Actually, probably unnecessary; we'll likely have to do some asm arithmetic to get the desired array offset
+    return ""
   }
 
 
