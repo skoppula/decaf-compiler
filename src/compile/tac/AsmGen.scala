@@ -20,7 +20,7 @@ class AsmGen{
       case t:TacBinOp => { // TODO
         return binOpToAsm(t, table)
       }
-      case t:TacUnOp => { // TODO
+      case t:TacUnOp => { // TODO: Done but untested
         return unaryOpToAsm(t, table)
       }
       case t:TacIf => { // TODO
@@ -38,10 +38,10 @@ class AsmGen{
       case t:TacCopy => { // TODO: Done but untested
         return copyToAsm(t, table)
       }
-      case t:TacCopyInt => { // TODO
+      case t:TacCopyInt => { // TODO: Done but untested
         return copyIntToAsm(t, table)
       }
-      case t:TacCopyBoolean => { // TODO
+      case t:TacCopyBoolean => { // TODO: Done but untested
         return copyBooleanToAsm(t, table)
       }
       case t:TacMethodCallExpr => { // TODO
@@ -50,10 +50,10 @@ class AsmGen{
       case t:TacMethodCallStmt => { // TODO
         return methodCallStmtToAsm(t, table)
       }
-      case t:TacReturnValue => { // TODO
+      case t:TacReturnValue => { // TODO: Done but untested
         return returnValueToAsm(t, table)
       }
-      case t:TacReturn => { // TODO
+      case t:TacReturn => { // TODO: Done but untested
         return returnToAsm(t, table)
       }
       case t:TacArrayLeft => { // TODO
@@ -133,10 +133,14 @@ class AsmGen{
       // Match arith ops
       case SIZE => { // TODO
         // 1. Get ArrayTypeDescriptor from lookupID(addr2)
-        // 2. Get x = ArrayTypeDescriptor.sizeBytes / TypeDescriptor.sizeBytes
-        // 3. Get offset of addr1
-        // 3. movq $(x.toString) [offset1](%rbp)
-        return List()
+        // 2. Get size = ArrayTypeDescriptor.length
+        // 3. movq $size, %r10
+        // 4. movq %r10, dest
+
+        val size = "$%d".format(table.lookup(addr2).length.longValue())
+        instrs :+= "\t%s\t%s, %s\n".format("movq", size, reg)
+        instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
+        return instrs
       }
       case MINUS => { // TODO: Done but untested
         // 1. Lookup rbp offsets for addr1, addr2
@@ -144,9 +148,9 @@ class AsmGen{
         // 3. negq %r10
         // 5. movq %r10 [offset1](%rbp)
 
-        instrs :+ "\t%s\t%s, %s\n".format("movq", src, reg)
-        instrs :+ "\t%s\t%s\n".format("negq", reg)
-        instrs :+ "\t%s\t%s, %s\n".format("movq", reg, dest)
+        instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
+        instrs :+= "\t%s\t%s\n".format("negq", reg)
+        instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
 
         return instrs
       }
@@ -157,10 +161,10 @@ class AsmGen{
         // 4. andq $1 %r10
         // 5. movq %r10 [offset1](%rbp)
 
-        instrs :+ "\t%s\t%s, %s\n".format("movq", src, reg)
-        instrs :+ "\t%s\t%s\n".format("notq", reg)
-        instrs :+ "\t%s\t%s, %s\n".format("andq", src, reg)
-        instrs :+ "\t%s\t%s, %s\n".format("movq", reg, dest)
+        instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
+        instrs :+= "\t%s\t%s\n".format("notq", reg)
+        instrs :+= "\t%s\t%s, %s\n".format("andq", "$1", reg)
+        instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
 
         return instrs
       }
@@ -182,11 +186,21 @@ class AsmGen{
   }
 
   def gotoToAsm(t: TacGoto, table: SymbolTable) : List[String] = {
-    return List("\t%s\t%s\n".format("jmp", t.label))
+    // TODO: Completed but needs to be tested
+    var instrs = List()
+
+    instrs :+= "\t%s\t%s\n".format("jmp", t.label)
+
+    return instrs
   }
 
   def labelToAsm(t: TacLabel, table: SymbolTable) : List[String] = {
-    return List(t.label + ":\n")
+    // TODO: Completed but needs to be tested
+    var instrs = List()
+
+    instrs :+= "%s:\n".format(t.label)
+
+    return instrs
   }
 
   def copyToAsm(t: TacCopy, table: SymbolTable) : List[String] = {
@@ -200,8 +214,8 @@ class AsmGen{
     val src = addrToAsm(addr2, table)
     val reg = "%r10"
 
-    instrs :+ "\t%s\t%s, %s\n".format("movq", src, reg)
-    instrs :+ "\t%s\t%s, %s\n".format("movq", reg, dest)
+    instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
+    instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
 
     return instrs
   }
@@ -209,15 +223,35 @@ class AsmGen{
   def copyIntToAsm(t: TacCopyInt, table: SymbolTable) : List[String] = {
     val (addr1, int) = (t.addr1, t.int)
     // x = 5
-    // TODO
-    return List()
+    // TODO Completed but needs to be tested
+    // TODO WARNING: We need to consider if immediate field cannot contain the (long) int
+    // 1. get %rbp offset of addr1
+    // 2. movq $int offset(%rbp)
+    var instrs = List()
+    val dest = addrToAsm(addr1, table)
+    val src = "$%d".format(int)
+    val reg = "%r10"
+
+    instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
+    instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
+
+    return instrs
   }
 
   def copyBooleanToAsm(t: TacCopyBoolean, table: SymbolTable) : List[String] = {
     val (addr1, bool) = (t.addr1, t.bool)
     // x = true
-    // TODO
-    return List()
+    // TODO Completed but needs to be tested
+    // 1. get %rbp offset of addr1
+    // 2. if true, src = "$1" else "$0"
+    // 3. movq src offset(%rbp)
+    var instrs = List()
+    val dest = addrToAsm(addr1, table)
+    val src = if (bool) "$1" else "$0" 
+
+    instrs :+= "\t%s\t%s, %s\n".format("movq", src, dest)
+
+    return instrs
   }
 
   def methodCallExprToAsm(t: TacMethodCallExpr, table: SymbolTable) : List[String] = { // TODO
@@ -247,12 +281,26 @@ class AsmGen{
 
   def returnValueToAsm(t: TacReturnValue, table: SymbolTable) : List[String] = {
     // addr1 is the variable where the return value is stored
-    return List()
+    // TODO: Done but untested
+    var instrs = List()
+    val addr1 = t.addr1
+    val src = addrToAsm(addr1, table)
+    val dest = "%rax"
+
+    instrs :+= "\t%s\t%s, %s\n".format("movq", src, dest)
+
+    return instrs
   }
 
   def returnToAsm(t: TacReturn, table: SymbolTable) : List[String] = {
     // indicator to leave, ret the method call
-    return List()
+    // TODO: Done but untested
+    var instrs = List()
+
+    instrs :+= "\tleave\n"
+    instrs :+= "\tret\n"
+
+    return instrs
   }
 
   def arrayLeftToAsm(t: TacArrayLeft, table: SymbolTable) : List[String] = {
