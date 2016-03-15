@@ -14,8 +14,20 @@ import compile.ScopeTypes._
 
 object Gen {
 
-  def gen(program: IrProgram, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
-    return ("", null)
+  def gen(program: IrProgram, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
+    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    buf += new TacProgramEnter() 
+    for (method <- program.methodDecls) {
+      buf ++= genMethodDecl(method)
+    }
+    return buf
+  }
+
+  def genMethodDecl(methodDecl: IrMethodDecl) : ArrayBuffer[Tac] = {
+    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    buf += new TacLabel(methodDecl.name)
+    buf += new TacMethodEnter()
+    return buf
   }
 
   // == Expr gening ==
