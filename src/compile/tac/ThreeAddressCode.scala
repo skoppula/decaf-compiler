@@ -6,6 +6,9 @@ abstract class ThreeAddressCode{}
 
 object ThreeAddressCode {
   abstract class Tac{}
+ 
+  case class TacProgramEnter() extends Tac{} // indicates the beginning of a program to cue allocating globals
+
   case class TacBinOp(addr1: String, addr2: String, op: OpTypes.BinOpEnumVal, addr3: String) extends Tac{} // addr1 = addr2 op addr3
   case class TacUnOp(addr1: String, op: OpTypes.UnOpEnumVal, addr2: String) extends Tac{} // addr1 = op addr2
   
@@ -18,6 +21,8 @@ object ThreeAddressCode {
   case class TacCopy(addr1: String, addr2: String) extends Tac{} // x = y
   case class TacCopyInt(addr1: String, int: Int) extends Tac{} // x = 5
   case class TacCopyBoolean(addr1: String, bool: Boolean) extends Tac{} // x = true
+
+  case class TacMethodEnter() extends Tac{} // indicates beginning of method stack
 
   case class TacMethodCallExpr(addr1: String, method: String, args: List[IrCallArg]) extends Tac{} // x = foo(args*)
   case class TacMethodCallStmt(method: String, args: List[IrCallArg]) extends Tac{} // foo(args*) (void return type)

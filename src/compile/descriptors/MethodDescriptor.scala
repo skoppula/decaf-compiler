@@ -24,7 +24,7 @@ class MethodDescriptor(
   }
 
   def computeOffsets() {
-    parameterTable.computeOffsets()
+    parameterTable.computeOffsets(0)
   }
 
 

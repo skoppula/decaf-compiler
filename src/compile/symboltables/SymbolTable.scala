@@ -1,6 +1,6 @@
 package compile.symboltables
 
-import compile.descriptors.BaseDescriptor
+import compile.descriptors._
 import util.CLI
 import scala.collection.mutable
 import compile.{ScopeTypes, IdentifierAlreadyExistsException}
@@ -41,13 +41,62 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     }
   }
 
-  def computeOffsets() {
-    // TODO
+  def computeOffsetOfDescriptor(descriptor: BaseDescriptor, offset : Int): Int = {
+    var currOffset = offset
+    descriptor match {
+      case int : IntTypeDescriptor => {
+        int.offsetBytes =  currOffset - int.sizeBytes
+        currOffset -= int.sizeBytes
+      }
+      case bool : BoolTypeDescriptor => {
+        bool.offsetBytes =  currOffset - bool.sizeBytes
+        currOffset -= bool.sizeBytes
+      }
+      case boolArr : BoolArrayTypeDescriptor => {
+        boolArr.offsetBytes =  currOffset - boolArr.sizeBytes
+        currOffset -= boolArr.sizeBytes
+      }
+      case intArr : IntArrayTypeDescriptor => {
+        intArr.offsetBytes =  currOffset - intArr.sizeBytes
+        currOffset -= intArr.sizeBytes
+      }
+    }
+    return currOffset
+  }
+
+  def computeSizeOfDescriptor(descriptor: BaseDescriptor) : Int = {
+    descriptor match {
+      case int : IntTypeDescriptor => return int.sizeBytes
+      case bool : BoolTypeDescriptor => return bool.sizeBytes
+      case boolArr : BoolArrayTypeDescriptor => return boolArr.sizeBytes
+      case intArr : IntArrayTypeDescriptor => return intArr.sizeBytes
+    }
+  }
+
+  def computeOffsets(baseOffset: Int): Int = {
+    var currOffset = baseOffset
+    for((name, descriptor) <- symbolTableMap) {
+      currOffset = computeOffsetOfDescriptor(descriptor, currOffset)
+    }
+
+    for(table <- childrenSymbolTables) {
+      currOffset = table.computeOffsets(currOffset)
+    }
+
+    return currOffset
   }
 
   def getTotalByteSize(): Int = {
-    // TODO
-    return 0
+    var currByteSize = 0
+    for((name, descriptor) <- symbolTableMap) {
+      currByteSize += computeSizeOfDescriptor(descriptor)
+    }
+
+    for(table <- childrenSymbolTables) {
+      currByteSize += table.getTotalByteSize()
+    }
+
+    return currByteSize
   }
 
   def lookupID(id : String) : BaseDescriptor = {
