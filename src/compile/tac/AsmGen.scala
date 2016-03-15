@@ -4,37 +4,57 @@ import compile.Ir._
 import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
 
+// Austin Note:
+// From the 6.035 x86-64 architecture guide
+// For the code generation phase of the project you will not be performing register allocation.  You should use %r10 and %r11 for temporary values that you load from the stack.
+// For consistency, for any asm instruction, format the string as 
+// "\t%s\t%s, %s\n".format(op, arg1, arg2)
+// or "\t%s\t%s\n".format(op, arg)
+// I chose this format because that's how gcc spits out the instructions.
+
 class AsmGen{
-  def asmGen(t: Tac) : List[String] = {
-    // Notes from Austin:
-    t match {
-      case tac:TacBinOp => {
-        return binOpToAsm(tac)
+  def asmGen(tac: Tac) : List[String] = {
+    tac match {
+      case t:TacBinOp => { // TODO
+        return binOpToAsm(t)
       }
-      case tac:TacUnaryOp => {
-        return unaryOpToAsm(tac)
+      case t:TacUnaryOp => { // TODO
+        return unaryOpToAsm(t)
       }
-      case tac:TacIfFalse => {
-        return List()
+      case t:TacIf => { // TODO
+        return ifToAsm(t)
       }
-      case tac:TacLabel => {
-        return List()
+      case t:TacIfFalse => { // TODO
+        return ifFalseToAsm(t)
       }
-      case tac:TacCopy => {
-        return List()
+      case t:TacGoto => { 
+        return gotoToAsm(t)
       }
-      case tac:TacMethodCall => {
-        return List()
+      case t:TacLabel => {
+        return labelToAsm(t)
       }
-      case tac:TacExprArray => {
-        return List()
+      case t:TacCopy => { // TODO
+        return copyToAsm(t)
+      }
+      case t:TacMethodCall => { // TODO
+        return methodCallToAsm(t)
+      }
+      case t:TacExprArray => { // TODO
+        return exprArrayToAsm(t)
       }
     }
   }
 
   def binOpToAsm(t: TacBinOp) : List[String] = { // TODO
     val (addr1, addr2, op, addr3) = (t.addr1, t.addr2, t.op, t.addr3)
-
+    // addr1 = addr2 op addr3
+    // The general template of these are going to be something as follows:
+    // 1. Lookup rbp offsets for addr1, addr2, addr3.
+    // 2. movq [offset2](%rbp) %r10
+    // 3. movq [offset3](%rbp) %r11
+    // 4. asm_op %r10 %r11
+    // 5. movq %r11 [offset1](%rbp)
+    // You'll likely have to use a few more instructions for the boolean ops
     op match {
       // Match arith ops
       case ADD => { // TODO
@@ -47,6 +67,8 @@ class AsmGen{
         return List()
       }
       case DIV => { // TODO
+        // Take care here
+        // idiv divisor <-> Divide rdx:rax by divisor. Store quotient in rax and store remainder in rdx.
         return List()
       }
       // Match cond ops 
@@ -81,19 +103,52 @@ class AsmGen{
 
   def unaryOpToAsm(t: TacUnaryOp) : List[String] = { // TODO
     val (addr1, op, addr2) = (t.addr1, t.op, t.addr2)
-
+    // addr1 = op addr2
     op match {
       // Match arith ops
       case SIZE => { // TODO
+        // 1. Get ArrayTypeDescriptor from lookupID(addr2)
+        // 2. Get x = ArrayTypeDescriptor.sizeBytes / TypeDescriptor.sizeBytes
+        // 3. Get offset of addr1
+        // 3. movq $(x.toString) [offset1](%rbp)
         return List()
       }
       case MINUS => { // TODO
+        // 1. Lookup rbp offsets for addr1, addr2
+        // 2. movq [offset2](%rbp) %r10
+        // 3. movq $0 %r11
+        // 4. subq %r10 %r11
+        // alternatively, negq %r10
+        // 5. movq %r11 [offset1](%rbp)
         return List()
       }
       case NOT => { // TODO
+        // 1. Lookup rbp offset for addr1, addr2
+        // 2. movq [offset2](%rbp) %r10
+        // 3. notq %r10
+        // 4. andq $1 %r10
+        // 5. movq %r10 [offset1](%rbp)
         return List()
       }
     }
+  }
+
+  def ifToAsm(t: TacIf) : List[String] = { // TODO
+    // if addr1 goto label
+    val (addr1, label) = (t.addr1, t.label)
+
+    return List()
+  }
+
+  def ifFalseToAsm(t: TacIfFalse) : List[String] = { // TODO
+   // ifFalse addr1 goto label
+    val (addr1, label) = (t.addr1, t.label)
+
+    return List()
+  }
+
+  def gotoToAsm(t: TacGoto) : List[String] = {
+    return List("\t%s\t%s\n".format("jmp", t.label))
   }
 
   def labelToAsm(t: TacLabel) : List[String] = {
@@ -108,7 +163,7 @@ class AsmGen{
 
     return List()
   }
-//TacMethodCall(addr1: String, method: String, args: List[IrCallArg])
+
   def methodCallToAsm(t: TacMethodCall) : List[String] = { // TODO
     val (addr1, method, args) = (t.addr1, t.method, t.args)
     // 1. Get rbp offset of addr1
@@ -128,9 +183,13 @@ class AsmGen{
 
   def exprArrayToAsm(t: TacExprArray) : List[String] = { // TODO
     val (addr1, addr2, index) = (t.addr1, t.addr2, t.index)
+    // x = y[index] (index is a temp variable as well)
     // 1. Get rbp offset of addr1
     // 2. Get rbp offset of addr2
-    // 3. Calculate rbp offset of array element, new_offset = addr2_offset - index*8
+    // 3. Get rbp offset of index
+    // 4. movq [index_offset](%rbp) index_temp_register
+    // 5. imul $8 index_temp_register
+    // 3. Calculate rbp offset of array element, new_offset = addr2_offset - index_temp_register
     //    (Runtime errors)?
     // 4. movq new_offset(%rbp) temp_register
     // 5. movq temp_register addr1_offset(%rbp)
