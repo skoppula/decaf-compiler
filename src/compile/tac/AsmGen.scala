@@ -4,7 +4,7 @@ import compile.Ir._
 import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
 import compile.symboltables.{SymbolTable}
-
+//import compile.descriptor.TypeDescriptors._
 
 // Austin Note:
 // From the 6.035 x86-64 architecture guide
@@ -123,7 +123,7 @@ class AsmGen{
 
   def unaryOpToAsm(t: TacUnOp, table: SymbolTable) : List[String] = { // TODO
     val (addr1, op, addr2) = (t.addr1, t.op, t.addr2)
-    var instrs = List()
+    var instrs : List[String] = List()
     val dest = addrToAsm(addr1, table)
     val src = addrToAsm(addr2, table)
     val reg = "%r10"
@@ -136,11 +136,23 @@ class AsmGen{
         // 2. Get size = ArrayTypeDescriptor.length
         // 3. movq $size, %r10
         // 4. movq %r10, dest
+        val descriptor = table.lookupID(addr2)
 
-        val size = "$%d".format(table.lookup(addr2).length.longValue())
-        instrs :+= "\t%s\t%s, %s\n".format("movq", size, reg)
-        instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
-        return instrs
+/*
+        descriptor match {
+          case d:ArrayBaseDescriptor => {
+            val size = "$%d".format(d.length.longValue())
+            instrs :+= "\t%s\t%s, %s\n".format("movq", size, reg)
+            instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
+            return instrs
+          }
+          case _ => {
+            // Should not reach here
+            return null
+          }
+        }
+ */
+        return List()
       }
       case MINUS => { // TODO: Done but untested
         // 1. Lookup rbp offsets for addr1, addr2
@@ -187,7 +199,7 @@ class AsmGen{
 
   def gotoToAsm(t: TacGoto, table: SymbolTable) : List[String] = {
     // TODO: Completed but needs to be tested
-    var instrs = List()
+    var instrs : List[String] = List()
 
     instrs :+= "\t%s\t%s\n".format("jmp", t.label)
 
@@ -196,7 +208,7 @@ class AsmGen{
 
   def labelToAsm(t: TacLabel, table: SymbolTable) : List[String] = {
     // TODO: Completed but needs to be tested
-    var instrs = List()
+    var instrs : List[String] = List()
 
     instrs :+= "%s:\n".format(t.label)
 
@@ -209,7 +221,7 @@ class AsmGen{
     // 1. get %rbp offset of addr 1 and addr 2
     // 2. load from addr2 into some register
     // 3. movq into addr1
-    var instrs = List()
+    var instrs : List[String] = List()
     val dest = addrToAsm(addr1, table)
     val src = addrToAsm(addr2, table)
     val reg = "%r10"
@@ -227,7 +239,7 @@ class AsmGen{
     // TODO WARNING: We need to consider if immediate field cannot contain the (long) int
     // 1. get %rbp offset of addr1
     // 2. movq $int offset(%rbp)
-    var instrs = List()
+    var instrs : List[String] = List()
     val dest = addrToAsm(addr1, table)
     val src = "$%d".format(int)
     val reg = "%r10"
@@ -245,7 +257,7 @@ class AsmGen{
     // 1. get %rbp offset of addr1
     // 2. if true, src = "$1" else "$0"
     // 3. movq src offset(%rbp)
-    var instrs = List()
+    var instrs : List[String] = List()
     val dest = addrToAsm(addr1, table)
     val src = if (bool) "$1" else "$0" 
 
@@ -282,7 +294,7 @@ class AsmGen{
   def returnValueToAsm(t: TacReturnValue, table: SymbolTable) : List[String] = {
     // addr1 is the variable where the return value is stored
     // TODO: Done but untested
-    var instrs = List()
+    var instrs : List[String] = List()
     val addr1 = t.addr1
     val src = addrToAsm(addr1, table)
     val dest = "%rax"
@@ -295,7 +307,7 @@ class AsmGen{
   def returnToAsm(t: TacReturn, table: SymbolTable) : List[String] = {
     // indicator to leave, ret the method call
     // TODO: Done but untested
-    var instrs = List()
+    var instrs : List[String] = List()
 
     instrs :+= "\tleave\n"
     instrs :+= "\tret\n"
