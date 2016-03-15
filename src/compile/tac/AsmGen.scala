@@ -22,7 +22,7 @@ class AsmGen{
       case t:TacBinOp => { // TODO
         return binOpToAsm(t, table)
       }
-      case t:TacUnaryOp => { // TODO
+      case t:TacUnOp => { // TODO
         return unaryOpToAsm(t, table)
       }
       case t:TacIf => { // TODO
@@ -40,10 +40,10 @@ class AsmGen{
       case t:TacCopy => { // TODO
         return copyToAsm(t, table)
       }
-      case t:TacMethodCall => { // TODO
+      case t:TacMethodCallExpr => { // TODO
         return methodCallToAsm(t, table)
       }
-      case t:TacExprArray => { // TODO
+      case t:TacArrayRight => { // TODO
         return exprArrayToAsm(t, table)
       }
     }
@@ -138,7 +138,7 @@ class AsmGen{
     }
   }
 
-  def unaryOpToAsm(t: TacUnaryOp, table: SymbolTable) : List[String] = { // TODO
+  def unaryOpToAsm(t: TacUnOp, table: SymbolTable) : List[String] = { // TODO
     val (addr1, op, addr2) = (t.addr1, t.op, t.addr2)
     // addr1 = op addr2
     op match {
@@ -206,7 +206,7 @@ class AsmGen{
     return List()
   }
 
-  def methodCallToAsm(t: TacMethodCall, table: SymbolTable) : List[String] = { // TODO
+  def methodCallToAsm(t: TacMethodCallExpr, table: SymbolTable) : List[String] = { // TODO
     val (addr1, method, args) = (t.addr1, t.method, t.args)
     // 1. Get rbp offset of addr1
     // 2. For each arg in args (iterating from the end to the beginning),
@@ -223,7 +223,7 @@ class AsmGen{
     return List()
   }
 
-  def exprArrayToAsm(t: TacExprArray, table: SymbolTable) : List[String] = { // TODO
+  def exprArrayToAsm(t: TacArrayRight, table: SymbolTable) : List[String] = { // TODO
     val (addr1, addr2, index) = (t.addr1, t.addr2, t.index)
     // x = y[index] (index is a temp variable as well)
     // 1. Get rbp offset of addr1
