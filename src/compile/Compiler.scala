@@ -100,11 +100,11 @@ object Compiler {
       parser.program()
       val t = parser.getAST().asInstanceOf[TokenAST]
 
-      if (parser.getError()) {
+      if (parser.getError) {
         print("[ERROR] Parse failed\n")
         return null
       } else if (CLI.debug){
-        print(t.toStringList())
+        print(t.toStringList)
       }
       return t
     } catch {
@@ -194,7 +194,7 @@ object Compiler {
       exceptionGenie.insert(new NoMainMethodException("You don't have a main() method! >:("))
     }
 
-    if(mainMethodDescriptor.getParamTable.size != 0) {
+    if(mainMethodDescriptor.getParamTable.nonEmpty) {
       exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
     }
 
