@@ -57,6 +57,7 @@ object Gen {
   def genIrTernOpExpr(ternOpExpr: IrTernOpExpr, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
     val temp: String = tempGenie.generateName()
     val elseLabel: String = tempGenie.generateLabel()
+    val endLabel: String = tempGenie.generateLabel()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     
     val (condTemp, condCode) = genExpr(ternOpExpr.cond, tempGenie)
@@ -67,8 +68,10 @@ object Gen {
     buf ++= condCode
     buf += tac
     buf ++= leftCode
+    buf += new TacGoto(endLabel)
     buf += new TacLabel(elseLabel)
     buf ++= rightCode
+    buf += new TacLabel(endLabel)
     
     return (temp, buf)
   }
@@ -102,7 +105,7 @@ object Gen {
 
     val (leftTemp, leftCode) = genExpr(binOpExpr.leftExpr, tempGenie)
     val (rightTemp, rightCode) = genExpr(binOpExpr.rightExpr, tempGenie)
-    var op : OpEnumVal = NONE
+    var op : OpEnumVal = null
     binOpExpr.binOp match {
       case IrMulOp() => op = MULT
       case IrDivOp() => op = DIV
