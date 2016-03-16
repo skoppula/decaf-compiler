@@ -2,12 +2,13 @@ package compile
 
 import compile.Ir._
 import compile.Compiler._
+import compile.exceptionhandling._
 import scala.collection.mutable
 import compile.descriptors._
-import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
-import compile.ScopeTypes._
+import compile.symboltables._
+import ScopeTypes._
 
-object Check {
+object IrChecks {
   // == Declaration checking ==
 
   // Checks if the size corresponding to an array declaration is valid

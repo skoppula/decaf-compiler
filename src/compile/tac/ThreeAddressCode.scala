@@ -2,8 +2,6 @@ package compile.tac
 
 import compile.Ir._
 
-abstract class ThreeAddressCode{}
-
 object ThreeAddressCode {
   abstract class Tac{}
  

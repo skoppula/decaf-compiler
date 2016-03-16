@@ -1,6 +1,7 @@
 package compile
 
 import _root_.util.CLI
+import compile.exceptionhandling._
 import edu.mit.compilers.grammar.{DecafParserTokenTypes => Token}
 import antlr.collections.AST
 import compile.Ir._

@@ -2,16 +2,17 @@ package compile
 
 import _root_.util.CLI
 import java.io._
+import compile.exceptionhandling._
 import sext._
 
 import compile.Ir._
 import compile.descriptors._
 import compile.symboltables._
-import compile.Check._
+import compile.IrChecks._
 
 import compile.tac._
 import compile.tac.ThreeAddressCode._
-import compile.Gen._
+import compile.IrGen._
 
 import scala.Console
 import scala.collection.mutable
@@ -49,9 +50,11 @@ object Compiler {
     }
   }
 
-  def assembly(program : IrProgram, methodTable : MethodsTable): Unit = {
+  def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
     val tempGenie : TempVariableGenie = new TempVariableGenie
     gen(program, tempGenie)
+    SymbolTableUtil.printSymbolTableStructure(methodsTable)
+
   }
 
   def scan(fileName: String) {
@@ -183,8 +186,6 @@ object Compiler {
     if(mainMethodDescriptor.getParamMap.nonEmpty) {
       exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
     }
-
-    SymbolTableUtil.printSymbolTableStructure(methodsTable)
 
     return (ir, methodsTable)
   }

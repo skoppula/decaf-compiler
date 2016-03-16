@@ -1,8 +1,8 @@
 package compile.symboltables
 
 import compile.descriptors._
+import compile.exceptionhandling.IdentifierAlreadyExistsException
 import scala.collection.mutable
-import compile.{ScopeTypes, IdentifierAlreadyExistsException}
 
 class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
   var symbolTableMap : mutable.HashMap[String, BaseDescriptor] = mutable.HashMap.empty[String, BaseDescriptor]

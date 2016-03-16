@@ -1,7 +1,7 @@
 package compile.symboltables
 
-import compile.IdentifierAlreadyExistsException
 import compile.descriptors._
+import compile.exceptionhandling.IdentifierAlreadyExistsException
 import util.CLI
 
 import scala.collection.mutable

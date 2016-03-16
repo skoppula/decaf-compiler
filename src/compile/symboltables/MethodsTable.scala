@@ -1,6 +1,7 @@
 package compile.symboltables
 
 import compile.descriptors.MethodDescriptor
+import compile.exceptionhandling.{MethodDoesNotExistException, CalloutAlreadyExistsException, MethodAlreadyExistsException, IdentifierAlreadyExistsException}
 import scala.collection.mutable.HashMap
 import compile._
 
