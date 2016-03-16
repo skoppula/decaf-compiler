@@ -377,6 +377,9 @@ class AsmGen{
     // 8. movq (%r11), %r11 // val of y[index] now in %r11
     // 9. movq %r11, [offset1](%rbp)
 
+    // Because the organization of global arrays differ from the organization of local arrays
+    // We have to consider these cases differently.
+
     return List()
   }
 
