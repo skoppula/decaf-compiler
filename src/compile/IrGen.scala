@@ -170,7 +170,22 @@ object IrGen {
   def genIrMethodCallExpr(methodExpr: IrMethodCallExpr, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) =  {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    val tac = new TacMethodCallExpr(temp, methodExpr.name, methodExpr.args)
+    var tempArgs: List[String] = List[String]()
+    for (arg <- methodExpr.args) { 
+      val argTemp: String = tempGenie.generateName()
+      arg match {
+        case IrCallExprArg(argExpr, _) => { 
+          val (argTemp, argTac) = genExpr(argExpr, tempGenie)
+          buf ++= argTac
+          tempArgs ++ argTemp
+        }
+        case IrCallStringArg(strLit, _) => { // should be unreachable...
+          tempArgs ++ strLit.value
+        } 
+      }
+    }
+    
+    val tac = new TacMethodCallExpr(temp, methodExpr.name, tempArgs)
     buf += tac
     return (temp, buf)
   }
@@ -219,7 +234,7 @@ object IrGen {
         return genIrAssignStmt(s, tempGenie)
       }
       case s: IrMethodCallStmt => {
-        return genIrMethodCallStmt(s)
+        return genIrMethodCallStmt(s, tempGenie)
       }
       case s: IrIfStmt => {
         return genIrIfStmt(s, parentStart, parentEnd, tempGenie)
@@ -296,13 +311,26 @@ object IrGen {
     }
   }
 
-  def genIrMethodCallStmt(stmt: IrMethodCallStmt) : ArrayBuffer[Tac] = {
+  def genIrMethodCallStmt(stmt: IrMethodCallStmt, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val callExpr: IrCallExpr = stmt.methCall
+    var tempArgs: List[String] = List[String]()
     callExpr match {
       case IrMethodCallExpr(name, args, _) => {
-        val tac = new TacMethodCallStmt(name, args)
-        buf += tac
+        for (arg <- args) {
+          arg match { 
+            case IrCallExprArg(argExpr, _) => { 
+              val (argTemp, argTac) = genExpr(argExpr, tempGenie)
+              buf ++= argTac
+              tempArgs ++ argTemp
+            }
+            case IrCallStringArg(strLit, _) => {  // should be unreachable...?
+              tempArgs ++ strLit.value
+            }
+          }
+        } 
+      val tac = new TacMethodCallStmt(name, tempArgs)
+      buf += tac 
       }
     }
     return buf

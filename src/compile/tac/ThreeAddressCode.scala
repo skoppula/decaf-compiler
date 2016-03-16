@@ -22,8 +22,8 @@ object ThreeAddressCode {
 
   case class TacMethodEnter() extends Tac{} // indicates beginning of method stack
 
-  case class TacMethodCallExpr(addr1: String, method: String, args: List[IrCallArg]) extends Tac{} // x = foo(args*)
-  case class TacMethodCallStmt(method: String, args: List[IrCallArg]) extends Tac{} // foo(args*) (void return type)
+  case class TacMethodCallExpr(addr1: String, method: String, args: List[String]) extends Tac{} // x = foo(args*)
+  case class TacMethodCallStmt(method: String, args: List[String]) extends Tac{} // foo(args*) (statement)
 
   case class TacReturnValue(addr1: String) extends Tac{} // addr1 is the temp variable where the return value is stored
   case class TacReturn() extends Tac{} // indicator to leave, ret the method call
