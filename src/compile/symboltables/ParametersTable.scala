@@ -15,9 +15,6 @@ class ParametersTable(
                        parametersMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor])
   extends SymbolTable(parentSymbolTable, null) {
 
-  if(CLI.irdebug)
-    println("Creating parameters field table")
-
   override def insert(id : String, descriptor : BaseDescriptor): Unit = {
     /**
       * Attempts to insert identifier, descriptor pair into symbol table
