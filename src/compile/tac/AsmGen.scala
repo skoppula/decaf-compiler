@@ -18,6 +18,9 @@ import compile.descriptors._
 class AsmGen{
   def asmGen(tac: Tac, table: SymbolTable) : List[String] = {
     tac match {
+      case t:TacProgramEnter => { // TODO
+        return programEnterToAsm(t, table)
+      }
       case t:TacBinOp => { // TODO
         return binOpToAsm(t, table)
       }
@@ -45,10 +48,13 @@ class AsmGen{
       case t:TacCopyBoolean => { // TODO: Done but untested
         return copyBooleanToAsm(t, table)
       }
+      case t:TacMethodEnter => { // TODO
+        return methodEnterToAsm(t, table)
+      }
       case t:TacMethodCallExpr => { // TODO: Done but untested
         return methodCallExprToAsm(t, table)
       }
-      case t:TacMethodCallStmt => { // TODO
+      case t:TacMethodCallStmt => { // TODO: Done but untested
         return methodCallStmtToAsm(t, table)
       }
       case t:TacReturnValue => { // TODO: Done but untested
@@ -64,6 +70,11 @@ class AsmGen{
         return arrayRightToAsm(t, table)
       }
     }
+  }
+
+  def programEnterToAsm(t: TacProgramEnter, table: SymbolTable) : List[String] = { // TODO
+
+    return List()
   }
 
   def binOpToAsm(t: TacBinOp, table: SymbolTable) : List[String] = { // TODO
@@ -317,6 +328,13 @@ class AsmGen{
 
     return instrs
   }
+
+
+  def methodEnterToAsm(t: TacMethodEnter, table: SymbolTable) : List[String] = { // TODO
+
+    return List()
+  }
+
 
   def methodCallExprToAsm(t: TacMethodCallExpr, table: SymbolTable) : List[String] = {
     // x = foo(args*)
