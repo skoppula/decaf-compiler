@@ -1,8 +1,7 @@
 package compile.symboltables
 
 import compile.descriptors.BaseDescriptor
-import util.CLI
-import compile.{InvalidGlobalFieldTableMethodException, IdentifierNotFoundException}
+import compile.exceptionhandling.InvalidGlobalFieldTableMethodException
 
 class GlobalFieldTable extends SymbolTable(null, null) {
 

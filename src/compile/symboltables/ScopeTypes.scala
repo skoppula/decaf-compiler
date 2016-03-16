@@ -1,4 +1,4 @@
-package compile
+package compile.symboltables
 
 object ScopeTypes {
   sealed trait EnumVal

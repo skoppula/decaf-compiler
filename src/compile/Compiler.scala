@@ -2,16 +2,17 @@ package compile
 
 import _root_.util.CLI
 import java.io._
+import compile.exceptionhandling._
 import sext._
 
 import compile.Ir._
 import compile.descriptors._
-import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
-import compile.Check._
+import compile.symboltables._
+import compile.IrChecks._
 
 import compile.tac._
 import compile.tac.ThreeAddressCode._
-import compile.Gen._
+import compile.IrGen._
 
 import scala.Console
 import scala.collection.mutable
@@ -36,21 +37,24 @@ object Compiler {
           System.exit(1)
         }
         System.exit(0)
-    } else if (CLI.target == CLI.Action.CONSTRUCT) {
-      if(inter(CLI.infile) == null) {
-        System.exit(1)
-      }
-      System.exit(0)
     } else if (CLI.target == CLI.Action.INTER) {
       val (program, y) = inter(CLI.infile) 
       if(program == null) {
         System.exit(1)
       } else {
-        val tempGenie : TempVariableGenie = new TempVariableGenie
-        gen(program, tempGenie)
+        System.exit(0)
       }
-      System.exit(0)
+    } else if(CLI.target == CLI.Action.ASSEMBLY) {
+      val (program, symboltables) = inter(CLI.infile)
+      assembly(program, symboltables)
     }
+  }
+
+  def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
+    val tempGenie : TempVariableGenie = new TempVariableGenie
+    gen(program, tempGenie)
+    SymbolTableUtil.printSymbolTableStructure(methodsTable)
+
   }
 
   def scan(fileName: String) {
@@ -136,7 +140,7 @@ object Compiler {
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
     if(CLI.irdebug) {
       println("\nIR decomposition:")
-      println(ir.treeString)
+      println(ir.treeString.substring(0,1000))
       println()
     }
 
@@ -156,21 +160,11 @@ object Compiler {
       }
     }
 
-    if(CLI.irdebug) {
-      println()
-      println(calloutManager)
-    }
-
     // Step 2.b.
     // Adds field declaration statements to the global field table
     calloutManager.closeCallouts
     val globalFieldTable : GlobalFieldTable = new GlobalFieldTable
     insertFieldDecls(ir.fieldDecls, globalFieldTable, exceptionGenie)
-    if(CLI.irdebug) {
-      println()
-      println(globalFieldTable)
-      println()
-    }
 
     // Step 2.c.
     // Process all the defined methods
@@ -181,11 +175,6 @@ object Compiler {
       walkMethodIRNode(calloutManager, globalFieldTable, scopeStack, methodsTable, methodDecl, exceptionGenie)
     }
 
-    if(CLI.irdebug) {
-      println(methodsTable)
-      println()
-    }
-
     // Step Three
     // Any remaining semantic checks/validation:
     //  - Checks if main() method with correct signature is present
@@ -194,7 +183,7 @@ object Compiler {
       exceptionGenie.insert(new NoMainMethodException("You don't have a main() method! >:("))
     }
 
-    if(mainMethodDescriptor.getParamTable.nonEmpty) {
+    if(mainMethodDescriptor.getParamMap.nonEmpty) {
       exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
     }
 
@@ -287,10 +276,6 @@ object Compiler {
     // Set up ParametersTable and MethodDescriptor
     val parametersTable = new ParametersTable(globalFieldTable, parametersMap)
     val currMethodDescriptor : MethodDescriptor = new MethodDescriptor(parametersTable, methodName, returnType);
-
-    if(CLI.irdebug) {
-      println(methodName + ": " + parametersTable);
-    }
 
     // Add to methods table
     try {

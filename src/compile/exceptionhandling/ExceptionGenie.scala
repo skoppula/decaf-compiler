@@ -1,4 +1,4 @@
-package compile
+package compile.exceptionhandling
 
 import scala.collection.mutable.ArrayBuffer
 

@@ -9,10 +9,10 @@ import compile.tac.ThreeAddressCode._
 
 import scala.collection.mutable.ArrayBuffer
 import compile.descriptors._
-import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
-import compile.ScopeTypes._
+import compile.symboltables._
+import ScopeTypes._
 
-object Gen {
+object IrGen {
 
   def gen(program: IrProgram, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]

@@ -1,4 +1,6 @@
-package compile
+package compile.exceptionhandling
+
+import compile.NodeLocation
 
 case class IdentifierNotFoundException(message: String) extends Exception(message)
 

@@ -1,7 +1,7 @@
 package compile.symboltables
 
-import compile.IdentifierAlreadyExistsException
 import compile.descriptors._
+import compile.exceptionhandling.IdentifierAlreadyExistsException
 import util.CLI
 
 import scala.collection.mutable
@@ -14,9 +14,6 @@ class ParametersTable(
                        parentSymbolTable : GlobalFieldTable,
                        parametersMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor])
   extends SymbolTable(parentSymbolTable, null) {
-
-  if(CLI.irdebug)
-    println("Creating parameters field table")
 
   override def insert(id : String, descriptor : BaseDescriptor): Unit = {
     /**
