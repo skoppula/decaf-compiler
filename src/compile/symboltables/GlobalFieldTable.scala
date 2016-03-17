@@ -1,8 +1,7 @@
 package compile.symboltables
 
 import compile.descriptors.BaseDescriptor
-import util.CLI
-import compile.{InvalidGlobalFieldTableMethodException, IdentifierNotFoundException}
+import compile.exceptionhandling.InvalidGlobalFieldTableMethodException
 
 class GlobalFieldTable extends SymbolTable(null, null) {
 
@@ -25,7 +24,7 @@ class GlobalFieldTable extends SymbolTable(null, null) {
   }
 
   // Not a valid function for GFT
-  override def computeOffsets() {
+  override def computeOffsets(baseOffset : Int) : Int = {
     throw new InvalidGlobalFieldTableMethodException("You shouldn't be calculating offsets for GFT!")
   }
 

@@ -1,7 +1,7 @@
 package compile.symboltables
 
-import compile.IdentifierAlreadyExistsException
-import compile.descriptors.{PrimitiveBaseDescriptor, IntTypeDescriptor, BoolArrayTypeDescriptor, BaseDescriptor}
+import compile.descriptors._
+import compile.exceptionhandling.IdentifierAlreadyExistsException
 import util.CLI
 
 import scala.collection.mutable
@@ -11,12 +11,9 @@ import scala.collection.mutable
   *   and the parameters of the corresponding method
   */
 class ParametersTable(
-                       parentsSymbolTable : GlobalFieldTable,
+                       parentSymbolTable : GlobalFieldTable,
                        parametersMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor])
-  extends SymbolTable(parentsSymbolTable, null) {
-
-  if(CLI.irdebug)
-    println("Creating parameters field table")
+  extends SymbolTable(parentSymbolTable, null) {
 
   override def insert(id : String, descriptor : BaseDescriptor): Unit = {
     /**
@@ -41,7 +38,7 @@ class ParametersTable(
     } else if (parametersMap.contains(id)) {
       parametersMap(id)
     } else {
-      parentsSymbolTable.lookupID(id)
+      parentSymbolTable.lookupID(id)
     }
   }
 
@@ -49,13 +46,48 @@ class ParametersTable(
     parametersMap
   }
 
-  override def getTotalByteSize(): Int = {
-    // TODO
-    return 0
+  override def isGlobal(id : String) : Boolean = {
+    if(symbolTableMap contains id) {
+      return false
+    } else if (parametersMap contains id) {
+      return false
+    } else {
+      return parentSymbolTable.isGlobal(id)
+    }
   }
 
-  override def computeOffsets() {
-    // TODO
+  override def getTotalByteSize(): Int = {
+    var currByteSize = 0
+    for((name, descriptor) <- symbolTableMap) {
+      currByteSize += computeSizeOfDescriptor(descriptor)
+    }
+
+    for((name, descriptor) <- parametersMap) {
+      currByteSize += computeSizeOfDescriptor(descriptor)
+    }
+
+    for(table <- childrenSymbolTables) {
+      currByteSize += table.getTotalByteSize()
+    }
+
+    return currByteSize
+  }
+
+  override def computeOffsets(baseOffset : Int): Int = {
+    var currOffset = baseOffset
+    for((name, descriptor) <- symbolTableMap) {
+      currOffset = computeOffsetOfDescriptor(descriptor, currOffset)
+    }
+
+    for((name, descriptor) <- parametersMap) {
+      currOffset = computeOffsetOfDescriptor(descriptor, currOffset)
+    }
+
+    for(table <- childrenSymbolTables) {
+      currOffset = table.computeOffsets(currOffset)
+    }
+
+    return currOffset
   }
 
 

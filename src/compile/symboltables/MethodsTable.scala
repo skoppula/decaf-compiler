@@ -1,6 +1,7 @@
 package compile.symboltables
 
 import compile.descriptors.MethodDescriptor
+import compile.exceptionhandling.{MethodDoesNotExistException, CalloutAlreadyExistsException, MethodAlreadyExistsException, IdentifierAlreadyExistsException}
 import scala.collection.mutable.HashMap
 import compile._
 
@@ -25,6 +26,9 @@ class MethodsTable(calloutManager : CalloutManager, globalFieldTable: GlobalFiel
       methodTable(name) = methodDescriptor
     }
   }
+
+  def getGlobalFieldTable : GlobalFieldTable = this.globalFieldTable
+  def getCallouts : CalloutManager = this.calloutManager
 
   def computeOffsets() {
     for((name, methodDescriptor) <- methodTable) {

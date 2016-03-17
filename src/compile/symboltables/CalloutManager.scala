@@ -1,4 +1,6 @@
-package compile
+package compile.symboltables
+
+import compile.exceptionhandling.{ExceptionGenie, InvalidCalloutException, CalloutAlreadyExistsException}
 
 import scala.collection.mutable
 

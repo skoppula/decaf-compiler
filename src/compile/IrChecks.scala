@@ -2,12 +2,13 @@ package compile
 
 import compile.Ir._
 import compile.Compiler._
+import compile.exceptionhandling._
 import scala.collection.mutable
 import compile.descriptors._
-import compile.symboltables.{ParametersTable, MethodsTable, GlobalFieldTable, SymbolTable}
-import compile.ScopeTypes._
+import compile.symboltables._
+import ScopeTypes._
 
-object Check {
+object IrChecks {
   // == Declaration checking ==
 
   // Checks if the size corresponding to an array declaration is valid
@@ -336,7 +337,7 @@ object Check {
         (false, null)
       }
     } else {
-      val expectedTypes = method.getParamTable.values.toSeq // param types expected by the method decl
+      val expectedTypes = method.getParamMap.values.toSeq // param types expected by the method decl
 
       if(expectedTypes.size != methodExpr.args.size) {
         genie.insert(new IncorrectNumberOfArgsException("Incorrect number of arguments in " + methodExpr.name, methodExpr.loc))

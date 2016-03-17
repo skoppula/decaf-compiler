@@ -17,14 +17,16 @@ class MethodDescriptor(
     "Method(" + methodName + "," + returnType.toString + ")"
   }
 
-  def getParamTable : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]  = parameterTable.getParametersTable
+  def getParamMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]  = parameterTable.getParametersTable
+
+  def getParamTable : ParametersTable  = this.parameterTable
 
   def getTotalByteSize(): Int = {
     return parameterTable.getTotalByteSize()
   }
 
   def computeOffsets() {
-    parameterTable.computeOffsets()
+    parameterTable.computeOffsets(0)
   }
 
 

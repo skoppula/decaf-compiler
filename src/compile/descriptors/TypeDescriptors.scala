@@ -3,7 +3,7 @@ package compile.descriptors
 // offsetBytes will remain null for GlobalFieldTable entries
 //  because global variables go into .DATA section and do not need an offset
 abstract class BaseDescriptor extends Descriptor {
-  var offsetBytes : Int = 0
+  var offsetBytes : Int = 2000 // Random null value
 }
 
 abstract class PrimitiveBaseDescriptor extends BaseDescriptor
