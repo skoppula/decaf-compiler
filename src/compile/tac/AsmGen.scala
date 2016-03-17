@@ -98,42 +98,172 @@ class AsmGen{
 
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("addq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("imulq", "%r11", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("imulq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
       }
       case DIV => { // TODO
         // Take care here
         // idiv divisor <-> Divide rdx:rax by divisor. Store quotient in rax and store remainder in rdx.
-        return List()
+
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%rax")
+        asmCommands += "\t%s\t%s, %s\n".format("cwd")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("idivq","%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+
+        asmCommands.toList
       }
       // Match cond ops 
       case AND => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("andq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+
+        asmCommands.toList
       }
       case OR => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("orq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+
+        asmCommands.toList
       }
       // Match rel ops
+
+      //Label2 is currently in a bunch of these
+      //as a placeholder. It needs to be switched
+      //with an instance of tempVariableGenie.genLabel()
+
       case LT => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", addr1asm)
+
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("jlt", "#label2")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
+        asmCommands += "%s\n".format("#label2:")
+
+        asmCommands.toList
       }
       case LTE => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", addr1asm)
+
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("jle", "#label2")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
+        asmCommands += "%s\n".format("#label2:")
+
+        asmCommands.toList
       }
       case GT => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", addr1asm)
+
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("jgt", "#label2")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
+        asmCommands += "%s\n".format("#label2:")
+
+        asmCommands.toList
       }
       case GTE => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", addr1asm)
+
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("jge", "#label2")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
+        asmCommands += "%s\n".format("#label2:")
+
+        asmCommands.toList
       }
       // Match eq ops
       case EQ => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", addr1asm)
+
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("jeq", "#label2")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
+        asmCommands += "%s\n".format("#label2:")
+
+        asmCommands.toList
       }
       case NEQ => { // TODO
-        return List()
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", addr1asm)
+
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("jne", "#label2")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
+        asmCommands += "%s\n".format("#label2:")
+
+        asmCommands.toList
       }
     }
   }
