@@ -77,7 +77,7 @@ class AsmGen{
     return List()
   }
 
-  def binOpToAsm(t: TacBinOp, table: SymbolTable) : List[String] = { // TODO
+  def binOpToAsm(t: TacBinOp, table: SymbolTable) : List[String] = {
     val (addr1, addr2, op, addr3) = (t.addr1, t.addr2, t.op, t.addr3)
     // addr1 = addr2 op addr3
     // The general template of these are going to be something as follows:
@@ -103,7 +103,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case SUB => { // TODO
+      case SUB => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -117,7 +117,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case MULT => { // TODO
+      case MULT => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -131,7 +131,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case DIV => { // TODO
+      case DIV => {
         // Take care here
         // idiv divisor <-> Divide rdx:rax by divisor. Store quotient in rax and store remainder in rdx.
 
@@ -150,7 +150,7 @@ class AsmGen{
         asmCommands.toList
       }
       // Match cond ops 
-      case AND => { // TODO
+      case AND => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -164,7 +164,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case OR => { // TODO
+      case OR => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -180,7 +180,7 @@ class AsmGen{
       }
       // Match rel ops
 
-      case LT => { // TODO
+      case LT => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -196,7 +196,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case LTE => { // TODO
+      case LTE => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -212,7 +212,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case GT => { // TODO
+      case GT => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -228,7 +228,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case GTE => { // TODO
+      case GTE => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -245,7 +245,7 @@ class AsmGen{
         asmCommands.toList
       }
       // Match eq ops
-      case EQ => { // TODO
+      case EQ => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
@@ -261,7 +261,7 @@ class AsmGen{
 
         asmCommands.toList
       }
-      case NEQ => { // TODO
+      case NEQ => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
