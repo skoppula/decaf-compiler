@@ -52,8 +52,8 @@ object Compiler {
 
   def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
     val tempGenie : TempVariableGenie = new TempVariableGenie
-    gen(program, tempGenie)
-    SymbolTableUtil.printSymbolTableStructure(methodsTable)
+    println(gen(program, tempGenie).mkString("\n"))
+    // SymbolTableUtil.printSymbolTableStructure(methodsTable)
 
   }
 

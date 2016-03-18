@@ -333,10 +333,10 @@ object IrGen {
             case IrCallExprArg(argExpr, _) => { 
               val (argTemp, argTac) = genExpr(argExpr, tempGenie)
               buf ++= argTac
-              tempArgs ++ argTemp
+              tempArgs :+ argTemp
             }
             case IrCallStringArg(strLit, _) => {  // should be unreachable...?
-              tempArgs ++ strLit.value
+              tempArgs :+ strLit.value
             }
           }
         } 
