@@ -1,29 +1,32 @@
-package compile
+package compile.tac
 
 import compile.Ir._
-import compile.Compiler._
-
 import compile.tac.OpTypes._
-import compile.tac._
 import compile.tac.ThreeAddressCode._
 
-import scala.collection.mutable.ArrayBuffer
-import compile.descriptors._
-import compile.symboltables._
-import ScopeTypes._
+import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 
-object IrGen {
+object TACGen {
 
   def gen(program: IrProgram, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    buf += new TacProgramEnter() 
     for (method <- program.methodDecls) {
       buf ++= genMethodDecl(method, tempGenie)
     }
     for (field <- program.fieldDecls) {
       tempGenie.generateName()
     }
-    return buf
+
+    // Filter out StringLiteralLabelTACs and put them in the front
+    // Put the program enter in front of string literal declarations
+    val noStringLits = buf.filter(tac => !tac.isInstanceOf[TacStringLiteral])
+    val stringLits = buf.filter(tac => tac.isInstanceOf[TacStringLiteral])
+    val finalTacs = ArrayBuffer.empty[Tac]
+    finalTacs += new TacProgramEnter()
+    stringLits.appendAll(noStringLits)
+    finalTacs.appendAll(stringLits)
+
+    return finalTacs
   }
 
   def genMethodDecl(methodDecl: IrMethodDecl, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
@@ -177,23 +180,24 @@ object IrGen {
   def genIrMethodCallExpr(methodExpr: IrMethodCallExpr, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) =  {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    var tempArgs: List[String] = List[String]()
+    var tempArgs: ListBuffer[String] = ListBuffer.empty[String]
     for (arg <- methodExpr.args) { 
       val argTemp: String = tempGenie.generateName()
       arg match {
         case IrCallExprArg(argExpr, _) => { 
           val (argTemp, argTac) = genExpr(argExpr, tempGenie)
           buf ++= argTac
-          tempArgs ++ argTemp
+          tempArgs += argTemp
         }
         case IrCallStringArg(strLit, _) => { // should be unreachable...
           val strLitLabel = tempGenie.generateLabel()
           buf prepend new TacStringLiteral(strLitLabel, strLit.value)
-        } 
+          tempArgs += strLitLabel
+        }
       }
     }
     
-    val tac = new TacMethodCallExpr(temp, methodExpr.name, tempArgs)
+    val tac = new TacMethodCallExpr(temp, methodExpr.name, tempArgs.toList)
     buf += tac
     return (temp, buf)
   }
@@ -325,22 +329,24 @@ object IrGen {
   def genIrMethodCallStmt(stmt: IrMethodCallStmt, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val callExpr: IrCallExpr = stmt.methCall
-    var tempArgs: List[String] = List[String]()
+    var tempArgs: ListBuffer[String] = ListBuffer.empty[String]
     callExpr match {
       case IrMethodCallExpr(name, args, _) => {
         for (arg <- args) {
-          arg match { 
-            case IrCallExprArg(argExpr, _) => { 
+          arg match {
+            case IrCallExprArg(argExpr, _) => {
               val (argTemp, argTac) = genExpr(argExpr, tempGenie)
               buf ++= argTac
-              tempArgs :+ argTemp
+              tempArgs += argTemp
             }
             case IrCallStringArg(strLit, _) => {  // should be unreachable...?
-              tempArgs :+ strLit.value
+              val strLitLabel = tempGenie.generateLabel()
+              buf prepend new TacStringLiteral(strLitLabel, strLit.value)
+              tempArgs += strLitLabel
             }
           }
         } 
-      val tac = new TacMethodCallStmt(name, tempArgs)
+      val tac = new TacMethodCallStmt(name, tempArgs.toList)
       buf += tac 
       }
     }

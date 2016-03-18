@@ -3,9 +3,11 @@ package compile.tac
 import compile.Ir._
 import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
-import compile.symboltables.{SymbolTable}
+import compile.symboltables.{GlobalFieldTable, SymbolTable}
 import scala.collection.mutable
 import compile.descriptors._
+
+import scala.collection.mutable.ListBuffer
 
 // Austin Note:
 // From the 6.035 x86-64 architecture guide
@@ -19,7 +21,7 @@ class AsmGen{
   def asmGen(tac: Tac, table: SymbolTable) : List[String] = {
     tac match {
       case t:TacProgramEnter => { // TODO
-        return programEnterToAsm(t, table)
+        return programEnterToAsm(t, table.asInstanceOf[GlobalFieldTable])
       }
       case t:TacBinOp => { // TODO
         return binOpToAsm(t, table)
@@ -72,9 +74,13 @@ class AsmGen{
     }
   }
 
-  def programEnterToAsm(t: TacProgramEnter, table: SymbolTable) : List[String] = { // TODO
-
-    return List()
+  def programEnterToAsm(t: TacProgramEnter, table: GlobalFieldTable) : List[String] = {
+    val instrs : ListBuffer[String] = ListBuffer.empty[String]
+    instrs += "section .bss"
+    for((name, descriptor) <- table.symbolTableMap) {
+      instrs += name + ": resb" + descToSizeBytes(descriptor).toString
+    }
+    return instrs.toList
   }
 
   def binOpToAsm(t: TacBinOp, table: SymbolTable) : List[String] = {
@@ -628,7 +634,7 @@ class AsmGen{
     }
   }
 
-  def arrayDescToSizeBytes(desc: BaseDescriptor) : Int = {
+  def descToSizeBytes(desc: BaseDescriptor) : Int = {
     // TODO : Done but untested
     desc match {
       case d:IntTypeDescriptor => {
