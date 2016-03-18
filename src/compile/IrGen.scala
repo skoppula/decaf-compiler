@@ -18,15 +18,22 @@ object IrGen {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     buf += new TacProgramEnter() 
     for (method <- program.methodDecls) {
-      buf ++= genMethodDecl(method)
+      buf ++= genMethodDecl(method, tempGenie)
+    }
+    for (field <- program.fieldDecls) {
+      tempGenie.generateName()
     }
     return buf
   }
 
-  def genMethodDecl(methodDecl: IrMethodDecl) : ArrayBuffer[Tac] = {
+  def genMethodDecl(methodDecl: IrMethodDecl, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     buf += new TacLabel(methodDecl.name)
     buf += new TacMethodEnter()
+    for (arg <- methodDecl.args) {
+      tempGenie.generateName()    
+    }
+    buf ++= genBlock(methodDecl.bodyBlock, null, null, tempGenie)
     return buf
   }
 
@@ -180,7 +187,8 @@ object IrGen {
           tempArgs ++ argTemp
         }
         case IrCallStringArg(strLit, _) => { // should be unreachable...
-          tempArgs ++ strLit.value
+          val strLitLabel = tempGenie.generateLabel()
+          buf prepend new TacStringLiteral(strLitLabel, strLit.value)
         } 
       }
     }
@@ -219,6 +227,9 @@ object IrGen {
   
   def genBlock(block: IrBlock, parentStart: String, parentEnd: String, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    for (field <- block.fieldDecls) {
+      tempGenie.generateName()
+    }
     for (stmt <- block.stmts) {
       buf ++= genStmt(stmt, parentStart, parentEnd, tempGenie)
     }
