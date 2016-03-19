@@ -14,6 +14,7 @@ object ThreeAddressCode {
   case class TacIfFalse(addr1: String, label: String) extends Tac{} // ifFalse addr1 goto label
 
   case class TacGoto(label: String) extends Tac{} // goto label
+  case class TacGlobl(name: String) extends Tac{} // This is required for main
   case class TacLabel(label: String) extends Tac{} // foo:
 
   case class TacCopy(addr1: String, addr2: String) extends Tac{} // x = y
@@ -25,7 +26,7 @@ object ThreeAddressCode {
   case class TacMethodCallExpr(addr1: String, method: String, args: List[String]) extends Tac{} // x = foo(args*)
   case class TacMethodCallStmt(method: String, args: List[String]) extends Tac{} // foo(args*) (statement)
 
-  case class TacStringLiteral(label: String, value: String) extends Tac{} // printf("asdf") --> #L1: .string "asdf"
+  case class TacStringLiteral(label: String, value: String) extends Tac{} // printf("asdf") --> .L1: .string "asdf"
 
   case class TacReturnValue(addr1: String) extends Tac{} // addr1 is the temp variable where the return value is stored
   case class TacReturn() extends Tac{} // indicator to leave, ret the method call

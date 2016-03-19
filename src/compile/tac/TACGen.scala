@@ -37,6 +37,10 @@ object TACGen {
     var tacs: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val asm: List[String] = List.empty[String]
 
+    // Special handler for main
+    if (methodDecl.name == "main") {
+      tacs += new TacGlobl(methodDecl.name)
+    }
     tacs += new TacLabel(methodDecl.name)
     tacs += new TacMethodEnter()
 

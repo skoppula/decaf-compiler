@@ -19,10 +19,10 @@ import scala.collection.mutable.ListBuffer
 object AsmGen{
   def asmGen(tac: Tac, table: SymbolTable) : List[String] = {
     tac match {
-      case t:TacProgramEnter => { // TODO
+      case t:TacProgramEnter => { // TODO: Done but untested
         return programEnterToAsm(t, table.asInstanceOf[GlobalFieldTable])
       }
-      case t:TacBinOp => { // TODO
+      case t:TacBinOp => { // TODO: Done but untested
         return binOpToAsm(t, table)
       }
       case t:TacUnOp => { // TODO: Done but untested
@@ -36,6 +36,9 @@ object AsmGen{
       }
       case t:TacGoto => { // TODO: Done but untested
         return gotoToAsm(t, table)
+      }
+      case t:TacGlobl => { // TODO: Done but untested
+        return globlToAsm(t, table)
       }
       case t:TacLabel => { // TODO: Done but untested
         return labelToAsm(t, table)
@@ -58,6 +61,9 @@ object AsmGen{
       case t:TacMethodCallStmt => { // TODO: Done but untested
         return methodCallStmtToAsm(t, table)
       }
+      case t:TacStringLiteral => { // TODO: Done but untested
+        return stringLiteralToAsm(t, table)
+      }
       case t:TacReturnValue => { // TODO: Done but untested
         return returnValueToAsm(t, table)
       }
@@ -74,12 +80,24 @@ object AsmGen{
   }
 
   def programEnterToAsm(t: TacProgramEnter, table: GlobalFieldTable) : List[String] = {
-    val instrs : ListBuffer[String] = ListBuffer.empty[String]
-    instrs += "section .bss"
+    // This is where allocation for global variables takes place
+    // TODO: Done but untested
+    var instrs : List[String] = List()
+
     for((name, descriptor) <- table.symbolTableMap) {
-      instrs += name + ": resb" + descToSizeBytes(descriptor).toString
+      val sizeBytes = descToSizeBytes(descriptor)
+      descriptor match {
+        case d:PrimitiveBaseDescriptor => {
+          // gcc uses alignment 8 for longs
+          instrs :+= "\t.comm\t%s,%d,%d\n".format(name,sizeBytes,8)
+        }
+        case d:ArrayBaseDescriptor => {
+          // gcc uses alignment 32 for global arrays
+          instrs :+= "\t.comm\t%s,%d,%d\n".format(name,sizeBytes,32)
+        }
+      }
     }
-    return instrs.toList
+    return instrs
   }
 
   def binOpToAsm(t: TacBinOp, table: SymbolTable) : List[String] = {
@@ -387,6 +405,20 @@ object AsmGen{
     return instrs
   }
 
+  def globlToAsm(t: TacGlobl, table: SymbolTable) : List[String] = {
+    // This is required for main
+    // method declaration looks like
+    // <tab> .globl main
+    // main:
+    // <code>
+    var instrs : List[String] = List()
+    val name = t.name
+
+    instrs :+= "\t.globl %s\n".format(name)
+
+    return instrs
+  }
+
   def labelToAsm(t: TacLabel, table: SymbolTable) : List[String] = {
     // label:
     // TODO: Done but untested
@@ -521,6 +553,16 @@ object AsmGen{
       instrs :+= "\t%s\t$%d, %s\n".format("addq", (args.length - 6)*primitiveTypeSize, "%rsp")
     }
 
+
+    return instrs
+  }
+
+  def stringLiteralToAsm(t: TacStringLiteral, table: SymbolTable) : List[String] = {
+    var instrs : List[String] = List()
+    val (label, value) = (t.label, t.value)
+
+    instrs :+= "%s:\n".format(label)
+    instrs :+= "\t.string \"%s\"\n".format(value)
 
     return instrs
   }
