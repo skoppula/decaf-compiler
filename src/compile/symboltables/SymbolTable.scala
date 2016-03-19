@@ -5,8 +5,8 @@ import compile.exceptionhandling.IdentifierAlreadyExistsException
 import scala.collection.mutable
 
 class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
-  var symbolTableMap : mutable.HashMap[String, BaseDescriptor] = mutable.HashMap.empty[String, BaseDescriptor]
-  var childrenSymbolTables : mutable.Set[SymbolTable] = mutable.Set.empty[SymbolTable]
+  var symbolTableMap : mutable.LinkedHashMap[String, BaseDescriptor] = mutable.LinkedHashMap.empty[String, BaseDescriptor]
+  var childrenSymbolTables : mutable.ListBuffer[SymbolTable] = mutable.ListBuffer.empty[SymbolTable]
   val scopeType = sType
 
   if (parentSymbolTable != null) {
@@ -26,7 +26,7 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
   }
 
   def addChild(symbolTable : SymbolTable): Unit = {
-      childrenSymbolTables.add(symbolTable)
+      childrenSymbolTables += symbolTable
   }
 
   def isGlobal(id : String) : Boolean = {

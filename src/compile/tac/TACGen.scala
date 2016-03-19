@@ -1,43 +1,56 @@
 package compile.tac
 
 import compile.Ir._
+import compile.symboltables.{ParametersTable, MethodsTable}
 import compile.tac.OpTypes._
+import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
 
 import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 
 object TACGen {
 
-  def gen(program: IrProgram, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
-    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+  def gen(program: IrProgram, tempGenie: TempVariableGenie, methodsTable : MethodsTable) : (ArrayBuffer[Tac], List[String]) = {
+    var tacs: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    val asm: List[String] = List.empty[String]
+
+    tacs += new TacProgramEnter()
+    asm :+ asmGen(tacs(0), methodsTable.getGlobalFieldTable)
+
     for (method <- program.methodDecls) {
-      buf ++= genMethodDecl(method, tempGenie)
+      val methodName = method.name
+      val methodParamTable = methodsTable.lookupID(methodName).getParamTable
+      var (methodTacs, methodAsm) = genMethodDecl(method, tempGenie, methodParamTable)
+      tacs ++= methodTacs
+      asm :+ methodAsm
     }
+
+    // Why is this needed **
     for (field <- program.fieldDecls) {
       tempGenie.generateName()
     }
 
-    // Filter out StringLiteralLabelTACs and put them in the front
-    // Put the program enter in front of string literal declarations
-    val noStringLits = buf.filter(tac => !tac.isInstanceOf[TacStringLiteral])
-    val stringLits = buf.filter(tac => tac.isInstanceOf[TacStringLiteral])
-    val finalTacs = ArrayBuffer.empty[Tac]
-    finalTacs += new TacProgramEnter()
-    stringLits.appendAll(noStringLits)
-    finalTacs.appendAll(stringLits)
-
-    return finalTacs
+    return (tacs, asm)
   }
 
-  def genMethodDecl(methodDecl: IrMethodDecl, tempGenie: TempVariableGenie) : ArrayBuffer[Tac] = {
-    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    buf += new TacLabel(methodDecl.name)
-    buf += new TacMethodEnter()
+  def genMethodDecl(methodDecl: IrMethodDecl, tempGenie: TempVariableGenie, methodParamTable : ParametersTable) : (ArrayBuffer[Tac], List[String]) = {
+    var tacs: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    val asm: List[String] = List.empty[String]
+
+    tacs += new TacLabel(methodDecl.name)
+    tacs += new TacMethodEnter()
+
+    asm :+ asmGen(tacs(0), methodParamTable)
+    asm :+ asmGen(tacs(0), methodParamTable)
+
+    // Why is this needed **
     for (arg <- methodDecl.args) {
       tempGenie.generateName()    
     }
-    buf ++= genBlock(methodDecl.bodyBlock, null, null, tempGenie)
-    return buf
+
+    tacs ++= genBlock(methodDecl.bodyBlock, null, null, tempGenie)
+
+    return (tacs, asm)
   }
 
   // == Expr gening ==
@@ -162,7 +175,7 @@ object TACGen {
   def genIrSingleLocation(singleLoc: IrSingleLocation, tempGenie: TempVariableGenie) : (String, ArrayBuffer[Tac]) = {
     val temp: String = tempGenie.generateName()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    val tac = new TacCopy(temp, singleLoc.name)
+    val tac = new TacCopy(temp, singleLoc.name) //This is problem, temp should adress if singleLoc.name is array
     buf += tac
     return (temp, buf)  
   }

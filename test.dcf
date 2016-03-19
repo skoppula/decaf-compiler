@@ -1,0 +1,10 @@
+callout printf;
+int a[10];
+
+void foo(int i) {
+
+}
+
+void main() {
+    printf(a); 
+}

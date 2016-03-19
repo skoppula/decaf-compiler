@@ -17,7 +17,7 @@ import scala.collection.mutable.ListBuffer
 // or "\t%s\t%s\n".format(op, arg)
 // I chose this format because that's how gcc spits out the instructions.
 
-class AsmGen{
+object AsmGen{
   def asmGen(tac: Tac, table: SymbolTable) : List[String] = {
     tac match {
       case t:TacProgramEnter => { // TODO

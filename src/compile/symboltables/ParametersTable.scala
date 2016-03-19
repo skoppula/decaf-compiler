@@ -34,7 +34,10 @@ class ParametersTable(
       * identifier not found.
       */
     if(symbolTableMap.contains(id)) {
-      symbolTableMap(id)
+      symbolTableMap.get(id) match {
+        case Some(b) => {return b}
+        case None => return null //SHOULD NEVER GET HERE DOE
+      }
     } else if (parametersMap.contains(id)) {
       parametersMap(id)
     } else {

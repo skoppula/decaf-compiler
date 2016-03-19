@@ -187,6 +187,7 @@ object Compiler {
       exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
     }
 
+    SymbolTableUtil.printSymbolTableStructure(methodsTable)
     return (ir, methodsTable)
   }
   
