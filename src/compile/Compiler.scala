@@ -52,7 +52,7 @@ object Compiler {
 
   def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
     val tempGenie : TempVariableGenie = new TempVariableGenie
-    println(gen(program, tempGenie).mkString("\n"))
+    // println(gen(program, tempGenie).mkString("\n"))
     // SymbolTableUtil.printSymbolTableStructure(methodsTable)
 
   }
@@ -140,7 +140,7 @@ object Compiler {
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
     if(CLI.irdebug) {
       println("\nIR decomposition:")
-      println(ir.treeString.substring(0,1000))
+      println(ir.treeString)
       println()
     }
 
