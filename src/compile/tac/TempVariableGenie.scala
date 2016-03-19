@@ -10,11 +10,11 @@ class TempVariableGenie {
   var labelCount = 0
   def generateName() : String  = {
     varCount = varCount + 1
-    ("#t" + varCount)
+    (".T" + varCount)
   }
   def generateLabel() : String = {
     labelCount = labelCount + 1
-    ("#l" + labelCount) // shouldn't actually need the #, but w/e 
+    (".L" + labelCount) // shouldn't actually need the #, but w/e 
   }
   def isVarName(name : String) : Boolean = {
     varNames contains name

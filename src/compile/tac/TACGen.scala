@@ -44,6 +44,9 @@ object TACGen {
     asm :+ asmGen(tacs(0), methodParamTable)
 
     // Why is this needed **
+    // TODO Austin: Yeah actually we should not generate a new temp
+    // var for each arg, but instead the corresponding scope
+    // table needs to map the param name to a stack offset
     for (arg <- methodDecl.args) {
       tempGenie.generateName()    
     }

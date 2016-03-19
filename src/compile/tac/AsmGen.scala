@@ -9,7 +9,6 @@ import compile.descriptors._
 
 import scala.collection.mutable.ListBuffer
 
-// Austin Note:
 // From the 6.035 x86-64 architecture guide
 // For the code generation phase of the project you will not be performing register allocation.  You should use %r10 and %r11 for temporary values that you load from the stack.
 // For consistency, for any asm instruction, format the string as 
@@ -403,6 +402,11 @@ object AsmGen{
     // 1. get %rbp offset of addr 1 and addr 2
     // 2. load from addr2 into some register
     // 3. movq into addr1
+    //
+    // HOWEVER, if addr2 is actually the name of an array variable
+    // We need to instead store the address corresponding to the base
+    // of the array.
+    // addrToAsm should now handle string literal labels as well
     // TODO: Done but untested
     var instrs : List[String] = List()
     val (addr1, addr2) = (t.addr1, t.addr2)
@@ -410,7 +414,13 @@ object AsmGen{
     val src = addrToAsm(addr2, table)
     val reg = "%r10"
 
-    instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
+    if (!table.isGlobal(addr2) && table.lookupID(addr2).isInstanceOf[ArrayBaseDescriptor]) {
+      // Array pointer handler
+      // TODO: Done but untested
+      instrs :+= "\t%s\t%s, %s\n".format("leaq", src, reg)
+    } else {
+      instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
+    }
     instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
 
     return instrs
@@ -578,16 +588,30 @@ object AsmGen{
   def addrToAsm(name: String, table: SymbolTable) : String = {
     /* A global variable reference will be of the form: name(%rip)
      * A local variable reference will be of the form: offset(%rbp)
+     * A string literal label with prefix .L will be of the form: $.L___
      */
     // TODO : Done but untested
 
-    if (table.isGlobal(name)) {
-      return "%s(%%rip)".format(name)
+    if (name.length >= 2 && name.substring(0,2) == ".L") {
+      // String literal handler
+      return "$%s".format(name)
     } else {
-      val offset = table.lookupID(name).offsetBytes
-      return "%d(%%rbp)".format(offset)
+      if (table.isGlobal(name)) {
+        table.lookupID(name) match {
+          case d:PrimitiveBaseDescriptor => {
+            return "%s(%%rip)".format(name)
+          }
+          case d:ArrayBaseDescriptor => {
+            return "$%s".format(name)
+          }
+        }
+      } else { // This handles array args fine, but need to use leaq instruction
+        val offset = table.lookupID(name).offsetBytes
+        return "%d(%%rbp)".format(offset)
+      }
     }
   }
+
 
   def arrayAddrToAsm(name: String, indexReg: String, table: SymbolTable) : String = {
     /* A global array variable reference will be of the form: name(,indexReg,8)
