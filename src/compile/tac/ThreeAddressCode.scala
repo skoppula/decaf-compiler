@@ -1,6 +1,7 @@
 package compile.tac
 
 import compile.Ir._
+import compile.descriptors.{MethodDescriptor}
 
 object ThreeAddressCode {
   abstract class Tac{}
@@ -14,14 +15,14 @@ object ThreeAddressCode {
   case class TacIfFalse(addr1: String, label: String) extends Tac{} // ifFalse addr1 goto label
 
   case class TacGoto(label: String) extends Tac{} // goto label
-  case class TacGlobl(name: String) extends Tac{} // This is required for main
+  case class TacGlobl(name: String) extends Tac{} // This is required for main; it exposes the label to the linker, which is needed by gcc to link main to the standard C runtime library
   case class TacLabel(label: String) extends Tac{} // foo:
 
   case class TacCopy(addr1: String, addr2: String) extends Tac{} // x = y
   case class TacCopyInt(addr1: String, int: Int) extends Tac{} // x = 5
   case class TacCopyBoolean(addr1: String, bool: Boolean) extends Tac{} // x = true
 
-  case class TacMethodEnter() extends Tac{} // indicates beginning of method stack
+  case class TacMethodEnter(methodDesc: MethodDescriptor) extends Tac{} // indicates beginning of method stack
 
   case class TacMethodCallExpr(addr1: String, method: String, args: List[String]) extends Tac{} // x = foo(args*)
   case class TacMethodCallStmt(method: String, args: List[String]) extends Tac{} // foo(args*) (statement)

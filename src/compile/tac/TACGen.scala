@@ -2,6 +2,7 @@ package compile.tac
 
 import compile.Ir._
 import compile.symboltables.{ParametersTable, MethodsTable}
+import compile.descriptors.{MethodDescriptor}
 import compile.tac.OpTypes._
 import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
@@ -20,7 +21,8 @@ object TACGen {
     for (method <- program.methodDecls) {
       val methodName = method.name
       val methodParamTable = methodsTable.lookupID(methodName).getParamTable
-      var (methodTacs, methodAsm) = genMethodDecl(method, tempGenie, methodParamTable)
+      val methodDesc = methodsTable.lookupID(methodName)
+      var (methodTacs, methodAsm) = genMethodDecl(method, tempGenie, methodParamTable, methodDesc)
       tacs ++= methodTacs
       asm :+ methodAsm
     }
@@ -33,27 +35,36 @@ object TACGen {
     return (tacs, asm)
   }
 
-  def genMethodDecl(methodDecl: IrMethodDecl, tempGenie: TempVariableGenie, methodParamTable : ParametersTable) : (ArrayBuffer[Tac], List[String]) = {
+  def genMethodDecl(methodDecl: IrMethodDecl, tempGenie: TempVariableGenie, methodParamTable : ParametersTable, methodDesc : MethodDescriptor) : (ArrayBuffer[Tac], List[String]) = {
     var tacs: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val asm: List[String] = List.empty[String]
 
-    // Special handler for main
+    // This is required for main; it exposes the label to the linker, which is needed by gcc to link main to the standard C runtime library
     if (methodDecl.name == "main") {
       tacs += new TacGlobl(methodDecl.name)
     }
     tacs += new TacLabel(methodDecl.name)
-    tacs += new TacMethodEnter()
+    // Austin:
+    // TODO : You need to pass in the amount of space I need here to allocate on the stack
+    // or give me access to the MethodDescriptor to call getTotalByteSize
+    // For now I have opted to pass in the method descriptor but I don't know what is
+    // best for the current framework
+    tacs += new TacMethodEnter(methodDesc)
 
     asm :+ asmGen(tacs(0), methodParamTable)
     asm :+ asmGen(tacs(0), methodParamTable)
 
     // Why is this needed **
-    // TODO Austin: Yeah actually we should not generate a new temp
+    // Austin: 
+    // TODO : Yeah actually we should not generate a new temp
     // var for each arg, but instead the corresponding scope
     // table needs to map the param name to a stack offset
+    // Commenting it out for now
+    /*
     for (arg <- methodDecl.args) {
       tempGenie.generateName()    
     }
+     */
 
     tacs ++= genBlock(methodDecl.bodyBlock, null, null, tempGenie)
 
@@ -209,8 +220,10 @@ object TACGen {
           buf ++= argTac
           tempArgs += argTemp
         }
-        case IrCallStringArg(strLit, _) => { // should be unreachable...
+        case IrCallStringArg(strLit, _) => {
           val strLitLabel = tempGenie.generateLabel()
+          // TODO these need to be rearranged in the TACs to come before
+          // A method declaration
           buf prepend new TacStringLiteral(strLitLabel, strLit.value)
           tempArgs += strLitLabel
         }

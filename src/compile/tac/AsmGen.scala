@@ -493,8 +493,28 @@ object AsmGen{
 
 
   def methodEnterToAsm(t: TacMethodEnter, table: SymbolTable) : List[String] = { // TODO
+    // Allocate space on the stack
+    // Copy each param into its corresponding temp var
+    // methodesc.getTotalByteSize
+    var instrs : List[String] = List()
+    val methodDesc = t.methodDesc
+    val reg = "%r10"
 
-    return List()
+    instrs :+= "\tenter\t$(%d), $0\n".format(methodDesc.getTotalByteSize)
+
+    // Put every passed argument into a corresponding local var on stack
+    // TODO: Placeholder since we have no current way to only get params
+    val params : List[String] = List("a", "b", "c")
+    params.zipWithIndex.reverse foreach {
+      case (addr, index) => {
+        val src = argNumToAsm(index+1)
+        val dest = addrToAsm(addr, table)
+        instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
+        instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
+      }
+    }
+
+    return instrs
   }
 
 
