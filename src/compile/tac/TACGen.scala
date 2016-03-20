@@ -7,16 +7,30 @@ import compile.tac.OpTypes._
 import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
 
-import scala.collection.mutable.{ListBuffer, ArrayBuffer}
+import scala.collection.mutable
+import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
 
 object TACGen {
 
-  def gen(program: IrProgram, tempGenie: TempVariableGenie, methodsTable : MethodsTable) : (ArrayBuffer[Tac], List[String]) = {
+  def combineLinkedHashMaps(lhm1 : LinkedHashMap[Tac, List[String]], lhm2 : LinkedHashMap[Tac, List[String]]) : LinkedHashMap[Tac, List[String]]= {
+    val newLHM : LinkedHashMap[Tac, List[String]] = LinkedHashMap.empty[Tac, List[String]]
+    for((tac, asm) <- lhm1) {
+      newLHM(tac) = asm
+    }
+
+    for((tac, asm) <- lhm2) {
+      newLHM(tac) = asm
+    }
+
+    return newLHM
+  }
+
+  def gen(program: IrProgram, tempGenie: TempVariableGenie, methodsTable : MethodsTable) : LinkedHashMap[Tac, List[String]] = {
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     var tacs: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val asm: List[String] = List.empty[String]
 
-    tacs += new TacProgramEnter()
-    asm :+ asmGen(tacs(0), methodsTable.getGlobalFieldTable)
+    tacAsmMap(new TacProgramEnter()) = asmGen(tacs(0), methodsTable.getGlobalFieldTable)
 
     for (method <- program.methodDecls) {
       val methodName = method.name
@@ -27,12 +41,7 @@ object TACGen {
       asm :+ methodAsm
     }
 
-    // Why is this needed **
-    for (field <- program.fieldDecls) {
-      tempGenie.generateName()
-    }
-
-    return (tacs, asm)
+    return tacAsmMap
   }
 
   def genMethodDecl(methodDecl: IrMethodDecl, tempGenie: TempVariableGenie, methodParamTable : ParametersTable, methodDesc : MethodDescriptor) : (ArrayBuffer[Tac], List[String]) = {
