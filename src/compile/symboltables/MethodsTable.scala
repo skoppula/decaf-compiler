@@ -30,12 +30,6 @@ class MethodsTable(calloutManager : CalloutManager, globalFieldTable: GlobalFiel
   def getGlobalFieldTable : GlobalFieldTable = this.globalFieldTable
   def getCallouts : CalloutManager = this.calloutManager
 
-  def computeOffsets() {
-    for((name, methodDescriptor) <- methodTable) {
-      methodDescriptor.computeOffsets()
-    }
-  }
-
   def getTotalByteSize(methodName : String) : Int = {
     if(methodTable.contains(methodName)) {
       return methodTable(methodName).getTotalByteSize()
