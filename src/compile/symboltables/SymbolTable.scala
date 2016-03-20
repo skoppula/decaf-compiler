@@ -13,6 +13,14 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     parentSymbolTable.addChild(this)
   }
 
+  def getChildrenSymbolTables : mutable.ListBuffer[SymbolTable] = {
+    return this.childrenSymbolTables
+  }
+
+  def getParentSymbolTable : SymbolTable = {
+    return this.parentSymbolTable
+  }
+
   def insert(id : String, descriptor : BaseDescriptor): Unit = {
     /**
       * Attempts to insert identifier, descriptor pair into symbol table
