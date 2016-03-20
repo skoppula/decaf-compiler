@@ -1,7 +1,7 @@
 package compile.symboltables
 
 import compile.descriptors.BaseDescriptor
-import compile.exceptionhandling.InvalidGlobalFieldTableMethodException
+import compile.exceptionhandling.IdentifierAlreadyExistsException
 
 class GlobalFieldTable extends SymbolTable(null, null) {
 
@@ -11,25 +11,19 @@ class GlobalFieldTable extends SymbolTable(null, null) {
       * or parent symbol table(s). Returns descriptor or null
       * if identifier not found.
       */
+    symbolTableMap.getOrElse(id, null)
+  }
 
+  override def insert(id : String, descriptor : BaseDescriptor): Unit = {
+    /**
+      * Attempts to insert identifier, descriptor pair into symbol table
+      * Throws Exception if already identifier already exists
+      */
     if(symbolTableMap.contains(id)) {
-      symbolTableMap.get(id) match {
-        case Some(b) => {return b}
-        case None => return null //SHOULD NEVER GET HERE DOE
-      }
+      throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists")
     } else {
-      null
+      symbolTableMap(id) = descriptor
     }
-  }
-
-  // Not a valid function for GFT
-  override def getTotalByteSize(): Int = {
-    throw new InvalidGlobalFieldTableMethodException("You shouldn't be calculating total byte size for GFT!")
-  }
-
-  // Not a valid function for GFT
-  override def computeOffsets(baseOffset : Int) : Int = {
-    throw new InvalidGlobalFieldTableMethodException("You shouldn't be calculating offsets for GFT!")
   }
 
   override def isGlobal(id : String) : Boolean = {

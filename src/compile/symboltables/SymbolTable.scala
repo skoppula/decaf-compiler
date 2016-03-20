@@ -2,18 +2,24 @@ package compile.symboltables
 
 import compile.descriptors._
 import compile.exceptionhandling.IdentifierAlreadyExistsException
-import scala.collection.mutable
+import scala.collection.mutable.{HashMap, ListBuffer}
 
 class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
-  var symbolTableMap : mutable.LinkedHashMap[String, BaseDescriptor] = mutable.LinkedHashMap.empty[String, BaseDescriptor]
-  var childrenSymbolTables : mutable.ListBuffer[SymbolTable] = mutable.ListBuffer.empty[SymbolTable]
+
+  var symbolTableMap : HashMap[String, BaseDescriptor] = HashMap.empty[String, BaseDescriptor]
+  var childrenSymbolTables : ListBuffer[SymbolTable] = ListBuffer.empty[SymbolTable]
   val scopeType = sType
+
+  var methodParameterTable : ParametersTable = null
+  if(parentSymbolTable != null) {
+    methodParameterTable = parentSymbolTable.methodParameterTable
+  }
 
   if (parentSymbolTable != null) {
     parentSymbolTable.addChild(this)
   }
 
-  def getChildrenSymbolTables : mutable.ListBuffer[SymbolTable] = {
+  def getChildrenSymbolTables : ListBuffer[SymbolTable] = {
     return this.childrenSymbolTables
   }
 
@@ -30,6 +36,8 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
       throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists")
     } else {
       symbolTableMap(id) = descriptor
+      methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize - descriptor.sizeBytes
+      descriptor.offsetBytes = methodParameterTable.currTotalByteSize
     }
   }
 
@@ -43,64 +51,6 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     } else {
       return parentSymbolTable.isGlobal(id)
     }
-  }
-
-  def computeOffsetOfDescriptor(descriptor: BaseDescriptor, offset : Int): Int = {
-    var currOffset = offset
-    descriptor match {
-      case int : IntTypeDescriptor => {
-        int.offsetBytes =  currOffset - int.sizeBytes
-        currOffset -= int.sizeBytes
-      }
-      case bool : BoolTypeDescriptor => {
-        bool.offsetBytes =  currOffset - bool.sizeBytes
-        currOffset -= bool.sizeBytes
-      }
-      case boolArr : BoolArrayTypeDescriptor => {
-        boolArr.offsetBytes =  currOffset - boolArr.sizeBytes
-        currOffset -= boolArr.sizeBytes
-      }
-      case intArr : IntArrayTypeDescriptor => {
-        intArr.offsetBytes =  currOffset - intArr.sizeBytes
-        currOffset -= intArr.sizeBytes
-      }
-    }
-    return currOffset
-  }
-
-  def computeSizeOfDescriptor(descriptor: BaseDescriptor) : Int = {
-    descriptor match {
-      case int : IntTypeDescriptor => return int.sizeBytes
-      case bool : BoolTypeDescriptor => return bool.sizeBytes
-      case boolArr : BoolArrayTypeDescriptor => return boolArr.sizeBytes
-      case intArr : IntArrayTypeDescriptor => return intArr.sizeBytes
-    }
-  }
-
-  def computeOffsets(baseOffset: Int): Int = {
-    var currOffset = baseOffset
-    for((name, descriptor) <- symbolTableMap) {
-      currOffset = computeOffsetOfDescriptor(descriptor, currOffset)
-    }
-
-    for(table <- childrenSymbolTables) {
-      currOffset = table.computeOffsets(currOffset)
-    }
-
-    return currOffset
-  }
-
-  def getTotalByteSize(): Int = {
-    var currByteSize = 0
-    for((name, descriptor) <- symbolTableMap) {
-      currByteSize += computeSizeOfDescriptor(descriptor)
-    }
-
-    for(table <- childrenSymbolTables) {
-      currByteSize += table.getTotalByteSize()
-    }
-
-    return currByteSize
   }
 
   def lookupID(id : String) : BaseDescriptor = {

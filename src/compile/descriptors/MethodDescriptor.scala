@@ -1,7 +1,6 @@
 package compile.descriptors
 
 import compile.symboltables.ParametersTable
-import compile.descriptors.TypeDescriptors
 import scala.collection.mutable
 
 class MethodDescriptor(
@@ -22,12 +21,6 @@ class MethodDescriptor(
   def getParamTable : ParametersTable  = this.parameterTable
 
   def getTotalByteSize(): Int = {
-    return parameterTable.getTotalByteSize()
+    return parameterTable.currTotalByteSize
   }
-
-  def computeOffsets() {
-    parameterTable.computeOffsets(0)
-  }
-
-
 }

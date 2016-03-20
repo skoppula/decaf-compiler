@@ -2,7 +2,6 @@ package compile.symboltables
 
 import compile.descriptors._
 import compile.exceptionhandling.IdentifierAlreadyExistsException
-import util.CLI
 
 import scala.collection.mutable
 
@@ -15,6 +14,14 @@ class ParametersTable(
                        parametersMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor])
   extends SymbolTable(parentSymbolTable, null) {
 
+  var currTotalByteSize = 0;
+  this.methodParameterTable = this
+
+  for((name, descriptor) <- parametersMap) {
+    methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize - descriptor.sizeBytes
+    descriptor.offsetBytes = methodParameterTable.currTotalByteSize
+  }
+
   override def insert(id : String, descriptor : BaseDescriptor): Unit = {
     /**
       * Attempts to insert identifier, descriptor pair into symbol table
@@ -24,6 +31,8 @@ class ParametersTable(
       throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists")
     } else {
       symbolTableMap(id) = descriptor
+      methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize - descriptor.sizeBytes
+      descriptor.offsetBytes = methodParameterTable.currTotalByteSize
     }
   }
 
@@ -58,41 +67,6 @@ class ParametersTable(
       return parentSymbolTable.isGlobal(id)
     }
   }
-
-  override def getTotalByteSize(): Int = {
-    var currByteSize = 0
-    for((name, descriptor) <- symbolTableMap) {
-      currByteSize += computeSizeOfDescriptor(descriptor)
-    }
-
-    for((name, descriptor) <- parametersMap) {
-      currByteSize += computeSizeOfDescriptor(descriptor)
-    }
-
-    for(table <- childrenSymbolTables) {
-      currByteSize += table.getTotalByteSize()
-    }
-
-    return currByteSize
-  }
-
-  override def computeOffsets(baseOffset : Int): Int = {
-    var currOffset = baseOffset
-    for((name, descriptor) <- symbolTableMap) {
-      currOffset = computeOffsetOfDescriptor(descriptor, currOffset)
-    }
-
-    for((name, descriptor) <- parametersMap) {
-      currOffset = computeOffsetOfDescriptor(descriptor, currOffset)
-    }
-
-    for(table <- childrenSymbolTables) {
-      currOffset = table.computeOffsets(currOffset)
-    }
-
-    return currOffset
-  }
-
 
   override def toString : String = {
     "ParameterTable(ParamMap:" + parametersMap.mkString(",") + ", FieldTable:" + symbolTableMap.mkString(",") + ")"

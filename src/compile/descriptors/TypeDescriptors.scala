@@ -4,18 +4,17 @@ package compile.descriptors
 //  because global variables go into .DATA section and do not need an offset
 abstract class BaseDescriptor extends Descriptor {
   var offsetBytes : Int = 2000 // Random null value
+  val sizeBytes : Int = 8
 }
 
 abstract class PrimitiveBaseDescriptor extends BaseDescriptor
 
 case class IntTypeDescriptor() extends PrimitiveBaseDescriptor {
   override val name = "IntType"
-  val sizeBytes : Int = 8
 }
 
 case class BoolTypeDescriptor() extends PrimitiveBaseDescriptor {
   override val name = "BoolType"
-  val sizeBytes : Int = 8
 }
 
 case class VoidTypeDescriptor() extends PrimitiveBaseDescriptor {
@@ -28,11 +27,12 @@ abstract class ArrayBaseDescriptor(size : BigInt) extends BaseDescriptor {
 
 case class IntArrayTypeDescriptor(size : BigInt) extends ArrayBaseDescriptor(size) {
   override val name = "IntArrayType"
-  val sizeBytes : Int = 8*size.toInt
+  override val sizeBytes : Int = 8*size.toInt
 }
 
 case class BoolArrayTypeDescriptor(size : BigInt) extends ArrayBaseDescriptor(size) {
   override val name = "BoolArrayType"
-  val sizeBytes : Int = 8*size.toInt
+  override val sizeBytes : Int = 8*size.toInt
 }
+
 
