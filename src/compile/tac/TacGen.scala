@@ -2,7 +2,7 @@ package compile.tac
 
 import compile.Ir._
 import compile.exceptionhandling._
-import compile.symboltables.{ParametersTable, MethodsTable, SymbolTable}
+import compile.symboltables.{MethodsTable, SymbolTable}
 import compile.descriptors.{BoolTypeDescriptor, IntTypeDescriptor, MethodDescriptor}
 import compile.tac.OpTypes._
 import compile.tac.AsmGen._
@@ -29,6 +29,8 @@ object TACGen {
       tacAsmMap = combineLinkedHashMaps(tacAsmMap, methodAsm)
     }
 
+    // TODO these need to be rearranged in the Strings TACs to come before
+    // Add NOPs
     return tacAsmMap
   }
 
@@ -143,32 +145,49 @@ object TACGen {
     return (temp, tacAsmMap)
   }
 
-  def genIrUnOpExpr(unOpExpr: IrUnOpExpr, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
+  def genIrUnOpExpr(
+                     unOpExpr: IrUnOpExpr,
+                     tempGenie: TempVariableGenie,
+                     symbolTable: SymbolTable
+                   ) : (String, LinkedHashMap[Tac, List[String]]) = {
+
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
+
     val (exprTemp, exprMap) = genExpr(unOpExpr.expr, tempGenie, symbolTable)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, exprMap) // generates code for the expr
+
     var op: UnOpEnumVal = null
     unOpExpr.unop match {
       case minus: IrMinusOp => {
         op = MINUS
+        symbolTable.insert(temp, new IntTypeDescriptor)
       }
       case not: IrNotOp => {
         op = NOT
+        symbolTable.insert(temp, new BoolTypeDescriptor)
       }
       case size: IrArraySizeOp => {
         op = SIZE
+        symbolTable.insert(temp, new IntTypeDescriptor)
       }
     }
 
     val tac = new TacUnOp(tempGenie.generateTacNumber(), temp, op, exprTemp)
-    tacAsmMap = combineLinkedHashMaps(tacAsmMap, exprMap) // generates code for the expr 
     tacAsmMap(tac) = asmGen(tac, symbolTable) // generates code for applying the unary op
+
     return (temp, tacAsmMap)
   }
 
-  def genIrBinOpExpr(binOpExpr: IrBinOpExpr, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
+  def genIrBinOpExpr(
+                      binOpExpr: IrBinOpExpr,
+                      tempGenie: TempVariableGenie,
+                      symbolTable: SymbolTable
+                    ) : (String, LinkedHashMap[Tac, List[String]]) = {
+
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
 
     val (leftTemp, leftMap) = genExpr(binOpExpr.leftExpr, tempGenie, symbolTable)
     val (rightTemp, rightMap) = genExpr(binOpExpr.rightExpr, tempGenie, symbolTable)
@@ -178,7 +197,7 @@ object TACGen {
       case IrMulOp() => op = MULT
       case IrDivOp() => op = DIV
       case IrAddOp() => op = ADD
-      case IrSubOp() => op = SUB 
+      case IrSubOp() => op = SUB
       case IrAndOp() => op = AND
       case IrOrOp()  => op = OR
       case IrLtOp()  => op = LT
@@ -196,7 +215,11 @@ object TACGen {
     return (temp, tacAsmMap)
   }
 
-  def genIrLocation(irLoc: IrLocation, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
+  def genIrLocation(
+                     irLoc: IrLocation,
+                     tempGenie: TempVariableGenie,
+                     symbolTable: SymbolTable
+                   ) : (String, LinkedHashMap[Tac, List[String]]) = {
     irLoc match {
       case sl: IrSingleLocation => {
         return genIrSingleLocation(sl, tempGenie, symbolTable)
@@ -207,33 +230,50 @@ object TACGen {
     }
   }
 
-  def genIrSingleLocation(singleLoc: IrSingleLocation, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
-    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+  def genIrSingleLocation(
+                           singleLoc: IrSingleLocation,
+                           tempGenie: TempVariableGenie,
+                           symbolTable: SymbolTable
+                         ) : (String, LinkedHashMap[Tac, List[String]]) = {
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
-    val tac = new TacCopy(tempGenie.generateTacNumber(), temp, singleLoc.name) //TODO This is a problem, temp should address if singleLoc.name is array
+    symbolTable.insert(temp, new IntTypeDescriptor)
+    val tac = new TacCopy(tempGenie.generateTacNumber(), temp, singleLoc.name)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap) 
   }
 
-  def genIrArrayLocation(arrayLoc: IrArrayLocation, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
+  def genIrArrayLocation(
+                          arrayLoc: IrArrayLocation,
+                          tempGenie: TempVariableGenie,
+                          symbolTable: SymbolTable
+                        ) : (String, LinkedHashMap[Tac, List[String]]) = {
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
-    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    symbolTable.insert(temp, new IntTypeDescriptor)
+
     val (index, indexMap) = genExpr(arrayLoc.index, tempGenie, symbolTable)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, indexMap)
+
     val tac = new TacArrayRight(tempGenie.generateTacNumber(), temp, arrayLoc.name, index)
     
-    tacAsmMap = combineLinkedHashMaps(tacAsmMap, indexMap)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap) 
   }
 
-  def genIrMethodCallExpr(methodExpr: IrMethodCallExpr, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) =  {
+  def genIrMethodCallExpr(
+                           methodExpr: IrMethodCallExpr,
+                           tempGenie: TempVariableGenie,
+                           symbolTable: SymbolTable
+                         ) : (String, LinkedHashMap[Tac, List[String]]) =  {
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
-    
+    symbolTable.insert(temp, new IntTypeDescriptor)
+
     var tempArgs: ListBuffer[String] = ListBuffer.empty[String]
     for (arg <- methodExpr.args) { 
       val argTemp: String = tempGenie.generateName()
+      symbolTable.insert(argTemp, new IntTypeDescriptor)
       arg match {
         case IrCallExprArg(argExpr, _) => { 
           val (argTemp, argMap) = genExpr(argExpr, tempGenie, symbolTable)
@@ -242,8 +282,6 @@ object TACGen {
         }
         case IrCallStringArg(strLit, _) => {
           val strLitLabel = tempGenie.generateLabel()
-          // TODO these need to be rearranged in the TACs to come before
-          // A method declaration
           val strLitTac = new TacStringLiteral(tempGenie.generateTacNumber(), strLitLabel, strLit.value)
           tacAsmMap(strLitTac) = asmGen(strLitTac, symbolTable)
           tempArgs += strLitLabel
@@ -256,26 +294,44 @@ object TACGen {
     return (temp, tacAsmMap)
   }
 
-  def genIrIntLiteral(intLit: IrIntLiteral, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
-    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+  def genIrIntLiteral(
+                       intLit: IrIntLiteral,
+                       tempGenie: TempVariableGenie,
+                       symbolTable: SymbolTable
+                     ) : (String, LinkedHashMap[Tac, List[String]]) = {
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
-    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, intLit.value.get.toInt) //TODO: check that this is actually safe, since it could be BigInt, etc.
+    symbolTable.insert(temp, new IntTypeDescriptor)
+    if(!intLit.value.isDefined) {
+      throw new CompilerProblem("Trying to assemble int literal copy, int literal has no value tho!", intLit.loc)
+    }
+    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, intLit.value.get.toInt)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap)
   }
 
   // Character literals evaluate to their integer ASCII value
-  def genIrCharLiteral(charLit: IrCharLiteral, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
-    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+  def genIrCharLiteral(
+                        charLit: IrCharLiteral,
+                        tempGenie: TempVariableGenie,
+                        symbolTable: SymbolTable
+                      ) : (String, LinkedHashMap[Tac, List[String]]) = {
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
     val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, charLit.value.toInt)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap)
   }
 
-  def genIrBooleanLiteral(boolLit: IrBooleanLiteral, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
-    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+  def genIrBooleanLiteral(
+                           boolLit: IrBooleanLiteral,
+                           tempGenie: TempVariableGenie,
+                           symbolTable: SymbolTable
+                         ) : (String, LinkedHashMap[Tac, List[String]]) = {
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
     val tac = new TacCopyBoolean(tempGenie.generateTacNumber(), temp, boolLit.value)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap)

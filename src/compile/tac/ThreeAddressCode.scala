@@ -8,6 +8,8 @@ object ThreeAddressCode {
  
   case class TacProgramEnter(id: Int) extends Tac{} // indicates the beginning of a program to cue allocating globals
 
+  case class TacNop(id: Int, comment: String) extends Tac{} // for nop operation, and adds a comment
+
   case class TacBinOp(id: Int, addr1: String, addr2: String, op: OpTypes.BinOpEnumVal, addr3: String) extends Tac{} // addr1 = addr2 op addr3
   case class TacUnOp(id: Int, addr1: String, op: OpTypes.UnOpEnumVal, addr2: String) extends Tac{} // addr1 = op addr2
   
