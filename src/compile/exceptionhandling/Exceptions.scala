@@ -112,6 +112,8 @@ case class IncorrectNumberOfArgsException(message: String, loc: NodeLocation) ex
 case class CompilerProblem(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 case class CompilerProblemNoLocation(message: String) extends Exception(message)
 
+case class ExpectedSubBlockCountNotActualException(message: String) extends Exception(message)
+
 case class NoMatchingStatementException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class MethodCallIsShadowedByLocalVariable(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)

@@ -3,7 +3,7 @@ package compile.tac
 import compile.Ir._
 import compile.exceptionhandling._
 import compile.symboltables.{ParametersTable, MethodsTable, SymbolTable}
-import compile.descriptors.{IntTypeDescriptor, MethodDescriptor}
+import compile.descriptors.{BoolTypeDescriptor, IntTypeDescriptor, MethodDescriptor}
 import compile.tac.OpTypes._
 import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
@@ -60,7 +60,11 @@ object TACGen {
   // == Expr gening ==
 
   //returns (temp_var, code) where temp_var is where the expression is allocated, and code is the list of TACs.
-  def genExpr(expr: IrExpression, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
+  def genExpr(
+               expr: IrExpression,
+               tempGenie: TempVariableGenie,
+               symbolTable: SymbolTable
+             ) : (String, LinkedHashMap[Tac, List[String]]) = {
     expr match {
       case singleLoc: IrSingleLocation => {
         return genIrSingleLocation(singleLoc, tempGenie, symbolTable)
@@ -89,32 +93,51 @@ object TACGen {
       case ternOpExpr: IrTernOpExpr => {
         return genIrTernOpExpr(ternOpExpr, tempGenie, symbolTable)
       }
+      case _ => {
+        return null
+      }
     }
-    null
   }
 
-  def genIrTernOpExpr(ternOpExpr: IrTernOpExpr, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : (String, LinkedHashMap[Tac, List[String]]) = {
+  def genIrTernOpExpr(
+                       ternOpExpr: IrTernOpExpr,
+                       tempGenie: TempVariableGenie,
+                       symbolTable: SymbolTable
+                     ) : (String, LinkedHashMap[Tac, List[String]]) = {
+
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+
     val elseLabel: String = tempGenie.generateLabel()
     val endLabel: String = tempGenie.generateLabel()
-    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    
+
     val (condTemp, condMap) = genExpr(ternOpExpr.cond, tempGenie, symbolTable)
-    val (leftTemp, leftMap) = genExpr(ternOpExpr.leftExpr, tempGenie, symbolTable)
-    val (rightTemp, rightMap) = genExpr(ternOpExpr.rightExpr, tempGenie, symbolTable)
-    
-    val tac = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, elseLabel)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, condMap) // generate code for evaluating the conditional expr
+
+
     val endLabelTac = new TacLabel(tempGenie.generateTacNumber(), endLabel)
     val endLabelGotoTac = new TacGoto(tempGenie.generateTacNumber(), endLabel)
     val elseLabelTac = new TacLabel(tempGenie.generateTacNumber(), elseLabel)
     
-    tacAsmMap = combineLinkedHashMaps(tacAsmMap, condMap) // generate code for evaluating the conditional expr
+
+    val tac = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, elseLabel)
     tacAsmMap(tac) = asmGen(tac, symbolTable) // ifFalse condExpr, goto elseLabel
+
+    val (leftTemp, leftMap) = genExpr(ternOpExpr.leftExpr, tempGenie, symbolTable)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, leftMap) // if block code
+    val leftCopy = TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+    tacAsmMap(leftCopy) = asmGen(leftCopy, symbolTable)
+
     tacAsmMap(endLabelGotoTac) = asmGen(endLabelGotoTac, symbolTable) // done evaluating; goto endLabel
+
     tacAsmMap(elseLabelTac) = asmGen(elseLabelTac, symbolTable) // else label
+
+    val (rightTemp, rightMap) = genExpr(ternOpExpr.rightExpr, tempGenie, symbolTable)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, rightMap) // else block code
+    val rightCopy = TacCopy(tempGenie.generateTacNumber(), temp, rightTemp)
+    tacAsmMap(rightCopy) = asmGen(rightCopy, symbolTable)
+
     tacAsmMap(endLabelTac) = asmGen(endLabelTac, symbolTable) // end label
     
     return (temp, tacAsmMap)
@@ -269,8 +292,21 @@ object TACGen {
 
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
 
+    val childrenTables = symbolTable.getChildrenSymbolTables
+    val expectedNumSubBlocks = childrenTables.size
+    var subblockCount = 0
+
     for (stmt <- block.stmts) {
-      tacAsmMap = combineLinkedHashMaps(tacAsmMap, genStmt(stmt, parentStart, parentEnd, tempGenie, symbolTable))
+      if(stmt.isInstanceOf[IrForStmt] || stmt.isInstanceOf[IrWhileStmt] || stmt.isInstanceOf[IrIfStmt]) {
+        tacAsmMap = combineLinkedHashMaps(tacAsmMap, genStmt(stmt, parentStart, parentEnd, tempGenie, childrenTables(subblockCount)))
+        subblockCount += 1
+      } else {
+        tacAsmMap = combineLinkedHashMaps(tacAsmMap, genStmt(stmt, parentStart, parentEnd, tempGenie, symbolTable))
+      }
+    }
+
+    if(expectedNumSubBlocks != subblockCount) {
+      throw new ExpectedSubBlockCountNotActualException("Expected " + expectedNumSubBlocks.toString  + " but got " + subblockCount.toString)
     }
 
     return tacAsmMap
@@ -481,76 +517,130 @@ object TACGen {
     return tacAsmMap
   }
 
-  def genIrForStmt(stmt: IrForStmt, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : LinkedHashMap[Tac, List[String]] = {
+  def genIrForStmt(
+                    stmt: IrForStmt,
+                    tempGenie: TempVariableGenie,
+                    symbolTable: SymbolTable
+                  ) : LinkedHashMap[Tac, List[String]] = {
+
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val startLabel: String = tempGenie.generateLabel()
     val endLabel: String = tempGenie.generateLabel()
+
     val (initValTemp, initValTac) = genExpr(stmt.initVal, tempGenie, symbolTable)
     val (endValTemp, endValTac) = genExpr(stmt.endVal, tempGenie, symbolTable)
-    val lessThan: String = tempGenie.generateName() 
-
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, initValTac)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, endValTac)
-    buf += new TacBinOp(tempGenie.generateTacNumber(), lessThan, initValTemp, LT, endValTemp) // lessThan is boolean representing if index < endVal 
-    buf += new TacLabel(tempGenie.generateTacNumber(), startLabel) // beginning of the for loop
-    buf += new TacIfFalse(tempGenie.generateTacNumber(), lessThan, endLabel) //if index >= endVal, exit for loop 
+
+    val forBeginTAC = new TacLabel(tempGenie.generateTacNumber(), startLabel) // beginning of the for loop
+    tacAsmMap(forBeginTAC) = asmGen(forBeginTAC, symbolTable)
+
+    // lessThan is boolean representing if index < endVal
+    val lessThan: String = tempGenie.generateName()
+    symbolTable.insert(lessThan, new BoolTypeDescriptor())
+    val forCondCmpTAC = new TacBinOp(tempGenie.generateTacNumber(), lessThan, initValTemp, LT, endValTemp)
+    tacAsmMap(forCondCmpTAC) = asmGen(forCondCmpTAC, symbolTable)
+
+    val forIfFalseTAC = new TacIfFalse(tempGenie.generateTacNumber(), lessThan, endLabel) //if index >= endVal, exit for loop
+    tacAsmMap(forIfFalseTAC) = asmGen(forIfFalseTAC, symbolTable)
 
     if (stmt.inc.isDefined) { 
       val (incTemp, incTac) = genExpr(stmt.inc.get, tempGenie, symbolTable)
       tacAsmMap = combineLinkedHashMaps(tacAsmMap, incTac)
-      buf += new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by inc
+
+      val forIncTAC = new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by inc
+      tacAsmMap(forIncTAC) = asmGen(forIncTAC, symbolTable)
+
     } else {
       val incTemp : String = tempGenie.generateName()
-      buf += new TacCopyInt(tempGenie.generateTacNumber(), incTemp, 1)
-      buf += new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by 1
+      symbolTable.insert(incTemp, new IntTypeDescriptor())
+      val loadIncTAC = new TacCopyInt(tempGenie.generateTacNumber(), incTemp, 1)
+      tacAsmMap(loadIncTAC) = asmGen(loadIncTAC, symbolTable)
+      val incOpTAC = new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by 1
     }
+
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.bodyBlock, startLabel, endLabel, tempGenie, symbolTable))
-    buf += new TacGoto(tempGenie.generateTacNumber(), startLabel) // continue looping
-    buf += new TacLabel(tempGenie.generateTacNumber(), endLabel)
+
+    val loopTAC = new TacGoto(tempGenie.generateTacNumber(), startLabel) // continue looping
+    tacAsmMap(loopTAC) = asmGen(loopTAC, symbolTable)
+
+    val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    tacAsmMap(endLabelTAC) = asmGen(endLabelTAC, symbolTable)
     
     return tacAsmMap
   }
 
-  def genIrWhileStmt(stmt: IrWhileStmt, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : LinkedHashMap[Tac, List[String]] = {
+  def genIrWhileStmt(
+                      stmt: IrWhileStmt,
+                      tempGenie: TempVariableGenie,
+                      symbolTable: SymbolTable
+                    ) : LinkedHashMap[Tac, List[String]] = {
+
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
-    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+
     val startLabel: String = tempGenie.generateLabel()
-    val endLabel: String = tempGenie.generateLabel() 
+    val endLabel: String = tempGenie.generateLabel()
+
+    val startLabelTAC = new TacLabel(tempGenie.generateTacNumber(), startLabel)
+    tacAsmMap(startLabelTAC) = asmGen(startLabelTAC, symbolTable)
+
     val (condTemp, condTac) = genExpr(stmt.boolExpr, tempGenie, symbolTable)
-     
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, condTac)
-    buf += new TacLabel(tempGenie.generateTacNumber(), startLabel) 
-    buf += new TacIfFalse(tempGenie.generateTacNumber(), condTemp, endLabel) 
-    tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.bodyBlock, startLabel, endLabel, tempGenie, symbolTable)) 
-    buf += new TacGoto(tempGenie.generateTacNumber(), startLabel)
-    buf += new TacLabel(tempGenie.generateTacNumber(), endLabel)
+
+    val jmpIfFalseTAC = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, endLabel)
+    tacAsmMap(jmpIfFalseTAC) = asmGen(jmpIfFalseTAC, symbolTable)
+
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.bodyBlock, startLabel, endLabel, tempGenie, symbolTable))
+
+    val loopBackTAC = new TacGoto(tempGenie.generateTacNumber(), startLabel)
+    tacAsmMap(loopBackTAC) = asmGen(loopBackTAC, symbolTable)
+
+    val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    tacAsmMap(endLabelTAC) = asmGen(endLabelTAC, symbolTable)
     
     return tacAsmMap
   }
 
-  def genIrReturnStmt(stmt: IrReturnStmt, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : LinkedHashMap[Tac, List[String]] = {
+  def genIrReturnStmt(
+                       stmt: IrReturnStmt,
+                       tempGenie: TempVariableGenie,
+                       symbolTable: SymbolTable
+                     ) : LinkedHashMap[Tac, List[String]] = {
+
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     if (stmt.value.isDefined) {
       val (retTemp, retTac) = genExpr(stmt.value.get, tempGenie, symbolTable)
       tacAsmMap = combineLinkedHashMaps(tacAsmMap, retTac)
       val returnValueTac = new TacReturnValue(tempGenie.generateTacNumber(), retTemp)
       tacAsmMap(returnValueTac) = asmGen(returnValueTac, symbolTable)
-    }    
+    }
+
     val returnTac = new TacReturn(tempGenie.generateTacNumber())
     tacAsmMap(returnTac) = asmGen(returnTac, symbolTable)
     return tacAsmMap
   }
 
-  def genIrBreakStmt(stmt: IrBreakStmt, parentEnd: String, tempGenie: TempVariableGenie, symbolTable: SymbolTable) : LinkedHashMap[Tac, List[String]] = {
-    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+  def genIrBreakStmt(
+                      stmt: IrBreakStmt,
+                      parentEnd: String,
+                      tempGenie: TempVariableGenie,
+                      symbolTable: SymbolTable
+                    ) : LinkedHashMap[Tac, List[String]] = {
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val gotoTac = new TacGoto(tempGenie.generateTacNumber(), parentEnd)
     tacAsmMap(gotoTac) = asmGen(gotoTac, symbolTable)
     return tacAsmMap
   }
 
-  def genIrContinueStmt(stmt: IrContinueStmt, parentStart: String, tempGenie: TempVariableGenie, symbolTable: SymbolTable): LinkedHashMap[Tac, List[String]] = {
-    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+  def genIrContinueStmt(
+                         stmt: IrContinueStmt,
+                         parentStart: String,
+                         tempGenie: TempVariableGenie,
+                         symbolTable: SymbolTable
+                       ): LinkedHashMap[Tac, List[String]] = {
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val gotoTac = new TacGoto(tempGenie.generateTacNumber(), parentStart)
     tacAsmMap(gotoTac) = asmGen(gotoTac, symbolTable)
     return tacAsmMap
