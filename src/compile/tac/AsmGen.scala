@@ -527,7 +527,7 @@ object AsmGen{
     val (addr1, method, args) = (t.addr1, t.method, t.args)
     val dest = addrToAsm(addr1, table)
 
-    instrs = methodCallStmtToAsm(new TacMethodCallStmt(method, args), table)
+    instrs = methodCallStmtToAsm(new TacMethodCallStmt(-1, method, args), table) //TODO: check that this -1 doesn't break anything
     instrs :+= "\t%s\t%s, %s\n".format("movq", "%rax", dest)
 
     return instrs
