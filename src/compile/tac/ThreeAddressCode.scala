@@ -1,6 +1,5 @@
 package compile.tac
 
-import compile.Ir._
 import compile.descriptors.{MethodDescriptor}
 
 object ThreeAddressCode {
@@ -29,7 +28,9 @@ object ThreeAddressCode {
   case class TacMethodCallExpr(id: Int, addr1: String, method: String, args: List[String]) extends Tac{} // x = foo(args*)
   case class TacMethodCallStmt(id: Int, method: String, args: List[String]) extends Tac{} // foo(args*) (statement)
 
+  case class TacStringLiteralStart(id: Int) extends Tac{}
   case class TacStringLiteral(id: Int, label: String, value: String) extends Tac{} // printf("asdf") --> .L1: .string "asdf"
+  case class TacStringLiteralEnd(id: Int) extends Tac{}
 
   case class TacReturnValue(id: Int, addr1: String) extends Tac{} // addr1 is the temp variable where the return value is stored
   case class TacReturn(id: Int) extends Tac{} // indicator to leave, ret the method call

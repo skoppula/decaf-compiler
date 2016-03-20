@@ -62,8 +62,14 @@ object AsmGen{
       case t:TacMethodCallStmt => { // TODO: Done but untested
         return methodCallStmtToAsm(t, table)
       }
+      case t:TacStringLiteralStart => {
+        return List("\t.section\t.rodata")
+      }
       case t:TacStringLiteral => { // TODO: Done but untested
         return stringLiteralToAsm(t, table)
+      }
+      case t:TacStringLiteralEnd => {
+        return List("\t.text")
       }
       case t:TacReturnValue => { // TODO: Done but untested
         return returnValueToAsm(t, table)
@@ -76,6 +82,13 @@ object AsmGen{
       }
       case t:TacArrayRight => { // TODO: Done but untested
         return arrayRightToAsm(t, table)
+      }
+      case t:TacNop => {
+        if(t.comment.isEmpty) {
+          return List("\n")
+        } else {
+          return List("; " + t.comment + "\n")
+        }
       }
     }
   }

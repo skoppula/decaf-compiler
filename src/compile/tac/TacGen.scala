@@ -17,11 +17,8 @@ object TACGen {
            tempGenie: TempVariableGenie,
            methodsTable : MethodsTable
          ) : LinkedHashMap[Tac, List[String]] = {
-    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
-    val asm: List[String] = List.empty[String]
 
-    val firstTac = new TacProgramEnter(tempGenie.generateTacNumber())
-    tacAsmMap(firstTac) = asmGen(firstTac, methodsTable.getGlobalFieldTable)
+    var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
 
     for (method <- program.methodDecls) {
       val methodDesc = methodsTable.lookupID(method.name)
@@ -29,9 +26,24 @@ object TACGen {
       tacAsmMap = combineLinkedHashMaps(tacAsmMap, methodAsm)
     }
 
-    // TODO these need to be rearranged in the Strings TACs to come before
-    // Add NOPs
-    return tacAsmMap
+    // Rearrange string literals TACs to the top of the TAC list; form a .text section
+    val stringLitLHM = LinkedHashMap.empty[Tac, List[String]]
+
+    val firstTac = new TacProgramEnter(tempGenie.generateTacNumber())
+    stringLitLHM(firstTac) = asmGen(firstTac, methodsTable.getGlobalFieldTable)
+
+    val strStart = new TacStringLiteralStart(tempGenie.generateTacNumber())
+    stringLitLHM(strStart) = asmGen(strStart, methodsTable.getGlobalFieldTable)
+
+    val tacs = tacAsmMap.keySet
+    for(tac <- tacs) {
+      if(tac.isInstanceOf[TacStringLiteral]) {
+        stringLitLHM(tac) = tacAsmMap(tac)
+        tacAsmMap.remove(tac)
+      }
+    }
+
+    return combineLinkedHashMaps(stringLitLHM, tacAsmMap)
   }
 
   def genMethodDecl(
@@ -42,6 +54,9 @@ object TACGen {
 
     val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val methodParamTable = methodDesc.getParamTable
+
+    val nopTac = new TacNop(tempGenie.generateTacNumber(), "")
+    tacAsmMap(nopTac) = asmGen(nopTac, methodParamTable)
 
     // This is required for main; it exposes the label to the linker, which is needed by gcc to link main to the standard C runtime library
     if (methodDecl.name == "main") {
