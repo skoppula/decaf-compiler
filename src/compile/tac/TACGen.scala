@@ -124,17 +124,23 @@ object TACGen {
     val endLabel: String = tempGenie.generateLabel()
     var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     
-    val (condTemp, condCode) = genExpr(ternOpExpr.cond, tempGenie, symbolTable)
-    val (leftTemp, leftCode) = genExpr(ternOpExpr.leftExpr, tempGenie, symbolTable)
-    val (rightTemp, rightCode) = genExpr(ternOpExpr.rightExpr, tempGenie, symbolTable)
+    val (condTemp, condMap) = genExpr(ternOpExpr.cond, tempGenie, symbolTable)
+    val (leftTemp, leftMap) = genExpr(ternOpExpr.leftExpr, tempGenie, symbolTable)
+    val (rightTemp, rightMap) = genExpr(ternOpExpr.rightExpr, tempGenie, symbolTable)
     
-    buf ++= condCode
-    buf += new TacIfFalse(condTemp, elseLabel)
-    buf ++= leftCode
-    buf += new TacGoto(endLabel)
-    buf += new TacLabel(elseLabel)
-    buf ++= rightCode
-    buf += new TacLabel(endLabel)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, condMap)
+    val tac = new TacIfFalse(condTemp, elseLabel)
+    tacAsmMap(tac) = asmGen(tac, symbolTable)
+
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, leftMap)
+    val endLabelTac = new TacLabel(endLabel)
+    val endLabelGotoTac = new TacGoto(endLabel)
+    val elseLabelTac = new TacLabel(elseLabel)
+       
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, endLabelGotoTac)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, elseLabelTac)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, rightMap)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, endLabelTac)
     
     return (temp, tacAsmMap)
   }

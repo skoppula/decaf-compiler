@@ -8,6 +8,8 @@ class TempVariableGenie {
   val labelNames = mutable.Set.empty[String]
   var varCount = 0
   var labelCount = 0
+  var tacCount = 0 
+
   def generateName() : String  = {
     varCount = varCount + 1
     (".T" + varCount)
@@ -16,6 +18,12 @@ class TempVariableGenie {
     labelCount = labelCount + 1
     (".L" + labelCount) // shouldn't actually need the #, but w/e 
   }
+ 
+  def generateTacNumber() : Int = {
+    tacCount = tacCount + 1
+    return tacCount
+  }
+
   def isVarName(name : String) : Boolean = {
     varNames contains name
   }
