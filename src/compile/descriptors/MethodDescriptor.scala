@@ -16,7 +16,7 @@ class MethodDescriptor(
     "Method(" + methodName + "," + returnType.toString + ")"
   }
 
-  def getParamMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]  = parameterTable.getParametersTable
+  def getParamMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]  = parameterTable.getParamMap
 
   def getParamTable : ParametersTable  = this.parameterTable
 

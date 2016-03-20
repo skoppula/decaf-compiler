@@ -54,7 +54,7 @@ class ParametersTable(
     }
   }
 
-  def getParametersTable : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor] = {
+  def getParamMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor] = {
     parametersMap
   }
 

@@ -36,7 +36,7 @@ object SymbolTableUtil {
   def parameterTableToString(table : ParametersTable) : ListBuffer[String] = {
     val outStrings : ListBuffer[String] = ListBuffer.empty[String]
     outStrings += "Parameters:"
-    for((name, descriptor) <- table.getParametersTable) {
+    for((name, descriptor) <- table.getParamMap) {
       outStrings += (name + ':' + typeDescriptorToString(descriptor))
     }
 

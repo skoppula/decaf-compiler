@@ -1,9 +1,10 @@
 package compile.tac
 
 import compile.Ir._
+import compile.exceptionhandling.{CompilerProblemNoLocation, CompilerProblem}
 import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
-import compile.symboltables.{GlobalFieldTable, SymbolTable}
+import compile.symboltables.{ParametersTable, GlobalFieldTable, SymbolTable}
 import scala.collection.mutable
 import compile.descriptors._
 
@@ -492,19 +493,22 @@ object AsmGen{
   }
 
 
-  def methodEnterToAsm(t: TacMethodEnter, table: SymbolTable) : List[String] = { // TODO
-    // Allocate space on the stack
-    // Copy each param into its corresponding temp var
-    // methodesc.getTotalByteSize
+  def methodEnterToAsm(t: TacMethodEnter, table: SymbolTable) : List[String] = {
+
+    if(!table.isInstanceOf[ParametersTable]) {
+      throw new CompilerProblemNoLocation("Expected parameter table, but only got symbol table (while creating method enter ASM)")
+    }
+
+    var methodParamTable = table.asInstanceOf[ParametersTable]
     var instrs : List[String] = List()
     val methodDesc = t.methodDesc
     val reg = "%r10"
 
+    // Allocate space on the stack
     instrs :+= "\tenter\t$(%d), $0\n".format(methodDesc.getTotalByteSize)
 
     // Put every passed argument into a corresponding local var on stack
-    // TODO: Placeholder since we have no current way to only get params
-    val params : List[String] = List("a", "b", "c")
+    val params : List[String] = methodParamTable.getParamMap.keys.toList
     params.zipWithIndex.reverse foreach {
       case (addr, index) => {
         val src = argNumToAsm(index+1)
