@@ -1,0 +1,15 @@
+callout printf;
+void main ( ) {
+  int i, sum;
+  int j;
+  sum = 0;
+  j = 0;
+  while ( ( j < 10 ) ) {
+    sum += j;
+    j += 1;
+  }  
+  if ( sum != 45 ) {
+    printf ( "ERROR: while loop is bad (1)\n" );
+  }
+  printf ( "basic while OK if no previous output\n" );
+}

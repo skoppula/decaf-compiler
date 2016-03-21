@@ -1,0 +1,11 @@
+callout printf;
+void main ( ) {
+  if ( 1 > 2 ) {
+    printf ( "ERROR: true branch is bad (2)\n" );
+  }
+  else {
+    // don't do anything here
+  }
+  printf ( "control flow OK if no previous output\n" );
+}
+

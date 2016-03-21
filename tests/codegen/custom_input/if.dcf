@@ -1,0 +1,12 @@
+callout printf;
+void main ( ) {
+  int i, sum;
+  int j;
+  sum = 0;
+  
+  if ( sum != 0 ) {
+    printf ( "ERROR: for loop is bad (1)\n" );
+  }
+  printf ( "if OK if no previous output\n" );
+}
+
