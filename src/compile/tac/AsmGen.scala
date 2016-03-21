@@ -77,6 +77,9 @@ object AsmGen{
       case t:TacReturn => { // TODO: Done but untested
         return returnToAsm(t, table)
       }
+      case t:TacSystemExit => { // TODO: Done but untested
+        return systemExitToAsm(t, table)
+      }
       case t:TacArrayLeft => { // TODO: Done but untested
         return arrayLeftToAsm(t, table)
       }
@@ -647,6 +650,16 @@ object AsmGen{
 
     instrs :+= "\tleave\n"
     instrs :+= "\tret\n"
+
+    return instrs
+  }
+
+  def systemExitToAsm(t: TacSystemExit, table:SymbolTable) : List[String] = {
+    var instrs : List[String] = List()
+    val signal = t.signal;
+
+    instrs :+= "\t%s\t$%s, %s\n".format("movq", signal, "%rdi")
+    instrs :+= "\t%s\t$%s\n".format("call", "exit")
 
     return instrs
   }
