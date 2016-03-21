@@ -1,0 +1,10 @@
+callout printf;
+
+void foo(){
+  printf ( "Should print" );
+}
+
+void main ( ) {
+  foo()
+}
+

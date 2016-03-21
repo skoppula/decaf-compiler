@@ -1,0 +1,12 @@
+callout printf;
+void main ( ) {
+  boolean one = true;
+  boolean two = true;
+  
+  if(one && two){
+    printf ( "Should print" );
+  }
+  else{
+    printf ( "Should not print" );
+  }
+}

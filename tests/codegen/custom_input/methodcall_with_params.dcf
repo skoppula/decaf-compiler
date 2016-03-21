@@ -1,0 +1,18 @@
+callout printf;
+
+void foo(paramOne,paramTwo){
+  
+  int a = paramOne + paramTwo
+
+  if(a == 5){
+    printf ( "Should print" );
+  }
+}
+
+void main ( ) {
+  int two = 2;
+  int three = 3;
+
+  foo(two,three)
+}
+

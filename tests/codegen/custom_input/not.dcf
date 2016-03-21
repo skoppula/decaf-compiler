@@ -1,0 +1,13 @@
+callout printf;
+void main ( ) {
+  boolean bool = true;
+  bool = !bool;
+ 
+  if(bool){
+    printf ( "Should not print" );
+  }
+  
+  if(!bool){
+    printf ( "Should print" );
+  }
+}

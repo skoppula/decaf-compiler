@@ -1,0 +1,7 @@
+callout printf;
+void main ( ) {
+  int quot;
+  quot = 8/2;
+  
+  printf ( "Should equal 4" );
+}

@@ -1,0 +1,18 @@
+callout printf;
+void main ( ) {
+  int five = 5;
+  int four = 4;
+  int three = 3;
+  
+  if(four <= four){
+    printf ( "Should print" );
+  }
+
+  if(three <= four){
+    printf ( "Should also print" );
+  }
+  
+  if(five <= four){
+    printf ( "Should not print" );
+  }
+}

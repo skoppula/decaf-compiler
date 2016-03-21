@@ -1,0 +1,15 @@
+callout printf;
+void main ( ) {
+  int five = 5;
+  int four = 4;
+ 
+  five += four;
+ 
+  if(five == 9){
+    printf ( "Should print" );
+  }
+  
+  if(four != 9){
+    printf ( "Should not print" );
+  }
+}
