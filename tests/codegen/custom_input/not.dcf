@@ -1,6 +1,7 @@
 callout printf;
 void main ( ) {
-  boolean bool = true;
+  boolean bool;
+  bool = true;
   bool = !bool;
  
   if(bool){
