@@ -52,9 +52,12 @@ object Compiler {
 
   def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
     val tempGenie : TempVariableGenie = new TempVariableGenie
-    // println(gen(program, tempGenie).mkString("\n"))
-    // SymbolTableUtil.printSymbolTableStructure(methodsTable)
-
+    val tacAsmMap = gen(program, tempGenie, methodsTable)
+    val asm = tacAsmMap.values
+    for (list <- asm) {
+      println(list mkString "\n")
+    }
+    SymbolTableUtil.printSymbolTableStructure(methodsTable)
   }
 
   def scan(fileName: String) {
