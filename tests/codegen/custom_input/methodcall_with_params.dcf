@@ -1,9 +1,8 @@
 callout printf;
 
-void foo(paramOne,paramTwo){
-  
+void foo (int paramOne,int paramTwo) {
   int a;
-  a = paramOne + paramTwo
+  a = paramOne + paramTwo;
 
   if(a == 5){
     printf ( "Should print\n" );
@@ -16,6 +15,6 @@ void main ( ) {
   two = 2;
   three = 3;
 
-  foo(two,three)
+  foo(two , three);
 }
 
