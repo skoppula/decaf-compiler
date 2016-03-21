@@ -43,6 +43,9 @@ object TACGen {
       }
     }
 
+    val strEnd = new TacStringLiteralEnd(tempGenie.generateTacNumber())
+    stringLitLHM(strEnd) = asmGen(strEnd, methodsTable.getGlobalFieldTable)
+
     return combineLinkedHashMaps(stringLitLHM, tacAsmMap)
   }
 
