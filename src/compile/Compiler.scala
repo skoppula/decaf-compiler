@@ -55,16 +55,18 @@ object Compiler {
     val tacAsmMap = gen(program, tempGenie, methodsTable)
     val asm = tacAsmMap.values
     for (list <- asm) {
-      println(list mkString "\n")
+      outFile.println(list mkString "\n")
     }
-    SymbolTableUtil.printSymbolTableStructure(methodsTable)
+    if(CLI.debug && CLI.target == CLI.Action.ASSEMBLY) {
+      SymbolTableUtil.printSymbolTableStructure(methodsTable)
+    }
   }
 
   def scan(fileName: String) {
     try {
       val inputStream: FileInputStream = new java.io.FileInputStream(fileName)
       val scanner = new DecafScanner(new DataInputStream(inputStream))
-      scanner.setTrace(CLI.debug)
+      scanner.setTrace(CLI.debug && CLI.target == CLI.Action.SCAN)
       var done = false
       while (!done) {
         try {
@@ -102,7 +104,7 @@ object Compiler {
       val scanner = new DecafScanner(new DataInputStream(inputStream))
       val parser = new DecafParser(scanner)
 
-      parser.setTrace(CLI.debug)
+      parser.setTrace(CLI.debug && CLI.target == CLI.Action.PARSE)
       parser.setASTNodeClass("compile.TokenAST")
       parser.program()
       val t = parser.getAST().asInstanceOf[TokenAST]
@@ -110,7 +112,7 @@ object Compiler {
       if (parser.getError) {
         print("[ERROR] Parse failed\n")
         return null
-      } else if (CLI.debug){
+      } else if (CLI.debug && CLI.target == CLI.Action.PARSE){
         print(t.toStringList)
       }
       return t
@@ -141,7 +143,7 @@ object Compiler {
 
     // Step 1
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
-    if(CLI.irdebug) {
+    if(CLI.irdebug && CLI.target == CLI.Action.INTER) {
       println("\nIR decomposition:")
       println(ir.treeString)
       println()
@@ -189,8 +191,10 @@ object Compiler {
     if(mainMethodDescriptor.getParamMap.nonEmpty) {
       exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
     }
-
-    SymbolTableUtil.printSymbolTableStructure(methodsTable)
+    
+    if(CLI.irdebug && CLI.target == CLI.Action.INTER) {
+      SymbolTableUtil.printSymbolTableStructure(methodsTable)
+    }
     return (ir, methodsTable)
   }
   

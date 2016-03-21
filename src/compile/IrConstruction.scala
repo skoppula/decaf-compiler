@@ -47,7 +47,7 @@ object IrConstruction {
     // Process callout node
     val calloutId = ast.getFirstChild().getText()
 
-    if(CLI.irdebug) {
+    if(CLI.irdebug && CLI.target == CLI.Action.INTER) {
       println("Callout Declaration: " + calloutId)
     }
 
@@ -100,7 +100,7 @@ object IrConstruction {
       fieldArgNode = fieldArgNode.getNextSibling()
     }
 
-    if(CLI.irdebug) {
+    if(CLI.irdebug && CLI.target == CLI.Action.INTER) {
       println("Field Declaration: type: " + fieldType + " args: " + fieldArgs)
     }
 
