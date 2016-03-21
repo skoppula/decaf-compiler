@@ -182,10 +182,10 @@ object AsmGen{
         var asmCommands = new mutable.ListBuffer[String]()
 
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%rax")
-        asmCommands += "\t%s\n".format("cwd")
+        asmCommands += "\t%s\n".format("cqo")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
         asmCommands += "\t%s\t%s\n".format("idivq","%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%rax", addr1asm)
 
         asmCommands.toList
       }

@@ -4,4 +4,8 @@ void main ( ) {
   quot = 8/2;
   
   printf ( "Should equal 4, is %ld\n", quot );
+
+  quot = -4/2;
+
+  printf ( "Should equal -2, is %ld\n", quot);
 }
