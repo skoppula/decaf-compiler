@@ -381,7 +381,10 @@ object TacGen {
     var subblockCount = 0
 
     for (stmt <- block.stmts) {
-      if(stmt.isInstanceOf[IrForStmt] || stmt.isInstanceOf[IrWhileStmt] || stmt.isInstanceOf[IrIfStmt]) {
+      if(stmt.isInstanceOf[IrIfStmt] && stmt.asInstanceOf[IrIfStmt].elseBlock.isDefined) {
+        tacAsmMap = combineLinkedHashMaps(tacAsmMap, genStmt(stmt, parentStart, parentEnd, tempGenie, childrenTables(subblockCount), childrenTables(subblockCount+1)))
+        subblockCount += 2
+      } else if(stmt.isInstanceOf[IrForStmt] || stmt.isInstanceOf[IrWhileStmt] || stmt.isInstanceOf[IrIfStmt]) {
         tacAsmMap = combineLinkedHashMaps(tacAsmMap, genStmt(stmt, parentStart, parentEnd, tempGenie, childrenTables(subblockCount)))
         subblockCount += 1
       } else {
@@ -403,7 +406,8 @@ object TacGen {
                parentStart: String,
                parentEnd: String,
                tempGenie: TempVariableGenie,
-               symbolTable: SymbolTable
+               symbolTable: SymbolTable,
+               symbolTable2: SymbolTable = null
              ) : LinkedHashMap[Tac, List[String]] = {
     stmt match {
       case s: IrAssignStmt => {
@@ -413,7 +417,11 @@ object TacGen {
         return genIrMethodCallStmt(s, tempGenie, symbolTable)
       }
       case s: IrIfStmt => {
-        return genIrIfStmt(s, parentStart, parentEnd, tempGenie, symbolTable)
+        if(s.elseBlock.isDefined) {
+          return genIrIfStmt(s, parentStart, parentEnd, tempGenie, symbolTable, symbolTable2)
+        } else {
+          return genIrIfStmt(s, parentStart, parentEnd, tempGenie, symbolTable)
+        }
       }
       case s: IrForStmt => {
         return genIrForStmt(s, tempGenie, symbolTable)
@@ -565,7 +573,8 @@ object TacGen {
                    parentStart: String,
                    parentEnd: String,
                    tempGenie: TempVariableGenie,
-                   symbolTable: SymbolTable
+                   symbolTable: SymbolTable,
+                   symbolTable2: SymbolTable = null
                  ) : LinkedHashMap[Tac, List[String]] = {
 
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
@@ -585,7 +594,7 @@ object TacGen {
       val elseLabelTac = new TacLabel(tempGenie.generateTacNumber(), elseLabel)
       tacAsmMap(elseLabelTac) = asmGen(elseLabelTac, symbolTable)
 
-      tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.elseBlock.get, parentStart, parentEnd, tempGenie, symbolTable))
+      tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.elseBlock.get, parentStart, parentEnd, tempGenie, symbolTable2))
 
       val endLabelTac = new TacLabel(tempGenie.generateTacNumber(), endLabel)
       tacAsmMap(endLabelTac) = asmGen(endLabelTac, symbolTable)
