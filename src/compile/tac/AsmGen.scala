@@ -229,7 +229,10 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovl", "$1", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("cmovlq", "%r10", "%r11")
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
       }
@@ -245,7 +248,10 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovle", "$1", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("cmovleq", "%r10", "%r11")
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
       }
@@ -261,7 +267,10 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovg", "$1", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("cmovgq", "%r10", "%r11")
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
       }
@@ -277,7 +286,10 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovge", "$1", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("cmovgeq", "%r10", "%r11")
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
       }
@@ -294,7 +306,10 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmove", "$1", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("cmoveq", "%r10", "%r11")
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
       }
@@ -310,7 +325,10 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", addr1asm)
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovne", "$1", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("cmovneq", "%r10", "%r11")
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
       }
@@ -386,7 +404,7 @@ object AsmGen{
     val (addr1, label) = (t.addr1, t.label)
     val dest = addrToAsm(addr1, table)
 
-    instrs :+= "\t%s\t%s, %s\n".format("cmp", "$1", dest)
+    instrs :+= "\t%s\t%s, %s\n".format("cmpq", "$1", dest)
     instrs :+= "\t%s\t%s\n".format("je", label)
 
     return instrs
@@ -402,7 +420,7 @@ object AsmGen{
     val (addr1, label) = (t.addr1, t.label)
     val dest = addrToAsm(addr1, table)
 
-    instrs :+= "\t%s\t%s, %s\n".format("cmp", "$1", dest)
+    instrs :+= "\t%s\t%s, %s\n".format("cmpq", "$1", dest)
     instrs :+= "\t%s\t%s\n".format("jne", label)
 
     return instrs
