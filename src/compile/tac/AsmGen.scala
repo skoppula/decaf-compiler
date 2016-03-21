@@ -179,12 +179,15 @@ object AsmGen{
         var asmCommands = new mutable.ListBuffer[String]()
 
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%rax")
-        asmCommands += "\t%s\t%s, %s\n".format("cwd")
+        asmCommands += "\t%s\n".format("cwd")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("idivq","%r11")
+        asmCommands += "\t%s\t%s\n".format("idivq","%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
 
         asmCommands.toList
+      }
+      case MOD => {
+        // TODO
       }
       // Match cond ops 
       case AND => {
@@ -536,6 +539,7 @@ object AsmGen{
     val reg = "%r10"
 
     // Allocate space on the stack
+    // TODO This currently keeps returning -8 for the size
     instrs :+= "\tenter\t$(%d), $0\n".format(methodDesc.getTotalByteSize)
 
     // Put every passed argument into a corresponding local var on stack

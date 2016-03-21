@@ -211,6 +211,7 @@ object TACGen {
     binOpExpr.binOp match {
       case IrMulOp() => op = MULT
       case IrDivOp() => op = DIV
+      case IrModOp() => op = MOD
       case IrAddOp() => op = ADD
       case IrSubOp() => op = SUB
       case IrAndOp() => op = AND

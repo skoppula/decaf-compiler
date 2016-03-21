@@ -9,6 +9,7 @@ object OpTypes {
   case object SUB extends BinOpEnumVal
   case object MULT extends BinOpEnumVal
   case object DIV extends BinOpEnumVal
+  case object MOD extends BinOpEnumVal
   
   case object AND extends BinOpEnumVal // x = y && z, etc.
   case object OR extends BinOpEnumVal
