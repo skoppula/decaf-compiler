@@ -63,13 +63,13 @@ object AsmGen{
         return methodCallStmtToAsm(t, table)
       }
       case t:TacStringLiteralStart => {
-        return List("\t.section\t.rodata")
+        return List("\t.section\t.rodata\n")
       }
       case t:TacStringLiteral => { // TODO: Done but untested
         return stringLiteralToAsm(t, table)
       }
       case t:TacStringLiteralEnd => {
-        return List("\t.text")
+        return List("\t.text\n")
       }
       case t:TacReturnValue => { // TODO: Done but untested
         return returnValueToAsm(t, table)
