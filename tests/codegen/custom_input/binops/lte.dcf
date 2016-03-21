@@ -1,9 +1,12 @@
 callout printf;
 void main ( ) {
-  int five = 5;
-  int four = 4;
-  int three = 3;
-  
+  int five;
+  int four;
+  int three;
+  five = 5;
+  four = 4;
+  three = 3;
+
   if(four <= four){
     printf ( "Should print" );
   }

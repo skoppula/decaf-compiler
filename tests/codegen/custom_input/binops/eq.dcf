@@ -1,6 +1,6 @@
 callout printf;
 void main ( ) {
-  int five
+  int five;
   int four;
   five = 5;
   four = 4;

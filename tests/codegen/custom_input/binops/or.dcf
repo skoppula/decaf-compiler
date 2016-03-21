@@ -1,8 +1,11 @@
 callout printf;
 void main ( ) {
-  boolean one = true;
-  boolean two = false;
+  boolean one;
+  boolean two;
   
+  one = true;
+  two = false;
+
   if(one || two){
     printf ( "Should print" );
   }
