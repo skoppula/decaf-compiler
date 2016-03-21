@@ -234,7 +234,7 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovlq", "%r10", "%r11")
@@ -253,7 +253,7 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovleq", "%r10", "%r11")
@@ -272,7 +272,7 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovgq", "%r10", "%r11")
@@ -291,7 +291,7 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovgeq", "%r10", "%r11")
