@@ -18,8 +18,8 @@ class ParametersTable(
   this.methodParameterTable = this
 
   for((name, descriptor) <- parametersMap) {
-    methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize - descriptor.sizeBytes
-    descriptor.offsetBytes = methodParameterTable.currTotalByteSize
+    methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize + descriptor.sizeBytes
+    descriptor.offsetBytes = -methodParameterTable.currTotalByteSize
   }
 
   override def insert(id : String, descriptor : BaseDescriptor): Unit = {
@@ -31,8 +31,8 @@ class ParametersTable(
       throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists")
     } else {
       symbolTableMap(id) = descriptor
-      methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize - descriptor.sizeBytes
-      descriptor.offsetBytes = methodParameterTable.currTotalByteSize
+      methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize + descriptor.sizeBytes
+      descriptor.offsetBytes = -methodParameterTable.currTotalByteSize
     }
   }
 

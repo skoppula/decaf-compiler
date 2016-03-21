@@ -36,8 +36,8 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
       throw new IdentifierAlreadyExistsException("Identifier " + id + " already exists")
     } else {
       symbolTableMap(id) = descriptor
-      methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize - descriptor.sizeBytes
-      descriptor.offsetBytes = methodParameterTable.currTotalByteSize
+      methodParameterTable.currTotalByteSize = methodParameterTable.currTotalByteSize + descriptor.sizeBytes
+      descriptor.offsetBytes = -methodParameterTable.currTotalByteSize
     }
   }
 

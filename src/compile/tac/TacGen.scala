@@ -43,6 +43,9 @@ object TACGen {
       }
     }
 
+    val strEnd = new TacStringLiteralEnd(tempGenie.generateTacNumber())
+    stringLitLHM(strEnd) = asmGen(strEnd, methodsTable.getGlobalFieldTable)
+
     return combineLinkedHashMaps(stringLitLHM, tacAsmMap)
   }
 
@@ -67,10 +70,11 @@ object TACGen {
     val methodLabelTac = new TacLabel(tempGenie.generateTacNumber(), methodDecl.name)
     tacAsmMap(methodLabelTac) = asmGen(methodLabelTac, methodParamTable)
 
+    val blockLHM = genBlock(methodDecl.bodyBlock, null, null, tempGenie, methodParamTable)
+
     val methodEnterTac = new TacMethodEnter(tempGenie.generateTacNumber(), methodDesc)
     tacAsmMap(methodEnterTac) = asmGen(methodEnterTac, methodParamTable)
 
-    val blockLHM = genBlock(methodDecl.bodyBlock, null, null, tempGenie, methodParamTable)
     return combineLinkedHashMaps(tacAsmMap, blockLHM)
   }
 
@@ -211,6 +215,7 @@ object TACGen {
     binOpExpr.binOp match {
       case IrMulOp() => op = MULT
       case IrDivOp() => op = DIV
+      case IrModOp() => op = MOD
       case IrAddOp() => op = ADD
       case IrSubOp() => op = SUB
       case IrAndOp() => op = AND
