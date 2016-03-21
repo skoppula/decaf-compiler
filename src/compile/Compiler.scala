@@ -55,7 +55,7 @@ object Compiler {
     val tacAsmMap = gen(program, tempGenie, methodsTable)
     val asm = tacAsmMap.values
     for (list <- asm) {
-      outFile.println(list mkString "\n")
+      outFile.println(list mkString "")
     }
     if(CLI.debug && CLI.target == CLI.Action.ASSEMBLY) {
       SymbolTableUtil.printSymbolTableStructure(methodsTable)

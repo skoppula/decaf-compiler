@@ -6,9 +6,9 @@ void main ( ) {
   two = true;
   
   if(one && two){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
   else{
-    printf ( "Should not print" );
+    printf ( "Should not print\n" );
   }
 }

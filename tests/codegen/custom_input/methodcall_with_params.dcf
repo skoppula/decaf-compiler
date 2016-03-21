@@ -6,7 +6,7 @@ void foo(paramOne,paramTwo){
   a = paramOne + paramTwo
 
   if(a == 5){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
 }
 

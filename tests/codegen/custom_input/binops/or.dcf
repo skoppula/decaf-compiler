@@ -7,9 +7,9 @@ void main ( ) {
   two = false;
 
   if(one || two){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
   else{
-    printf ( "Should not print" );
+    printf ( "Should not print\n" );
   }
 }

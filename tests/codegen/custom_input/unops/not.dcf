@@ -5,10 +5,10 @@ void main ( ) {
   bool = !bool;
  
   if(bool){
-    printf ( "Should not print" );
+    printf ( "Should not print\n" );
   }
   
   if(!bool){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
 }
