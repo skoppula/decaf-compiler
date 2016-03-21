@@ -188,6 +188,7 @@ object AsmGen{
       }
       case MOD => {
         // TODO
+        return List()
       }
       // Match cond ops 
       case AND => {
