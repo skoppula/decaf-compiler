@@ -4,9 +4,7 @@ void foo (int paramOne,int paramTwo) {
   int a;
   a = paramOne + paramTwo;
 
-  if(a == 5){
-    printf ( "Should print\n" );
-  }
+  printf ( "Should equal 5, is %ld\n", a );
 }
 
 void main ( ) {
