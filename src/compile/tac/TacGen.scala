@@ -70,10 +70,11 @@ object TACGen {
     val methodLabelTac = new TacLabel(tempGenie.generateTacNumber(), methodDecl.name)
     tacAsmMap(methodLabelTac) = asmGen(methodLabelTac, methodParamTable)
 
+    val blockLHM = genBlock(methodDecl.bodyBlock, null, null, tempGenie, methodParamTable)
+
     val methodEnterTac = new TacMethodEnter(tempGenie.generateTacNumber(), methodDesc)
     tacAsmMap(methodEnterTac) = asmGen(methodEnterTac, methodParamTable)
 
-    val blockLHM = genBlock(methodDecl.bodyBlock, null, null, tempGenie, methodParamTable)
     return combineLinkedHashMaps(tacAsmMap, blockLHM)
   }
 
