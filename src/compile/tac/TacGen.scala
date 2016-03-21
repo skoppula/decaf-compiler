@@ -75,10 +75,7 @@ object TacGen {
     val methodEnterTac = new TacMethodEnter(tempGenie.generateTacNumber(), methodDesc)
     tacAsmMap(methodEnterTac) = asmGen(methodEnterTac, methodParamTable)
 
-    if (methodDecl.name == "main") {
-      val mainExit = new TacSystemExit(tempGenie.generateTacNumber(), 0)
-      blockLHM(mainExit) = asmGen(mainExit, methodParamTable)
-    } else if(methodDesc.methodType.isInstanceOf[VoidTypeDescriptor]) {
+    if(methodDesc.methodType.isInstanceOf[VoidTypeDescriptor]) {
       val voidExit = new TacReturn(tempGenie.generateTacNumber())
       blockLHM(voidExit) = asmGen(voidExit, methodParamTable)
     } else {
