@@ -17,7 +17,7 @@ for file in $(find `dirname $0` -name '*.dcf'); do
   msg=""
   if runcompiler $file $asm 2>&1 >/dev/null; then
     binary=`tempfile`
-    if gcc -o $binary -L `dirname $0`/lib -l6035 $asm 2>&1 >/dev/null; then
+    if gcc -o $binary -L `dirname $0`/../lib -l6035 $asm 2>&1 >/dev/null; then
       output=`tempfile`
       $binary > $output
       exitcode=$?
@@ -28,8 +28,12 @@ for file in $(find `dirname $0` -name '*.dcf'); do
           msg="Program did not exit with exit status $val"
         fi
       else
+        echo Output: $(cat $output)
+        echo Should be: $(cat `dirname $0`/output/`basename $file`.out)
         if ! diff -u $output `dirname $0`/output/`basename $file`.out > $diffout 2>/dev/null; then
-          msg="File $file output mismatch.";
+          msg="FAIL";
+        else
+          msg="PASS";
         fi
       fi
     else
@@ -43,6 +47,7 @@ for file in $(find `dirname $0` -name '*.dcf'); do
     echo $msg
   fi
   rm -f $diffout $output $binary $asm;
+  printf "\n"
 done
 
 exit $fail;
