@@ -1,10 +1,10 @@
 callout printf;
-int a[10];
 
-void foo(int i) {
-
+int foo(int i) {
+    return 1;
+    i = i+1
 }
 
 void main() {
-    printf(a); 
+    foo(1); 
 }
