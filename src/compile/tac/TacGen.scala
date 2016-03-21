@@ -10,7 +10,7 @@ import compile.tac.ThreeAddressCode._
 import compile.util.Util.combineLinkedHashMaps
 import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
 
-object TACGen {
+object TacGen {
 
   def gen(
            program: IrProgram,

@@ -12,7 +12,7 @@ import compile.IrChecks._
 
 import compile.tac._
 import compile.tac.ThreeAddressCode._
-import TACGen._
+import TacGen._
 
 import scala.Console
 import scala.collection.mutable
