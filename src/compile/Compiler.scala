@@ -53,11 +53,20 @@ object Compiler {
   def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
     val tempGenie : TempVariableGenie = new TempVariableGenie
     val tacAsmMap = gen(program, tempGenie, methodsTable)
-    val asm = tacAsmMap.values
-    for (list <- asm) {
-      outFile.println(list mkString "")
+
+    if (CLI.outfile == null || CLI.outfile.isEmpty) {
+      for (list <- tacAsmMap.values) {
+        outFile.println(list mkString "")
+      }
+    } else {
+      val pw = new PrintWriter(new File(CLI.outfile))
+      for (list <- tacAsmMap.values) {
+        pw.write(list mkString "" + "\n")
+      }
+      pw.close
     }
-    if(CLI.debug && CLI.target == CLI.Action.ASSEMBLY) {
+
+    if(CLI.debug) {
       SymbolTableUtil.printSymbolTableStructure(methodsTable)
     }
   }
