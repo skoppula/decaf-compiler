@@ -34,6 +34,7 @@ object ThreeAddressCode {
 
   case class TacReturnValue(id: Int, addr1: String) extends Tac{} // addr1 is the temp variable where the return value is stored
   case class TacReturn(id: Int) extends Tac{} // indicator to leave, ret the method call
+  case class TacSystemExit(id: Int, signal: Int) extends Tac{} // indicated exit with signal
 
   case class TacArrayLeft(id: Int, addr1: String, addr2: String, index: String) extends Tac{} // x = y[index] (index is a temp variable as well)
   case class TacArrayRight(id: Int, addr1: String, index: String, addr2: String) extends Tac{} // x[index] = y 

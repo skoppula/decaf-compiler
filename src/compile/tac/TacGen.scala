@@ -3,7 +3,7 @@ package compile.tac
 import compile.Ir._
 import compile.exceptionhandling._
 import compile.symboltables.{MethodsTable, SymbolTable}
-import compile.descriptors.{BoolTypeDescriptor, IntTypeDescriptor, MethodDescriptor}
+import compile.descriptors.{VoidTypeDescriptor, BoolTypeDescriptor, IntTypeDescriptor, MethodDescriptor}
 import compile.tac.OpTypes._
 import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
@@ -74,6 +74,17 @@ object TACGen {
 
     val methodEnterTac = new TacMethodEnter(tempGenie.generateTacNumber(), methodDesc)
     tacAsmMap(methodEnterTac) = asmGen(methodEnterTac, methodParamTable)
+
+    if (methodDecl.name == "main") {
+      val mainExit = new TacSystemExit(tempGenie.generateTacNumber(), 0)
+      blockLHM(mainExit) = asmGen(mainExit, methodParamTable)
+    } else if(methodDesc.methodType.isInstanceOf[VoidTypeDescriptor]) {
+      val voidExit = new TacReturn(tempGenie.generateTacNumber())
+      blockLHM(voidExit) = asmGen(voidExit, methodParamTable)
+    } else {
+      val mainExit = new TacSystemExit(tempGenie.generateTacNumber(), -2)
+      blockLHM(mainExit) = asmGen(mainExit, methodParamTable)
+    }
 
     return combineLinkedHashMaps(tacAsmMap, blockLHM)
   }
