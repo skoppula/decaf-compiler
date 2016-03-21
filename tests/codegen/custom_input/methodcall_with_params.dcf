@@ -2,7 +2,8 @@ callout printf;
 
 void foo(paramOne,paramTwo){
   
-  int a = paramOne + paramTwo
+  int a;
+  a = paramOne + paramTwo
 
   if(a == 5){
     printf ( "Should print" );
@@ -10,8 +11,10 @@ void foo(paramOne,paramTwo){
 }
 
 void main ( ) {
-  int two = 2;
-  int three = 3;
+  int two;
+  int three;
+  two = 2;
+  three = 3;
 
   foo(two,three)
 }
