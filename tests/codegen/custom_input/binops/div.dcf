@@ -3,5 +3,5 @@ void main ( ) {
   int quot;
   quot = 8/2;
   
-  printf ( "Should equal 4" );
+  printf ( "Should equal 4, is %ld\n", quot );
 }

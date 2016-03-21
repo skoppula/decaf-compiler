@@ -3,6 +3,6 @@ void main ( ) {
   int sum;
   sum = 1+1;
   
-  printf ( "Should equal 2, is %ld", sum );
+  printf ( "Should equal 2, is %ld\n", sum );
 
 }

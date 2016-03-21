@@ -3,5 +3,5 @@ void main ( ) {
   int prod;
   prod = 2*2;
   
-  printf ( "Should equal 4" );
+  printf ( "Should equal 4, is %ld\n", prod );
 }

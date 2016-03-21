@@ -6,10 +6,10 @@ void main ( ) {
   four = 4;
 
   if(five != four){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
   
   if(four != four){
-    printf ( "Should not print" );
+    printf ( "Should not print\n" );
   }
 }

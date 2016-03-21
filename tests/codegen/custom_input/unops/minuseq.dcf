@@ -8,10 +8,10 @@ void main ( ) {
   five -= four;
  
   if(five == 1){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
   
   if(four != 1){
-    printf ( "Should not print" );
+    printf ( "Should not print\n" );
   }
 }

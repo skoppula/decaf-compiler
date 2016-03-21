@@ -8,14 +8,14 @@ void main ( ) {
   three = 3;
 
   if(four <= four){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
 
   if(three <= four){
-    printf ( "Should also print" );
+    printf ( "Should also print\n" );
   }
   
   if(five <= four){
-    printf ( "Should not print" );
+    printf ( "Should not print\n" );
   }
 }

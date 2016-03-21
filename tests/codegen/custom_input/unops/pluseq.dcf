@@ -9,10 +9,10 @@ void main ( ) {
   five += four;
  
   if(five == 9){
-    printf ( "Should print" );
+    printf ( "Should print\n" );
   }
   
   if(four != 9){
-    printf ( "Should not print" );
+    printf ( "Should not print\n" );
   }
 }
