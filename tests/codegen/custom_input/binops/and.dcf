@@ -1,7 +1,9 @@
 callout printf;
 void main ( ) {
-  boolean one = true;
-  boolean two = true;
+  boolean one;
+  boolean two;
+  one = true;
+  two = true;
   
   if(one && two){
     printf ( "Should print" );
