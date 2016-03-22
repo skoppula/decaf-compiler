@@ -217,6 +217,25 @@ object TacGen {
     symbolTable.insert(temp, new IntTypeDescriptor)
 
     val (leftTemp, leftMap) = genExpr(binOpExpr.leftExpr, tempGenie, symbolTable)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, leftMap)
+
+    val endLabel = tempGenie.generateLabel()
+
+    // If leftTemp is false, and Op is AND, copy leftTemp to temp, and skip over binOp evaluation and short circuit 2
+    // If leftTemp is true, and Op is OR, copy leftTemp to temp, and skip over binOp evaluation
+
+    if(binOpExpr.binOp.isInstanceOf[IrAndOp]) {
+      val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+      val ifTac = new TacIfFalse(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      tacAsmMap(copyTac) = asmGen(copyTac, symbolTable)
+      tacAsmMap(ifTac) = asmGen(ifTac, symbolTable)
+    } else if(binOpExpr.binOp.isInstanceOf[IrOrOp]) {
+      val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+      val ifTac = new TacIf(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      tacAsmMap(copyTac) = asmGen(copyTac, symbolTable)
+      tacAsmMap(ifTac) = asmGen(ifTac, symbolTable)
+    }
+
     val (rightTemp, rightMap) = genExpr(binOpExpr.rightExpr, tempGenie, symbolTable)
     
     var op : BinOpEnumVal = null
@@ -235,11 +254,14 @@ object TacGen {
       case IrEqualOp()  => op = EQ
       case IrNotEqualOp() => op = NEQ 
     }
-    
+
     val tac = new TacBinOp(tempGenie.generateTacNumber(), temp, leftTemp, op, rightTemp)
-    tacAsmMap = combineLinkedHashMaps(tacAsmMap, leftMap)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, rightMap)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
+
+    val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    tacAsmMap(endLabelTAC) = asmGen(endLabelTAC, symbolTable)
+
     return (temp, tacAsmMap)
   }
 
