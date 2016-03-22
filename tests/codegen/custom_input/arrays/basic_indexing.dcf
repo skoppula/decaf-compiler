@@ -1,0 +1,16 @@
+callout printf;
+int a[3];
+int b[12];
+
+void main ( ) {
+  b[0] = 0;
+  b[11] = 12;
+  a[0] = 10;
+  b[0] = a[0]; 
+  a[0] = b[b[0] + 1];
+  printf ( "expecting to print 12:\n" );
+  printf ( "%d\n", a[0] );
+  printf ( "expecting to print 10:\n" );
+  printf ( "%d\n", b[0] );
+}
+
