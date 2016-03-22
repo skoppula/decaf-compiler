@@ -1,0 +1,7 @@
+callout printf;
+// This should produce a runtime error
+int a[77];
+void main ( ) {
+  printf ( "expecting to print 77:\n" );
+  printf ( "\n", @a );
+}
