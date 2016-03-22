@@ -564,7 +564,7 @@ object AsmGen{
     val params : List[String] = methodParamTable.getParamMap.keys.toList
     params.zipWithIndex.reverse foreach {
       case (addr, index) => {
-        val src = argNumToAsm(index+1)
+        val src = pullArgNumToAsm(index+1)
         val dest = addrToAsm(addr, table)
         instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
         instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
@@ -617,7 +617,7 @@ object AsmGen{
     args.zipWithIndex.reverse foreach {
       case (addr, index) => {
         val src = addrToAsm(addr, table)
-        val dest = argNumToAsm(index+1)
+        val dest = pushArgNumToAsm(index+1)
         instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
         instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
       }
@@ -756,7 +756,7 @@ object AsmGen{
     }
   }
 
-  def argNumToAsm(argNum: Int) : String = {
+  def pushArgNumToAsm(argNum: Int) : String = {
     // argNum must be positive
     val primitiveTypeSize = 8
     argNum match {
@@ -783,6 +783,34 @@ object AsmGen{
       }
       case _ => {
         return "%d(%%rsp)".format((argNum-7)*primitiveTypeSize)
+      }
+    }
+  }
+
+  def pullArgNumToAsm(argNum: Int) : String = {
+    // argNum must be positive
+    val primitiveTypeSize = 8
+    argNum match {
+      case 1 => {
+        return "%rdi"
+      }
+      case 2 => {
+        return "%rsi"
+      }
+      case 3 => {
+        return "%rdx"
+      }
+      case 4 => {
+        return "%rcx"
+      }
+      case 5 => {
+        return "%r8"
+      }
+      case 6 => {
+        return "%r9"
+      }
+      case _ => {
+        return "%d(%%rbp)".format(16 + (argNum-7)*primitiveTypeSize)
       }
     }
   }
