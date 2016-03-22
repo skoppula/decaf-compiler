@@ -560,15 +560,37 @@ object TacGen {
     val sizeCondCmpTAC = new TacBinOp(tempGenie.generateTacNumber(), sizeCheckBool, indexTemp, LT, sizeOfArray)
     tacAsmMap(sizeCondCmpTAC) = asmGen(sizeCondCmpTAC, symbolTable)
 
-    val accessIndexLabel: String = tempGenie.generateLabel()
+    // Initialize constant zero for lower bound check
+    val constantZeroTemp = tempGenie.generateName()
+    symbolTable.insert(constantZeroTemp, new IntTypeDescriptor)
+    val copyConstantZero = new TacCopyInt(tempGenie.generateTacNumber(), constantZeroTemp, 0)
+    tacAsmMap(copyConstantZero) = asmGen(copyConstantZero, symbolTable)
 
-    // If if is within bounds, jump over the system exit (-1)
+    // Check whether the array index is too small
+    val lowerSizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(lowerSizeCheckBool, new BoolTypeDescriptor())
+    val lowerSizeCondTAC = new TacBinOp(tempGenie.generateTacNumber(), lowerSizeCheckBool, indexTemp, LT, constantZeroTemp)
+    tacAsmMap(lowerSizeCondTAC) = asmGen(lowerSizeCondTAC, symbolTable)
+
+    val accessIndexLabel: String = tempGenie.generateLabel()
+    val errorOutLabel: String = tempGenie.generateLabel()
+
+    // If index is not > 0, jump to the system exit (-1)
+    val lowerboundsTAC = new TacIf(tempGenie.generateTacNumber(), lowerSizeCheckBool, errorOutLabel)
+    tacAsmMap(lowerboundsTAC) = asmGen(lowerboundsTAC, symbolTable)
+
+    // If index is within bounds, jump over the system exit (-1)
     val sizeIfTAC = new TacIf(tempGenie.generateTacNumber(), sizeCheckBool, accessIndexLabel)
     tacAsmMap(sizeIfTAC) = asmGen(sizeIfTAC, symbolTable)
+
+    // Label right before error out
+    val errorOutLabelTAC = new TacLabel(tempGenie.generateTacNumber(), errorOutLabel)
+    tacAsmMap(errorOutLabelTAC) = asmGen(errorOutLabelTAC, symbolTable)
 
     val sysExitOne = new TacSystemExit(tempGenie.generateTacNumber(), -1)
     tacAsmMap(sysExitOne) = asmGen(sysExitOne, symbolTable)
 
+    // Label for everything is all good
     val accessIndexLabelTAC = new TacLabel(tempGenie.generateTacNumber(), accessIndexLabel)
     tacAsmMap(accessIndexLabelTAC) = asmGen(accessIndexLabelTAC, symbolTable)
 
