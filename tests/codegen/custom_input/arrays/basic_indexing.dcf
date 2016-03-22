@@ -8,9 +8,7 @@ void main ( ) {
   a[0] = 10;
   b[0] = a[0]; 
   a[0] = b[b[0] + 1];
-  printf ( "expecting to print 12:\n" );
-  printf ( "%d\n", a[0] );
-  printf ( "expecting to print 10:\n" );
-  printf ( "%d\n", b[0] );
+  printf ( "expecting to print 12, is %ld\n", a[0] );
+  printf ( "expecting to print 10, is %ld\n", b[0] );
 }
 

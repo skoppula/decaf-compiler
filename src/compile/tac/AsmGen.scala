@@ -678,8 +678,8 @@ object AsmGen{
     return instrs
   }
 
-  def arrayLeftToAsm(t: TacArrayLeft, table: SymbolTable) : List[String] = {
-    // x = y[index]
+  def arrayRightToAsm(t: TacArrayRight, table: SymbolTable) : List[String] = {
+    // x = y[index] (index is a temp variable as well)
     // TODO: Done but untested
     var instrs : List[String] = List()
     val (addr1, addr2, index) = (t.addr1, t.addr2, t.index)
@@ -696,7 +696,7 @@ object AsmGen{
     return instrs
   }
 
-  def arrayRightToAsm(t: TacArrayRight, table: SymbolTable) : List[String] = {
+  def arrayLeftToAsm(t: TacArrayLeft, table: SymbolTable) : List[String] = {
     // x[index] = y (index is a temp variable as well)
     // TODO: Done but untested
     var instrs : List[String] = List()
