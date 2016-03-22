@@ -68,6 +68,10 @@ object Compiler {
 
     if(CLI.debug) {
       SymbolTableUtil.printSymbolTableStructure(methodsTable)
+      println()
+      for (tac <- tacAsmMap.keys) {
+        println(tac)
+      }
     }
   }
 

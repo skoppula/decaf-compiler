@@ -652,6 +652,7 @@ object TacGen {
       val loadIncTAC = new TacCopyInt(tempGenie.generateTacNumber(), incTemp, 1)
       tacAsmMap(loadIncTAC) = asmGen(loadIncTAC, symbolTable)
       val incOpTAC = new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by 1
+      tacAsmMap(incOpTAC) = asmGen(incOpTAC, symbolTable)
     }
 
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.bodyBlock, startLabel, endLabel, tempGenie, symbolTable))
