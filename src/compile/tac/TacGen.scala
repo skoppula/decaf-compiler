@@ -3,7 +3,7 @@ package compile.tac
 import compile.Ir._
 import compile.exceptionhandling._
 import compile.symboltables.{MethodsTable, SymbolTable}
-import compile.descriptors.{VoidTypeDescriptor, BoolTypeDescriptor, IntTypeDescriptor, MethodDescriptor}
+import compile.descriptors._
 import compile.tac.OpTypes._
 import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
@@ -265,7 +265,16 @@ object TacGen {
                          ) : (String, LinkedHashMap[Tac, List[String]]) = {
     val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
-    symbolTable.insert(temp, new IntTypeDescriptor)
+    val locType = symbolTable.lookupID(singleLoc.name)
+    locType match { 
+      case a: ArrayBaseDescriptor => {
+        symbolTable.insert(temp, new IntArrayTypeDescriptor(a.length))
+      }
+      case p: PrimitiveBaseDescriptor => {
+        symbolTable.insert(temp, new IntTypeDescriptor)
+      }
+    }
+    
     val tac = new TacCopy(tempGenie.generateTacNumber(), temp, singleLoc.name)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap) 
