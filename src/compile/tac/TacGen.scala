@@ -618,13 +618,15 @@ object TacGen {
 
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
 
-    var buf: ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     val startLabel: String = tempGenie.generateLabel()
     val endLabel: String = tempGenie.generateLabel()
 
     val (initValTemp, initValTac) = genExpr(stmt.initVal, tempGenie, symbolTable)
     val (endValTemp, endValTac) = genExpr(stmt.endVal, tempGenie, symbolTable)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, initValTac)
+    val copyIntoVar = new TacCopy(tempGenie.generateTacNumber(), stmt.irLoc.name, initValTemp)
+    tacAsmMap(copyIntoVar) = asmGen(copyIntoVar, symbolTable)
+
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, endValTac)
 
     val forBeginTAC = new TacLabel(tempGenie.generateTacNumber(), startLabel) // beginning of the for loop
@@ -639,12 +641,17 @@ object TacGen {
     val forIfFalseTAC = new TacIfFalse(tempGenie.generateTacNumber(), lessThan, endLabel) //if index >= endVal, exit for loop
     tacAsmMap(forIfFalseTAC) = asmGen(forIfFalseTAC, symbolTable)
 
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.bodyBlock, startLabel, endLabel, tempGenie, symbolTable))
+
     if (stmt.inc.isDefined) { 
       val (incTemp, incTac) = genExpr(stmt.inc.get, tempGenie, symbolTable)
       tacAsmMap = combineLinkedHashMaps(tacAsmMap, incTac)
 
       val forIncTAC = new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by inc
       tacAsmMap(forIncTAC) = asmGen(forIncTAC, symbolTable)
+
+      val copyIntoVar = new TacCopy(tempGenie.generateTacNumber(), stmt.irLoc.name, initValTemp)
+      tacAsmMap(copyIntoVar) = asmGen(copyIntoVar, symbolTable)
 
     } else {
       val incTemp : String = tempGenie.generateName()
@@ -653,10 +660,10 @@ object TacGen {
       tacAsmMap(loadIncTAC) = asmGen(loadIncTAC, symbolTable)
       val incOpTAC = new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by 1
       tacAsmMap(incOpTAC) = asmGen(incOpTAC, symbolTable)
+
+      val copyIntoVar = new TacCopy(tempGenie.generateTacNumber(), stmt.irLoc.name, initValTemp)
+      tacAsmMap(copyIntoVar) = asmGen(copyIntoVar, symbolTable)
     }
-
-    tacAsmMap = combineLinkedHashMaps(tacAsmMap, genBlock(stmt.bodyBlock, startLabel, endLabel, tempGenie, symbolTable))
-
     val loopTAC = new TacGoto(tempGenie.generateTacNumber(), startLabel) // continue looping
     tacAsmMap(loopTAC) = asmGen(loopTAC, symbolTable)
 
