@@ -190,8 +190,22 @@ object AsmGen{
         asmCommands.toList
       }
       case MOD => {
-        // TODO
-        return List()
+        // Take care here
+        // idiv divisor <-> Divide rdx:rax by divisor. Store quotient in rax and store remainder in rdx.
+
+        val addr1asm = addrToAsm(addr1,table)
+        val addr2asm = addrToAsm(addr2,table)
+        val addr3asm = addrToAsm(addr3,table)
+
+        var asmCommands = new mutable.ListBuffer[String]()
+
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%rax")
+        asmCommands += "\t%s\n".format("cqo")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        asmCommands += "\t%s\t%s\n".format("idivq","%r11")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%rdx", addr1asm)
+
+        asmCommands.toList
       }
       // Match cond ops 
       case AND => {
