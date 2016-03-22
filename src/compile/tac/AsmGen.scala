@@ -673,7 +673,7 @@ object AsmGen{
     val signal = t.signal;
 
     instrs :+= "\t%s\t$%s, %s\n".format("movq", signal, "%rdi")
-    instrs :+= "\t%s\t$%s\n".format("call", "exit")
+    instrs :+= "\t%s\t%s\n".format("call", "exit")
 
     return instrs
   }
