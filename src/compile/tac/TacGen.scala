@@ -8,6 +8,7 @@ import compile.tac.OpTypes._
 import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
 import compile.util.Util.combineLinkedHashMaps
+import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
 
 object TacGen {
@@ -397,7 +398,63 @@ object TacGen {
     return (temp, tacAsmMap)
   }
   
-  // == Block macro == 
+  // == Block macro ==
+
+  def initializeLocalField(
+                            name : String,
+                            desc : BaseDescriptor,
+                            tempGenie: TempVariableGenie,
+                            symbolTable: SymbolTable
+                          ): LinkedHashMap[Tac, List[String]] = {
+
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+
+    desc match {
+      case itd: IntTypeDescriptor => {
+        val copyIntTac = new TacCopyInt(tempGenie.generateTacNumber(), name, 0)
+        tacAsmMap(copyIntTac) = asmGen(copyIntTac, symbolTable)
+      }
+      case btd: BoolTypeDescriptor => {
+        val copyBoolTac = new TacCopyBoolean(tempGenie.generateTacNumber(), name, false)
+        tacAsmMap(copyBoolTac) = asmGen(copyBoolTac, symbolTable)
+      }
+      case iad: IntArrayTypeDescriptor => {
+        val indexTemp = tempGenie.generateName()
+        symbolTable.insert(indexTemp, new IntTypeDescriptor)
+
+        val constantZeroTemp = tempGenie.generateName()
+        symbolTable.insert(constantZeroTemp, new IntTypeDescriptor)
+        val copyConstantZero = new TacCopyInt(tempGenie.generateTacNumber(), constantZeroTemp, 0)
+        tacAsmMap(copyConstantZero) = asmGen(copyConstantZero, symbolTable)
+
+        for(i <- 0 until iad.size.toInt) {
+          val copyIndex = new TacCopyInt(tempGenie.generateTacNumber(), indexTemp, i)
+          tacAsmMap(copyIndex) = asmGen(copyIndex, symbolTable)
+
+          val arrayAssign = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, constantZeroTemp)
+          tacAsmMap(arrayAssign) = asmGen(arrayAssign, symbolTable)
+        }
+      }
+      case bad: BoolArrayTypeDescriptor => {
+        val indexTemp = tempGenie.generateName()
+        symbolTable.insert(indexTemp, new IntTypeDescriptor)
+
+        val constantFalseTemp = tempGenie.generateName()
+        symbolTable.insert(constantFalseTemp, new BoolTypeDescriptor)
+        val copyConstantFalse = new TacCopyBoolean(tempGenie.generateTacNumber(), constantFalseTemp, false)
+        tacAsmMap(copyConstantFalse) = asmGen(copyConstantFalse, symbolTable)
+
+        for(i <- 0 until bad.size.toInt) {
+          val copyIndex = new TacCopyInt(tempGenie.generateTacNumber(), indexTemp, i)
+          tacAsmMap(copyIndex) = asmGen(copyIndex, symbolTable)
+
+          val arrayAssign = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, constantFalseTemp)
+          tacAsmMap(arrayAssign) = asmGen(arrayAssign, symbolTable)
+        }
+      }
+    }
+    return tacAsmMap
+  }
   
   def genBlock(
                 block: IrBlock,
@@ -407,6 +464,13 @@ object TacGen {
                 symbolTable: SymbolTable) : LinkedHashMap[Tac, List[String]] = {
 
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+
+    println(symbolTable.symbolTableMap)
+    for((name, desc) <- symbolTable.symbolTableMap) {
+      if(name.size < 2 || name.substring(0,2) != ".T") {
+        tacAsmMap = combineLinkedHashMaps(tacAsmMap, initializeLocalField(name, desc, tempGenie, symbolTable))
+      }
+    }
 
     val childrenTables = symbolTable.getChildrenSymbolTables
     val expectedNumSubBlocks = childrenTables.size
