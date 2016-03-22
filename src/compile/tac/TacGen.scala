@@ -292,6 +292,7 @@ object TacGen {
     val (index, indexMap) = genExpr(arrayLoc.index, tempGenie, symbolTable)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, indexMap)
 
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(arrayLoc.name, index, tempGenie, symbolTable))
     val tac = new TacArrayRight(tempGenie.generateTacNumber(), temp, arrayLoc.name, index)
     
     tacAsmMap(tac) = asmGen(tac, symbolTable)
@@ -453,6 +454,42 @@ object TacGen {
     }
   }
 
+  def checkArrayBounds(
+                       arrayName : String,
+                       indexTemp: String,
+                       tempGenie : TempVariableGenie,
+                       symbolTable : SymbolTable
+                     ) : LinkedHashMap[Tac, List[String]] = {
+
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+
+    // Get the size of the array
+    val sizeOfArray: String = tempGenie.generateName()
+    symbolTable.insert(sizeOfArray, new IntTypeDescriptor())
+    val tacSizeOfArray = new TacUnOp(tempGenie.generateTacNumber(), sizeOfArray, SIZE, arrayName)
+    tacAsmMap(tacSizeOfArray) = asmGen(tacSizeOfArray, symbolTable)
+
+    // Check whether the array index is too big
+    val sizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(sizeCheckBool, new BoolTypeDescriptor())
+    val sizeCondCmpTAC = new TacBinOp(tempGenie.generateTacNumber(), sizeCheckBool, indexTemp, LT, sizeOfArray)
+    tacAsmMap(sizeCondCmpTAC) = asmGen(sizeCondCmpTAC, symbolTable)
+
+    val accessIndexLabel: String = tempGenie.generateLabel()
+
+    // If if is within bounds, jump over the system exit (-1)
+    val sizeIfTAC = new TacIf(tempGenie.generateTacNumber(), sizeCheckBool, accessIndexLabel)
+    tacAsmMap(sizeIfTAC) = asmGen(sizeIfTAC, symbolTable)
+
+    val sysExitOne = new TacSystemExit(tempGenie.generateTacNumber(), -1)
+    tacAsmMap(sysExitOne) = asmGen(sysExitOne, symbolTable)
+
+    val accessIndexLabelTAC = new TacLabel(tempGenie.generateTacNumber(), accessIndexLabel)
+    tacAsmMap(accessIndexLabelTAC) = asmGen(accessIndexLabelTAC, symbolTable)
+
+    return tacAsmMap
+  }
+
   def genIrAssignStmt(
                        stmt: IrAssignStmt,
                        tempGenie: TempVariableGenie,
@@ -476,8 +513,10 @@ object TacGen {
             tacAsmMap = combineLinkedHashMaps(tacAsmMap, indexMap)
 
             // Copy RHS into array location
+            tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(name, indexTemp, tempGenie, symbolTable))
             val arrayLocTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, exprTemp)
             tacAsmMap(arrayLocTac) = asmGen(arrayLocTac, symbolTable)
+
             return tacAsmMap
           }
         }
@@ -502,6 +541,7 @@ object TacGen {
             val arrayRightTac = new TacArrayRight(tempGenie.generateTacNumber(), temp, name, indexTemp)
             val arrayOpTac = new TacBinOp(tempGenie.generateTacNumber(), temp, temp, SUB, exprTemp)
             val arrayLeftTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, temp)
+            tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(name, indexTemp, tempGenie, symbolTable))
             tacAsmMap(arrayRightTac) = asmGen(arrayRightTac, symbolTable)
             tacAsmMap(arrayOpTac) = asmGen(arrayOpTac, symbolTable)
             tacAsmMap(arrayLeftTac) = asmGen(arrayLeftTac, symbolTable)
@@ -529,6 +569,7 @@ object TacGen {
             val arrayRightTac = new TacArrayRight(tempGenie.generateTacNumber(), temp, name, indexTemp)
             val arrayOpTac = new TacBinOp(tempGenie.generateTacNumber(), temp, name, ADD, exprTemp)
             val arrayLeftTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, temp)
+            tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(name, indexTemp, tempGenie, symbolTable))
             tacAsmMap(arrayRightTac) = asmGen(arrayRightTac, symbolTable)
             tacAsmMap(arrayOpTac) = asmGen(arrayOpTac, symbolTable)
             tacAsmMap(arrayLeftTac) = asmGen(arrayLeftTac, symbolTable)
