@@ -521,8 +521,8 @@ object TacGen {
             val arrayOpTac = new TacBinOp(tempGenie.generateTacNumber(), temp, name, ADD, exprTemp)
             val arrayLeftTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, temp)
             tacAsmMap(arrayRightTac) = asmGen(arrayRightTac, symbolTable)
-            tacAsmMap(arrayOpTac) = asmGen(arrayRightTac, symbolTable)
-            tacAsmMap(arrayLeftTac) = asmGen(arrayRightTac, symbolTable)
+            tacAsmMap(arrayOpTac) = asmGen(arrayOpTac, symbolTable)
+            tacAsmMap(arrayLeftTac) = asmGen(arrayLeftTac, symbolTable)
 
             return tacAsmMap
           }
