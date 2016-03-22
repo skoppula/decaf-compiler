@@ -152,8 +152,8 @@ object AsmGen{
 
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("subq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+        asmCommands += "\t%s\t%s, %s\n".format("subq", "%r11", "%r10")
+        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r10", addr1asm)
 
         asmCommands.toList
       }
