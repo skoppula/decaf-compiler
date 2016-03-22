@@ -465,7 +465,6 @@ object TacGen {
 
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
 
-    println(symbolTable.symbolTableMap)
     for((name, desc) <- symbolTable.symbolTableMap) {
       if(name.size < 2 || name.substring(0,2) != ".T") {
         tacAsmMap = combineLinkedHashMaps(tacAsmMap, initializeLocalField(name, desc, tempGenie, symbolTable))
