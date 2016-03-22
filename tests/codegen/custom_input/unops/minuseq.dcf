@@ -11,7 +11,7 @@ void main ( ) {
     printf ( "Should print\n" );
   }
   
-  if(four != 1){
+  if(four == 1){
     printf ( "Should not print\n" );
   }
 }

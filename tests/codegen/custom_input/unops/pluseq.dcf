@@ -12,7 +12,7 @@ void main ( ) {
     printf ( "Should print\n" );
   }
   
-  if(four != 9){
+  if(four == 9){
     printf ( "Should not print\n" );
   }
 }
