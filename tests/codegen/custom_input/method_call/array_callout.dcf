@@ -1,0 +1,19 @@
+callout printf;
+callout memcmp;
+int a[3];
+
+void main ( ) {
+  int b[3];
+  int result;
+
+  result = 1;
+  result = memcmp(a, b, 8*3);
+  printf ( "expecting 0, is %ld\n", result );
+
+  b[2] = 1;
+
+  result = memcmp(a, b, 8*3);
+  result = (result != 0);
+  printf ( "expecting 1, is %ld\n", result );
+}
+
