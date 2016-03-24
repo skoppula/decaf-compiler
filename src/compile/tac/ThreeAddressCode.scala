@@ -20,7 +20,7 @@ object ThreeAddressCode {
   case class TacLabel(id: Int, label: String) extends Tac{} // foo:
 
   case class TacCopy(id: Int, addr1: String, addr2: String) extends Tac{} // x = y
-  case class TacCopyInt(id: Int, addr1: String, int: Int) extends Tac{} // x = 5
+  case class TacCopyInt(id: Int, addr1: String, int: Long) extends Tac{} // x = 5
   case class TacCopyBoolean(id: Int, addr1: String, bool: Boolean) extends Tac{} // x = true
 
   case class TacMethodEnter(id: Int, methodDesc: MethodDescriptor) extends Tac{} // indicates beginning of method stack

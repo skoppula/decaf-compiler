@@ -366,7 +366,7 @@ object TacGen {
     if(!intLit.value.isDefined) {
       throw new CompilerProblem("Trying to assemble int literal copy, int literal has no value tho!", intLit.loc)
     }
-    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, intLit.value.get.toInt)
+    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, intLit.value.get.toLong)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap)
   }
@@ -380,7 +380,7 @@ object TacGen {
     val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
     symbolTable.insert(temp, new IntTypeDescriptor)
-    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, charLit.value.toInt)
+    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, charLit.value.toLong)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap)
   }
