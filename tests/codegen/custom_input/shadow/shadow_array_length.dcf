@@ -1,0 +1,20 @@
+callout printf;
+int a[3];
+int b[5];
+
+void main ( ) {
+  int a[5];
+
+  printf ( "expecting to print 5, is %ld\n", @a );
+  printf ( "expecting to print 5, is %ld\n", @b );
+
+  if (true) {
+    int b[3];
+    printf ( "expecting to print 3, is %ld\n", @b );
+    if (true) {
+      int a[2];
+      printf ( "expecting to print 2, is %ld\n", @a );
+    }
+  }
+}
+

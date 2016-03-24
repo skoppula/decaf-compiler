@@ -1,0 +1,25 @@
+callout printf;
+int a;
+int b;
+
+void main ( ) {
+  a = 1;
+  b = a;
+
+  printf ( "expecting to print 1, is %ld\n", b);
+
+  if (true) {
+    int b;
+    b = 0;
+    printf ( "expecting to print 0, is %ld\n", b);    
+
+   if (true) {
+    int b;
+    b = 2;
+    printf ( "expecting to print 2, is %ld\n", b);        
+   }
+  }
+
+  printf ( "expecting to print 1, is %ld\n", b);
+}
+

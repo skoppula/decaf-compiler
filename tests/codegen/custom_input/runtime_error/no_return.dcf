@@ -1,0 +1,9 @@
+callout printf;
+int foo ( ) {
+    printf( "Entered foo\n" );
+}
+
+void main ( ) {
+    foo();
+}
+

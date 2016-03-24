@@ -4,4 +4,16 @@ void main ( ) {
   prod = 2*2;
   
   printf ( "Should equal 4, is %ld\n", prod );
+
+  prod = 3*-2;
+
+  printf ( "Should equal -6, is %ld\n", prod);
+
+  prod = -3*3;
+
+  printf ( "Should equal -9, is %ld\n", prod);
+
+  prod = -4*-2;
+
+  printf ( "Should equal 8, is %ld\n", prod);
 }

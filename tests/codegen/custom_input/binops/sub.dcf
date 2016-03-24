@@ -4,4 +4,8 @@ void main ( ) {
   dif = 3-2;
   
   printf ( "Should equal 1, is %ld\n", dif );
+
+  dif = dif - (-4);
+
+  printf ( "Should equal 5, is %ld\n", dif );
 }

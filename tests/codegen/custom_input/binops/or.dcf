@@ -12,4 +12,16 @@ void main ( ) {
   else{
     printf ( "Should not print\n" );
   }
+
+  if(true || true) {
+   printf ( "Should print\n" );
+  }
+ 
+  if (false || true) {
+   printf ( "Should print\n" );
+  }
+
+  if (false || false) {
+   printf ( "Should not print\n" );
+  }
 }

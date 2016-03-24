@@ -12,4 +12,8 @@ void main ( ) {
   if(four == four){
     printf ( "Should print\n" );
   }
+
+  if(-2 == -2) {
+    printf ( "Should print\n" );
+  }
 }

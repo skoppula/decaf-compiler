@@ -1,0 +1,27 @@
+callout printf;
+void main ( ) {
+  int sum;
+  int i;
+  int j;
+  sum = 0;
+  i = 0;
+  j = 0;
+  while ( j < 5 ) {
+    for ( j = 0, 12, 3 ) {
+      sum += j;
+    }
+  }  
+  printf ( "expecting to print 18, is %ld\n", sum );    
+
+  j = 0;
+  while ( i < 3 ) {
+    while ( j < 5 ) {
+      sum += 1;
+      j += 1;
+    }
+    i += 1;
+    j = 0;
+  }
+
+  printf ( "expecting to print 33, is %ld\n", sum );    
+}
