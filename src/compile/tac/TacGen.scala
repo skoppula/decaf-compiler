@@ -8,6 +8,7 @@ import compile.tac.OpTypes._
 import compile.tac.AsmGen._
 import compile.tac.ThreeAddressCode._
 import compile.util.Util.combineLinkedHashMaps
+import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
 
 object TacGen {
@@ -217,6 +218,25 @@ object TacGen {
     symbolTable.insert(temp, new IntTypeDescriptor)
 
     val (leftTemp, leftMap) = genExpr(binOpExpr.leftExpr, tempGenie, symbolTable)
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, leftMap)
+
+    val endLabel = tempGenie.generateLabel()
+
+    // If leftTemp is false, and Op is AND, copy leftTemp to temp, and skip over binOp evaluation and short circuit 2
+    // If leftTemp is true, and Op is OR, copy leftTemp to temp, and skip over binOp evaluation
+
+    if(binOpExpr.binOp.isInstanceOf[IrAndOp]) {
+      val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+      val ifTac = new TacIfFalse(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      tacAsmMap(copyTac) = asmGen(copyTac, symbolTable)
+      tacAsmMap(ifTac) = asmGen(ifTac, symbolTable)
+    } else if(binOpExpr.binOp.isInstanceOf[IrOrOp]) {
+      val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+      val ifTac = new TacIf(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      tacAsmMap(copyTac) = asmGen(copyTac, symbolTable)
+      tacAsmMap(ifTac) = asmGen(ifTac, symbolTable)
+    }
+
     val (rightTemp, rightMap) = genExpr(binOpExpr.rightExpr, tempGenie, symbolTable)
     
     var op : BinOpEnumVal = null
@@ -235,11 +255,14 @@ object TacGen {
       case IrEqualOp()  => op = EQ
       case IrNotEqualOp() => op = NEQ 
     }
-    
+
     val tac = new TacBinOp(tempGenie.generateTacNumber(), temp, leftTemp, op, rightTemp)
-    tacAsmMap = combineLinkedHashMaps(tacAsmMap, leftMap)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, rightMap)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
+
+    val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    tacAsmMap(endLabelTAC) = asmGen(endLabelTAC, symbolTable)
+
     return (temp, tacAsmMap)
   }
 
@@ -292,6 +315,7 @@ object TacGen {
     val (index, indexMap) = genExpr(arrayLoc.index, tempGenie, symbolTable)
     tacAsmMap = combineLinkedHashMaps(tacAsmMap, indexMap)
 
+    tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(arrayLoc.name, index, tempGenie, symbolTable))
     val tac = new TacArrayRight(tempGenie.generateTacNumber(), temp, arrayLoc.name, index)
     
     tacAsmMap(tac) = asmGen(tac, symbolTable)
@@ -342,7 +366,7 @@ object TacGen {
     if(!intLit.value.isDefined) {
       throw new CompilerProblem("Trying to assemble int literal copy, int literal has no value tho!", intLit.loc)
     }
-    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, intLit.value.get.toInt)
+    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, intLit.value.get.toLong)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap)
   }
@@ -356,7 +380,7 @@ object TacGen {
     val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
     val temp: String = tempGenie.generateName()
     symbolTable.insert(temp, new IntTypeDescriptor)
-    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, charLit.value.toInt)
+    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, charLit.value.toLong)
     tacAsmMap(tac) = asmGen(tac, symbolTable)
     return (temp, tacAsmMap)
   }
@@ -374,7 +398,63 @@ object TacGen {
     return (temp, tacAsmMap)
   }
   
-  // == Block macro == 
+  // == Block macro ==
+
+  def initializeLocalField(
+                            name : String,
+                            desc : BaseDescriptor,
+                            tempGenie: TempVariableGenie,
+                            symbolTable: SymbolTable
+                          ): LinkedHashMap[Tac, List[String]] = {
+
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+
+    desc match {
+      case itd: IntTypeDescriptor => {
+        val copyIntTac = new TacCopyInt(tempGenie.generateTacNumber(), name, 0)
+        tacAsmMap(copyIntTac) = asmGen(copyIntTac, symbolTable)
+      }
+      case btd: BoolTypeDescriptor => {
+        val copyBoolTac = new TacCopyBoolean(tempGenie.generateTacNumber(), name, false)
+        tacAsmMap(copyBoolTac) = asmGen(copyBoolTac, symbolTable)
+      }
+      case iad: IntArrayTypeDescriptor => {
+        val indexTemp = tempGenie.generateName()
+        symbolTable.insert(indexTemp, new IntTypeDescriptor)
+
+        val constantZeroTemp = tempGenie.generateName()
+        symbolTable.insert(constantZeroTemp, new IntTypeDescriptor)
+        val copyConstantZero = new TacCopyInt(tempGenie.generateTacNumber(), constantZeroTemp, 0)
+        tacAsmMap(copyConstantZero) = asmGen(copyConstantZero, symbolTable)
+
+        for(i <- 0 until iad.size.toInt) {
+          val copyIndex = new TacCopyInt(tempGenie.generateTacNumber(), indexTemp, i)
+          tacAsmMap(copyIndex) = asmGen(copyIndex, symbolTable)
+
+          val arrayAssign = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, constantZeroTemp)
+          tacAsmMap(arrayAssign) = asmGen(arrayAssign, symbolTable)
+        }
+      }
+      case bad: BoolArrayTypeDescriptor => {
+        val indexTemp = tempGenie.generateName()
+        symbolTable.insert(indexTemp, new IntTypeDescriptor)
+
+        val constantFalseTemp = tempGenie.generateName()
+        symbolTable.insert(constantFalseTemp, new BoolTypeDescriptor)
+        val copyConstantFalse = new TacCopyBoolean(tempGenie.generateTacNumber(), constantFalseTemp, false)
+        tacAsmMap(copyConstantFalse) = asmGen(copyConstantFalse, symbolTable)
+
+        for(i <- 0 until bad.size.toInt) {
+          val copyIndex = new TacCopyInt(tempGenie.generateTacNumber(), indexTemp, i)
+          tacAsmMap(copyIndex) = asmGen(copyIndex, symbolTable)
+
+          val arrayAssign = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, constantFalseTemp)
+          tacAsmMap(arrayAssign) = asmGen(arrayAssign, symbolTable)
+        }
+      }
+    }
+    return tacAsmMap
+  }
   
   def genBlock(
                 block: IrBlock,
@@ -384,6 +464,12 @@ object TacGen {
                 symbolTable: SymbolTable) : LinkedHashMap[Tac, List[String]] = {
 
     var tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+
+    for((name, desc) <- symbolTable.symbolTableMap) {
+      if(name.size < 2 || name.substring(0,2) != ".T") {
+        tacAsmMap = combineLinkedHashMaps(tacAsmMap, initializeLocalField(name, desc, tempGenie, symbolTable))
+      }
+    }
 
     val childrenTables = symbolTable.getChildrenSymbolTables
     val expectedNumSubBlocks = childrenTables.size
@@ -453,6 +539,64 @@ object TacGen {
     }
   }
 
+  def checkArrayBounds(
+                       arrayName : String,
+                       indexTemp: String,
+                       tempGenie : TempVariableGenie,
+                       symbolTable : SymbolTable
+                     ) : LinkedHashMap[Tac, List[String]] = {
+
+    val tacAsmMap = LinkedHashMap.empty[Tac, List[String]]
+
+    // Get the size of the array
+    val sizeOfArray: String = tempGenie.generateName()
+    symbolTable.insert(sizeOfArray, new IntTypeDescriptor())
+    val tacSizeOfArray = new TacUnOp(tempGenie.generateTacNumber(), sizeOfArray, SIZE, arrayName)
+    tacAsmMap(tacSizeOfArray) = asmGen(tacSizeOfArray, symbolTable)
+
+    // Check whether the array index is too big
+    val sizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(sizeCheckBool, new BoolTypeDescriptor())
+    val sizeCondCmpTAC = new TacBinOp(tempGenie.generateTacNumber(), sizeCheckBool, indexTemp, LT, sizeOfArray)
+    tacAsmMap(sizeCondCmpTAC) = asmGen(sizeCondCmpTAC, symbolTable)
+
+    // Initialize constant zero for lower bound check
+    val constantZeroTemp = tempGenie.generateName()
+    symbolTable.insert(constantZeroTemp, new IntTypeDescriptor)
+    val copyConstantZero = new TacCopyInt(tempGenie.generateTacNumber(), constantZeroTemp, 0)
+    tacAsmMap(copyConstantZero) = asmGen(copyConstantZero, symbolTable)
+
+    // Check whether the array index is too small
+    val lowerSizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(lowerSizeCheckBool, new BoolTypeDescriptor())
+    val lowerSizeCondTAC = new TacBinOp(tempGenie.generateTacNumber(), lowerSizeCheckBool, indexTemp, LT, constantZeroTemp)
+    tacAsmMap(lowerSizeCondTAC) = asmGen(lowerSizeCondTAC, symbolTable)
+
+    val accessIndexLabel: String = tempGenie.generateLabel()
+    val errorOutLabel: String = tempGenie.generateLabel()
+
+    // If index is not > 0, jump to the system exit (-1)
+    val lowerboundsTAC = new TacIf(tempGenie.generateTacNumber(), lowerSizeCheckBool, errorOutLabel)
+    tacAsmMap(lowerboundsTAC) = asmGen(lowerboundsTAC, symbolTable)
+
+    // If index is within bounds, jump over the system exit (-1)
+    val sizeIfTAC = new TacIf(tempGenie.generateTacNumber(), sizeCheckBool, accessIndexLabel)
+    tacAsmMap(sizeIfTAC) = asmGen(sizeIfTAC, symbolTable)
+
+    // Label right before error out
+    val errorOutLabelTAC = new TacLabel(tempGenie.generateTacNumber(), errorOutLabel)
+    tacAsmMap(errorOutLabelTAC) = asmGen(errorOutLabelTAC, symbolTable)
+
+    val sysExitOne = new TacSystemExit(tempGenie.generateTacNumber(), -1)
+    tacAsmMap(sysExitOne) = asmGen(sysExitOne, symbolTable)
+
+    // Label for everything is all good
+    val accessIndexLabelTAC = new TacLabel(tempGenie.generateTacNumber(), accessIndexLabel)
+    tacAsmMap(accessIndexLabelTAC) = asmGen(accessIndexLabelTAC, symbolTable)
+
+    return tacAsmMap
+  }
+
   def genIrAssignStmt(
                        stmt: IrAssignStmt,
                        tempGenie: TempVariableGenie,
@@ -476,8 +620,10 @@ object TacGen {
             tacAsmMap = combineLinkedHashMaps(tacAsmMap, indexMap)
 
             // Copy RHS into array location
+            tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(name, indexTemp, tempGenie, symbolTable))
             val arrayLocTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, exprTemp)
             tacAsmMap(arrayLocTac) = asmGen(arrayLocTac, symbolTable)
+
             return tacAsmMap
           }
         }
@@ -502,6 +648,7 @@ object TacGen {
             val arrayRightTac = new TacArrayRight(tempGenie.generateTacNumber(), temp, name, indexTemp)
             val arrayOpTac = new TacBinOp(tempGenie.generateTacNumber(), temp, temp, SUB, exprTemp)
             val arrayLeftTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, temp)
+            tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(name, indexTemp, tempGenie, symbolTable))
             tacAsmMap(arrayRightTac) = asmGen(arrayRightTac, symbolTable)
             tacAsmMap(arrayOpTac) = asmGen(arrayOpTac, symbolTable)
             tacAsmMap(arrayLeftTac) = asmGen(arrayLeftTac, symbolTable)
@@ -529,6 +676,7 @@ object TacGen {
             val arrayRightTac = new TacArrayRight(tempGenie.generateTacNumber(), temp, name, indexTemp)
             val arrayOpTac = new TacBinOp(tempGenie.generateTacNumber(), temp, name, ADD, exprTemp)
             val arrayLeftTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, temp)
+            tacAsmMap = combineLinkedHashMaps(tacAsmMap, checkArrayBounds(name, indexTemp, tempGenie, symbolTable))
             tacAsmMap(arrayRightTac) = asmGen(arrayRightTac, symbolTable)
             tacAsmMap(arrayOpTac) = asmGen(arrayOpTac, symbolTable)
             tacAsmMap(arrayLeftTac) = asmGen(arrayLeftTac, symbolTable)

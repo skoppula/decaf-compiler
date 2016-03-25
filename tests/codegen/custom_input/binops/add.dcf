@@ -5,4 +5,8 @@ void main ( ) {
   
   printf ( "Should equal 2, is %ld\n", sum );
 
+  sum = sum + (-3);
+
+  printf ( "Should equal -1, is %ld\n", sum);
+
 }

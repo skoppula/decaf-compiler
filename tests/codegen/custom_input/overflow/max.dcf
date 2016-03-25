@@ -1,0 +1,12 @@
+callout printf;
+void main ( ) {
+  int a;
+  a = 9223372036854775807;
+  
+  printf ( "Should equal 9223372036854775807, is %ld\n", a );
+
+  a += 1;
+
+  printf ( "Should equal -9223372036854775808, is %ld\n", a);
+
+}

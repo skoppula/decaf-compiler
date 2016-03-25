@@ -7,5 +7,13 @@ void main ( ) {
 
   quot = 5%3;
 
-  printf ( "Should equal 2, is %ld\n", quot);
+  printf ( "Should equal 2, is %ld\n", quot );
+
+  quot = 5%-3;
+
+  printf ( "Should equal 2, is %ld\n", quot );
+
+  quot = -5%3;
+
+  printf ( "Should equal -2, is %ld\n", quot );
 }

@@ -11,4 +11,12 @@ void main ( ) {
   else{
     printf ( "Should not print\n" );
   }
+
+  if(-3 > -5) {
+    printf ( "Should print\n");
+  }
+
+  if(-4 > -3) {
+    printf ( "Should not print\n");
+  }
 }

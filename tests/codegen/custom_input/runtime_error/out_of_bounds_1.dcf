@@ -1,0 +1,7 @@
+callout printf;
+int a[2];
+
+void main ( ) {
+    a[-1] = 0;
+}
+
