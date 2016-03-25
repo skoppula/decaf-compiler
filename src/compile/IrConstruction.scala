@@ -266,7 +266,7 @@ object IrConstruction {
 
     // This initial conversion does not attempt to determine if we are performing
     // a method call or a callout call. This will need to be determined
-    // on the semantic pass through. TODO
+    // on the semantic pass through.
     var argNode = methodNameNode.getNextSibling()
     for ( _ <- 0 until numArgs) {
       argNode.getType() match {

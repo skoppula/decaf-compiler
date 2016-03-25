@@ -11,11 +11,11 @@ class CalloutManager(exceptionGenie: ExceptionGenie) {
   def addCallout(calloutName : String): Unit = {
 
     if(closed) {
-      exceptionGenie.insert(new InvalidCalloutException("You cannot declare any callouts!"))
+      exceptionGenie.insert(new InvalidCalloutException("You cannot declare callouts except at the top of the program."))
     }
 
     if(calloutSet contains calloutName) {
-      exceptionGenie.insert(new CalloutAlreadyExistsException("Sorry, you have already defined that callout"))
+      exceptionGenie.insert(new CalloutAlreadyExistsException("Callout " + calloutName + " has already been declared."))
     } else {
       calloutSet = calloutSet + calloutName
     }

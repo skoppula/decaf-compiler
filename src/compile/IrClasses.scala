@@ -3,7 +3,6 @@ package compile
 // class definitions for the intermediate representation
 
 class NodeLocation(ln: Int, cn: Int) {
-    // var program : String = pr //TODO: get the program name somehow
     var lineNumber : Int = ln
     var columnNumber : Int = cn
     override def toString() : String = {
@@ -13,15 +12,11 @@ class NodeLocation(ln: Int, cn: Int) {
 
 abstract class Ir {
     var errors : List[Any] = null
-    var parent : Ir = null
 }
 
 object Ir {
 
 case class IrProgram(calloutDecls: List[IrCalloutDecl], fieldDecls: List[IrFieldDecl], methodDecls: List[IrMethodDecl]) extends Ir {
-  calloutDecls.foreach(c => c.parent = this)
-  fieldDecls.foreach(d => d.parent = this)
-  methodDecls.foreach(m => m.parent = this)
 }
 
 // == Declarations ==
@@ -36,7 +31,6 @@ case class         IrFieldDecl(fieldType: IrType, fields: List[IrFieldDeclArg], 
 }
 
 case class         IrMethodDecl(methodType: IrType, name: String, args: List[IrMethodDeclArg], bodyBlock: IrBlock, loc: NodeLocation) extends IrMemberDecl(loc) {
-    bodyBlock.parent = this
 }
 
 abstract class IrFieldDeclArg(loc : NodeLocation) {
@@ -51,8 +45,6 @@ case class IrMethodDeclArg(argType: IrType, name: String, loc : NodeLocation) {
 
 // == Block ==
 case class IrBlock(fieldDecls: List[IrFieldDecl], stmts: List[IrStatement]) extends Ir {
-    fieldDecls.foreach(f => f.parent = this)
-    stmts.foreach(s => s.parent = this)    
 }
 
 // == Types ==
@@ -76,7 +68,6 @@ abstract class IrStatement(loc: NodeLocation) extends Ir {
 abstract class IrAssignStmt(loc: NodeLocation) extends IrStatement(loc) {
   val irLoc : IrLocation = null
   val expr : IrExpression = null
-  expr.parent = this
 }
 case class         IrEqualsAssignStmt (override val irLoc: IrLocation, override val expr: IrExpression, loc: NodeLocation) extends IrAssignStmt(loc) {
     override def toString(): String = irLoc.toString() + " = " + expr.toString();
@@ -89,29 +80,18 @@ case class         IrPlusAssignStmt (override val irLoc: IrLocation, override va
 }
 
 case class         IrMethodCallStmt (methCall: IrCallExpr, loc: NodeLocation) extends IrStatement(loc) {
-    methCall.parent = this
 }
 
 case class         IrIfStmt (cond: IrExpression, ifBlock: IrBlock, elseBlock: Option[IrBlock], loc: NodeLocation) extends IrStatement(loc) {
-    cond.parent = this
-    ifBlock.parent = this
-    if (elseBlock.isDefined) { 
-        elseBlock.get.parent = this 
-    }
 }
 
 case class         IrForStmt (irLoc: IrLocation, initVal: IrExpression, endVal: IrExpression, inc: Option[IrIntLiteral], bodyBlock: IrBlock, loc: NodeLocation) extends IrStatement(loc) {
-    bodyBlock.parent = this
 }
 
 case class         IrWhileStmt (boolExpr: IrExpression, bodyBlock: IrBlock, loc: NodeLocation) extends IrStatement(loc) {
-    bodyBlock.parent = this
     override def toString(): String = "while" + boolExpr.toString() + bodyBlock.toString();
 }
 case class         IrReturnStmt (value: Option[IrExpression], loc: NodeLocation) extends IrStatement(loc) {
-    if (value.isDefined) {
-        value.get.parent = this
-    }
 }
 
 case class         IrBreakStmt (loc: NodeLocation) extends IrStatement(loc)
@@ -145,20 +125,16 @@ case class             IrSingleLocation(override val name: String, loc: NodeLoca
   override def toString(): String = name;
 }
 case class             IrArrayLocation(override val name: String, index: IrExpression, loc: NodeLocation) extends IrLocation(loc) {
-  index.parent = this
   override def toString(): String = name + "[" + index.toString() + "]";
 }
+
 // = Ternary Expression =
 case class          IrTernOpExpr(cond: IrExpression, leftExpr: IrExpression, rightExpr: IrExpression, loc: NodeLocation) extends IrExpression(loc) {
-  cond.parent = this
-  leftExpr.parent = this
-  rightExpr.parent = this
   override def toString(): String = cond.toString() + "?" + leftExpr.toString() + ":" + rightExpr.toString();
 }
+
 // = Binary Expression =
 case class          IrBinOpExpr(binOp: IrBinOp, leftExpr: IrExpression, rightExpr: IrExpression, loc: NodeLocation) extends IrExpression(loc) {
-  leftExpr.parent = this
-  rightExpr.parent = this
 }
 
 // = Binary Operators =
@@ -183,7 +159,6 @@ case class              IrOrOp() extends IrCondOp
 
 // = Unary Expression =
 case class          IrUnOpExpr(unop: IrUnOp, expr: IrExpression, loc: NodeLocation) extends IrExpression(loc) {
-    expr.parent = this
 }
 // = Unary Operators = 
 abstract class IrUnOp

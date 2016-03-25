@@ -198,11 +198,11 @@ object Compiler {
     //  - Checks if main() method with correct signature is present
     val mainMethodDescriptor = methodsTable.lookupID("main")
     if(mainMethodDescriptor == null) {
-      exceptionGenie.insert(new NoMainMethodException("You don't have a main() method! >:("))
+      exceptionGenie.insert(new NoMainMethodException("The program contains no main() method"))
     }
 
     if(mainMethodDescriptor.getParamMap.nonEmpty) {
-      exceptionGenie.insert(new MainMethodHasParametersException("Your main() method has parameters! Not allowed! >:("))
+      exceptionGenie.insert(new MainMethodHasParametersException("The main() method cannot take arguments"))
     }
     
     if(CLI.irdebug && CLI.target == CLI.Action.INTER) {
@@ -215,7 +215,7 @@ object Compiler {
     for(fieldDecl <- fieldDecls) {
       var isInt: Boolean = false;
       if (fieldDecl.fieldType.isInstanceOf[IrVoidType])
-        exceptionGenie.insert(new VoidCannotBeDeclarationTypeException("void can't be declaration type", fieldDecl.loc))
+        exceptionGenie.insert(new VoidCannotBeDeclarationTypeException("A variable cannot be declared as void type", fieldDecl.loc))
       else {
         isInt = fieldDecl.fieldType.isInstanceOf[IrIntType]
       }
@@ -234,12 +234,12 @@ object Compiler {
             if (isInt) {
               val intArr = field.asInstanceOf[IrArrayFieldDecl]
               fieldName = intArr.name
-              val arrSize = intArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved :(", intArr.loc))
+              val arrSize = intArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved", intArr.loc))
               symbolTable.insert(fieldName, new IntArrayTypeDescriptor(arrSize))
             } else {
               val boolArr = field.asInstanceOf[IrArrayFieldDecl]
               fieldName = boolArr.name
-              val arrSize = boolArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved :(", boolArr.loc))
+              val arrSize = boolArr.size.value.getOrElse(throw new InvalidIntLiteralException("int literal had no value saved", boolArr.loc))
               symbolTable.insert(fieldName, new BoolArrayTypeDescriptor(arrSize))
             }
           }
@@ -281,7 +281,7 @@ object Compiler {
     val parametersMap = new mutable.LinkedHashMap[String, PrimitiveBaseDescriptor]
     for(arg <- methodDecl.args) {
       if(arg.argType.isInstanceOf[IrVoidType]) {
-        exceptionGenie.insert(new MethodParameterCannotBeVoidException("Method parameter cannot be void", methodLoc))
+        exceptionGenie.insert(new MethodParameterCannotBeVoidException("Method parameter cannot be of void type", methodLoc))
       } else {
         if(parametersMap.contains(arg.name)) {
           exceptionGenie.insert(new DuplicateParameterNameException("Duplicate parameter name " + arg.name, methodLoc))

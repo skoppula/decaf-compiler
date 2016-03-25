@@ -20,70 +20,70 @@ import scala.collection.mutable.ListBuffer
 object AsmGen{
   def asmGen(tac: Tac, table: SymbolTable) : List[String] = {
     tac match {
-      case t:TacProgramEnter => { // TODO: Done but untested
+      case t:TacProgramEnter => { 
         return programEnterToAsm(t, table.asInstanceOf[GlobalFieldTable])
       }
-      case t:TacBinOp => { // TODO: Done but untested
+      case t:TacBinOp => { 
         return binOpToAsm(t, table)
       }
-      case t:TacUnOp => { // TODO: Done but untested
+      case t:TacUnOp => { 
         return unaryOpToAsm(t, table)
       }
-      case t:TacIf => { // TODO: Done but untested
+      case t:TacIf => { 
         return ifToAsm(t, table)
       }
-      case t:TacIfFalse => { // TODO: Done but untested
+      case t:TacIfFalse => { 
         return ifFalseToAsm(t, table)
       }
-      case t:TacGoto => { // TODO: Done but untested
+      case t:TacGoto => { 
         return gotoToAsm(t, table)
       }
-      case t:TacGlobl => { // TODO: Done but untested
+      case t:TacGlobl => { 
         return globlToAsm(t, table)
       }
-      case t:TacLabel => { // TODO: Done but untested
+      case t:TacLabel => { 
         return labelToAsm(t, table)
       }
-      case t:TacCopy => { // TODO: Done but untested
+      case t:TacCopy => { 
         return copyToAsm(t, table)
       }
-      case t:TacCopyInt => { // TODO: Done but untested
+      case t:TacCopyInt => { 
         return copyIntToAsm(t, table)
       }
-      case t:TacCopyBoolean => { // TODO: Done but untested
+      case t:TacCopyBoolean => { 
         return copyBooleanToAsm(t, table)
       }
-      case t:TacMethodEnter => { // TODO
+      case t:TacMethodEnter => {
         return methodEnterToAsm(t, table)
       }
-      case t:TacMethodCallExpr => { // TODO: Done but untested
+      case t:TacMethodCallExpr => { 
         return methodCallExprToAsm(t, table)
       }
-      case t:TacMethodCallStmt => { // TODO: Done but untested
+      case t:TacMethodCallStmt => { 
         return methodCallStmtToAsm(t, table)
       }
       case t:TacStringLiteralStart => {
         return List("\t.section\t.rodata\n")
       }
-      case t:TacStringLiteral => { // TODO: Done but untested
+      case t:TacStringLiteral => { 
         return stringLiteralToAsm(t, table)
       }
       case t:TacStringLiteralEnd => {
         return List("\t.text\n")
       }
-      case t:TacReturnValue => { // TODO: Done but untested
+      case t:TacReturnValue => { 
         return returnValueToAsm(t, table)
       }
-      case t:TacReturn => { // TODO: Done but untested
+      case t:TacReturn => { 
         return returnToAsm(t, table)
       }
-      case t:TacSystemExit => { // TODO: Done but untested
+      case t:TacSystemExit => { 
         return systemExitToAsm(t, table)
       }
-      case t:TacArrayLeft => { // TODO: Done but untested
+      case t:TacArrayLeft => { 
         return arrayLeftToAsm(t, table)
       }
-      case t:TacArrayRight => { // TODO: Done but untested
+      case t:TacArrayRight => { 
         return arrayRightToAsm(t, table)
       }
       case t:TacNop => {
@@ -98,7 +98,7 @@ object AsmGen{
 
   def programEnterToAsm(t: TacProgramEnter, table: GlobalFieldTable) : List[String] = {
     // This is where allocation for global variables takes place
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
 
     for((name, descriptor) <- table.symbolTableMap) {
@@ -370,7 +370,7 @@ object AsmGen{
         // 2. Get size = ArrayTypeDescriptor.length
         // 3. movq $size, %r10
         // 4. movq %r10, dest
-        // TODO: Done but untested
+        
         val descriptor = table.lookupID(addr2)
 
         descriptor match {
@@ -391,7 +391,7 @@ object AsmGen{
         // 2. movq [offset2](%rbp) %r10
         // 3. negq %r10
         // 4. movq %r10 [offset1](%rbp)
-        // TODO: Done but untested
+        
         instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
         instrs :+= "\t%s\t%s\n".format("negq", reg)
         instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
@@ -404,7 +404,7 @@ object AsmGen{
         // 3. notq %r10
         // 4. andq $1 %r10
         // 5. movq %r10 [offset1](%rbp)
-        // TODO: Done but untested
+        
         instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
         instrs :+= "\t%s\t%s\n".format("notq", reg)
         instrs :+= "\t%s\t%s, %s\n".format("andq", "$1", reg)
@@ -420,7 +420,7 @@ object AsmGen{
     // 1. Get  offset of addr1
     // 2. cmp $1 [offset1](%rbp)
     // 3. je label
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, label) = (t.addr1, t.label)
     val dest = addrToAsm(addr1, table)
@@ -436,7 +436,7 @@ object AsmGen{
     // 1. Get offset of addr1
     // 2. cmp $1 [offset1](%rbp)
     // 3. jne label
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, label) = (t.addr1, t.label)
     val dest = addrToAsm(addr1, table)
@@ -450,7 +450,6 @@ object AsmGen{
   def gotoToAsm(t: TacGoto, table: SymbolTable) : List[String] = {
     // GOTO label
     // 1. jmp label
-    // TODO: Done but untested
     var instrs : List[String] = List()
 
     instrs :+= "\t%s\t%s\n".format("jmp", t.label)
@@ -474,7 +473,7 @@ object AsmGen{
 
   def labelToAsm(t: TacLabel, table: SymbolTable) : List[String] = {
     // label:
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
 
     instrs :+= "%s:\n".format(t.label)
@@ -492,7 +491,7 @@ object AsmGen{
     // We need to instead store the address corresponding to the base
     // of the array.
     // addrToAsm should now handle string literal labels as well
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, addr2) = (t.addr1, t.addr2)
     val dest = addrToAsm(addr1, table)
@@ -501,7 +500,7 @@ object AsmGen{
 
     if (!table.isGlobal(addr2) && table.lookupID(addr2).isInstanceOf[ArrayBaseDescriptor]) {
       // Array pointer handler
-      // TODO: Done but untested
+      
       instrs :+= "\t%s\t%s, %s\n".format("leaq", src, reg)
     } else {
       instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
@@ -515,7 +514,7 @@ object AsmGen{
     // x = 5
     // 1. get %rbp offset of addr1
     // 2. movq $int offset(%rbp)
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, int) = (t.addr1, t.int)
     val dest = addrToAsm(addr1, table)
@@ -533,7 +532,7 @@ object AsmGen{
     // 1. get %rbp offset of addr1
     // 2. if true, src = "$1" else "$0"
     // 3. movq src offset(%rbp)
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, bool) = (t.addr1, t.bool)
     val dest = addrToAsm(addr1, table)
@@ -557,7 +556,6 @@ object AsmGen{
     val reg = "%r10"
 
     // Allocate space on the stack
-    // TODO This currently keeps returning -8 for the size
     instrs :+= "\tenter\t$(%d), $0\n".format(methodDesc.getTotalByteSize)
 
     // Put every passed argument into a corresponding local var on stack
@@ -579,7 +577,7 @@ object AsmGen{
     // x = foo(args*)
     // 1. Use methodCallStmtToAsm to generate all the initial method call related instructions
     // 2. movq %rax [location of addr1](%rbp)
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, method, args) = (t.addr1, t.method, t.args)
     val dest = addrToAsm(addr1, table)
@@ -604,7 +602,7 @@ object AsmGen{
     //       movq $0 %rax
     // 4. call method
     // Same as methodCallExprToAsm excepting steps 1 and 5
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (method, args) = (t.method, t.args)
     val reg = "%r10"
@@ -646,7 +644,7 @@ object AsmGen{
 
   def returnValueToAsm(t: TacReturnValue, table: SymbolTable) : List[String] = {
     // addr1 is the variable where the return value is stored
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val addr1 = t.addr1
     val src = addrToAsm(addr1, table)
@@ -659,7 +657,7 @@ object AsmGen{
 
   def returnToAsm(t: TacReturn, table: SymbolTable) : List[String] = {
     // indicator to leave, ret the method call
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
 
     instrs :+= "\tleave\n"
@@ -680,7 +678,7 @@ object AsmGen{
 
   def arrayRightToAsm(t: TacArrayRight, table: SymbolTable) : List[String] = {
     // x = y[index] (index is a temp variable as well)
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, addr2, index) = (t.addr1, t.addr2, t.index)
     val dest = addrToAsm(addr1, table)
@@ -698,7 +696,7 @@ object AsmGen{
 
   def arrayLeftToAsm(t: TacArrayLeft, table: SymbolTable) : List[String] = {
     // x[index] = y (index is a temp variable as well)
-    // TODO: Done but untested
+    
     var instrs : List[String] = List()
     val (addr1, index, addr2) = (t.addr1, t.index, t.addr2)
     val src = addrToAsm(addr2, table)
@@ -719,7 +717,6 @@ object AsmGen{
      * A local variable reference will be of the form: offset(%rbp)
      * A string literal label with prefix .L will be of the form: $.L___
      */
-    // TODO : Done but untested
 
     if (name.length >= 2 && name.substring(0,2) == ".L") {
       // String literal handler
@@ -746,7 +743,7 @@ object AsmGen{
     /* A global array variable reference will be of the form: name(,indexReg,8)
      * A local array variable reference will be of the form: offset(%rbp,indexReg,8)
      */
-    // TODO: Done but untested
+    
     val primitiveTypeSize = 8
     if (table.isGlobal(name)) {
       return "%s(,%s,%d)".format(name, indexReg, primitiveTypeSize)
@@ -816,7 +813,6 @@ object AsmGen{
   }
 
   def descToSizeBytes(desc: BaseDescriptor) : Int = {
-    // TODO : Done but untested
     desc match {
       case d:IntTypeDescriptor => {
         return d.sizeBytes

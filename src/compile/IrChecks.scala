@@ -470,7 +470,6 @@ object IrChecks {
       }
       case s: IrContinueStmt => {
         val scopeFilter = scopeStack.toList.filter((s:SymbolTable) => (s.scopeType == FOR || s.scopeType == WHILE))
-        println(scopeFilter)
         if (scopeFilter.length > 0) {
           return true
         } else {
