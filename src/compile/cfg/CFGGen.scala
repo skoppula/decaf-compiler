@@ -232,10 +232,10 @@ class CFGGen {
 //        return genIrWhileStmt(s, tempGenie, symbolTable)
 //      }
       case s: IrReturnStmt => {
-        return genIrReturnStmt(s, tempGenie, symbolTable)
+        return genIrReturnStmtBB(s, tempGenie, symbolTable)
       }
       case s: IrBreakStmt => {
-        return genIrBreakStmt(s, parentEnd, tempGenie, symbolTable)
+        return genIrBreakStmtBB(s, parentEnd, tempGenie, symbolTable)
       }
       case s: IrContinueStmt => {
         return genIrContinueStmtBB(s, parentStart, tempGenie, symbolTable)
@@ -425,7 +425,7 @@ class CFGGen {
     throw new NoMatchingStatementException("in genIrAssignStmt()", stmt.expr.nodeLoc)
   }
 
-  def genIrReturnStmt(
+  def genIrReturnStmtBB(
                        stmt: IrReturnStmt,
                        tempGenie: TempVariableGenie,
                        symbolTable: SymbolTable
@@ -452,7 +452,7 @@ class CFGGen {
     return (startContBB, endContBB)
   }
 
-  def genIrBreakStmt(
+  def genIrBreakStmtBB(
                       stmt: IrBreakStmt,
                       parentEnd: NormalBB,
                       tempGenie: TempVariableGenie,
