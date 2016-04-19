@@ -4,6 +4,7 @@ import compile.Ir._
 import compile.exceptionhandling._
 import compile.symboltables.{MethodsTable, SymbolTable}
 import compile.descriptors._
+import compile.tac.OpTypes.{ADD, SUB, LT, SIZE}
 import compile.tac.TempVariableGenie
 import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
@@ -211,9 +212,9 @@ class CFGGen {
                symbolTable2: SymbolTable = null
              ) : (NormalBB, NormalBB) = {
     stmt match {
-//      case s: IrAssignStmt => {
-//        return genIrAssignStmt(s, tempGenie, symbolTable)
-//      }
+      case s: IrAssignStmt => {
+        return genIrAssignStmtBB(s, tempGenie, symbolTable)
+      }
 //      case s: IrMethodCallStmt => {
 //        return genIrMethodCallStmt(s, tempGenie, symbolTable)
 //      }
@@ -243,6 +244,185 @@ class CFGGen {
         throw new NoMatchingStatementException("No matching statement", stmt.nodeLoc)
       }
     }
+  }
+
+  def checkArrayBoundsBB(
+                        arrayName : String,
+                        indexTemp: String,
+                        tempGenie : TempVariableGenie,
+                        symbolTable : SymbolTable
+                      ) : (NormalBB, NormalBB) = {
+
+    val checkBB = new NormalBB(symbolTable)
+
+    // Get the size of the array
+    val sizeOfArray: String = tempGenie.generateName()
+    symbolTable.insert(sizeOfArray, new IntTypeDescriptor())
+    val tacSizeOfArray = new TacUnOp(tempGenie.generateTacNumber(), sizeOfArray, SIZE, arrayName)
+    checkBB.instrs += tacSizeOfArray
+
+    // Check whether the array index is too big
+    val sizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(sizeCheckBool, new BoolTypeDescriptor())
+    val sizeCondCmpTAC = new TacBinOp(tempGenie.generateTacNumber(), sizeCheckBool, indexTemp, LT, sizeOfArray)
+    checkBB.instrs += sizeCondCmpTAC
+
+    // Initialize constant zero for lower bound check
+    val constantZeroTemp = tempGenie.generateName()
+    symbolTable.insert(constantZeroTemp, new IntTypeDescriptor)
+    // TODO Optimize
+    val copyConstantZero = new TacCopyInt(tempGenie.generateTacNumber(), constantZeroTemp, 0)
+    checkBB.instrs += copyConstantZero
+
+    // Check whether the array index is too small
+    val lowerSizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(lowerSizeCheckBool, new BoolTypeDescriptor())
+    val lowerSizeCondTAC = new TacBinOp(tempGenie.generateTacNumber(), lowerSizeCheckBool, indexTemp, LT, constantZeroTemp)
+    checkBB.instrs += lowerSizeCondTAC
+
+    val accessIndexLabel: String = tempGenie.generateLabel()
+    val errorOutLabel: String = tempGenie.generateLabel()
+
+    // If index is not > 0, jump to the system exit (-1)
+    val lowerboundsTAC = new TacIf(tempGenie.generateTacNumber(), lowerSizeCheckBool, errorOutLabel)
+    checkBB.instrs += lowerboundsTAC
+
+    // If index is within bounds, jump over the system exit (-1)
+    val sizeIfTAC = new TacIf(tempGenie.generateTacNumber(), sizeCheckBool, accessIndexLabel)
+    checkBB.instrs += sizeIfTAC
+
+    // Label right before error out
+    val errorOutLabelTAC = new TacLabel(tempGenie.generateTacNumber(), errorOutLabel)
+    checkBB.instrs += errorOutLabelTAC
+
+    val sysExitOne = new TacSystemExit(tempGenie.generateTacNumber(), -1)
+    checkBB.instrs += sysExitOne
+
+    // Label for everything is all good
+    val accessIndexLabelTAC = new TacLabel(tempGenie.generateTacNumber(), accessIndexLabel)
+    checkBB.instrs += accessIndexLabelTAC
+
+    return (checkBB, checkBB)
+  }
+
+
+  def genIrAssignStmtBB(
+                       stmt: IrAssignStmt,
+                       tempGenie: TempVariableGenie,
+                       symbolTable: SymbolTable
+                     ) : (NormalBB, NormalBB) = {
+
+    val (exprTemp, exprStartBB, exprEndBB) = genExprBB(stmt.expr, tempGenie, symbolTable)
+
+    val assignStartBB = new NormalBB(symbolTable)
+    val assignEndBB = new NormalBB(symbolTable)
+
+    stmt match {
+      case IrEqualsAssignStmt(irLoc, expr, _) => {
+        irLoc match {
+          case IrSingleLocation(name, _) => {
+            val singleLocTac = new TacCopy(tempGenie.generateTacNumber(), name, exprTemp)
+            assignStartBB.instrs += singleLocTac
+            return (assignStartBB, assignStartBB)
+          }
+
+          case IrArrayLocation(name, index, _) => {
+            // Evaluate expression in index
+            val (indexTemp, indexStartBB, indexEndBB) = genExprBB(index, tempGenie, symbolTable)
+            assignStartBB.child = indexStartBB
+            indexStartBB.parent = assignStartBB
+
+            val (checkBoundsStartBB, checkBoundsEndBB) = checkArrayBoundsBB(name, indexTemp, tempGenie, symbolTable)
+            indexEndBB.child = checkBoundsStartBB
+            checkBoundsStartBB.parent = indexEndBB
+            checkBoundsEndBB.child = assignEndBB
+            assignEndBB.parent = checkBoundsEndBB
+
+            // Copy RHS into array location
+            val arrayLocTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, exprTemp)
+            assignEndBB.instrs += arrayLocTac
+
+            return (assignStartBB, assignEndBB)
+          }
+        }
+      }
+
+      case IrMinusAssignStmt(irLoc, expr, _) =>  {
+        irLoc match {
+          case IrSingleLocation(name, _) => {
+            val minusTac = new TacBinOp(tempGenie.generateTacNumber(), name, name, SUB, exprTemp)
+            assignStartBB.instrs += minusTac
+            return (assignStartBB, assignStartBB)
+          }
+
+          case IrArrayLocation(name, index, _) => {
+            // Evaluate expression in index
+            val (indexTemp, indexStartBB, indexEndBB) = genExprBB(index, tempGenie, symbolTable)
+            val (checkStartBB, checkEndBB) = checkArrayBoundsBB(name, indexTemp, tempGenie, symbolTable)
+
+            assignStartBB.child = indexStartBB
+            indexStartBB.parent = assignStartBB
+
+            indexEndBB.child = checkStartBB
+            checkStartBB.parent = indexEndBB
+
+            val temp: String = tempGenie.generateName()
+            symbolTable.insert(temp, new IntTypeDescriptor())
+
+            val arrayRightTac = new TacArrayRight(tempGenie.generateTacNumber(), temp, name, indexTemp)
+            val arrayOpTac = new TacBinOp(tempGenie.generateTacNumber(), temp, temp, SUB, exprTemp)
+            val arrayLeftTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, temp)
+            assignEndBB.instrs += arrayRightTac
+            assignEndBB.instrs += arrayOpTac
+            assignEndBB.instrs += arrayLeftTac
+
+            checkEndBB.child = assignEndBB
+            assignEndBB.parent = checkEndBB
+
+            return (assignStartBB, assignEndBB)
+          }
+        }
+      }
+
+      case IrPlusAssignStmt(irLoc, expr, _) => {
+        irLoc match {
+          case IrSingleLocation(name, _) => {
+            val plusTac = new TacBinOp(tempGenie.generateTacNumber(), name, name, ADD, exprTemp)
+            assignStartBB.instrs += plusTac
+            return (assignStartBB, assignStartBB)
+          }
+
+          case IrArrayLocation(name, index, _) => {
+            val (indexTemp, indexStartBB, indexEndBB) = genExprBB(index, tempGenie, symbolTable)
+            val (checkStartBB, checkEndBB) = checkArrayBoundsBB(name, indexTemp, tempGenie, symbolTable)
+
+            assignStartBB.child = indexStartBB
+            indexStartBB.parent = assignStartBB
+
+            indexEndBB.child = checkStartBB
+            checkStartBB.parent = indexEndBB
+
+            val temp: String = tempGenie.generateName()
+            symbolTable.insert(temp, new IntTypeDescriptor())
+
+            val arrayRightTac = new TacArrayRight(tempGenie.generateTacNumber(), temp, name, indexTemp)
+            val arrayOpTac = new TacBinOp(tempGenie.generateTacNumber(), temp, name, ADD, exprTemp)
+            val arrayLeftTac = new TacArrayLeft(tempGenie.generateTacNumber(), name, indexTemp, temp)
+
+            assignEndBB.instrs += arrayRightTac
+            assignEndBB.instrs += arrayOpTac
+            assignEndBB.instrs += arrayLeftTac
+
+            checkEndBB.child = assignEndBB
+            assignEndBB.parent = checkEndBB
+
+            return (assignStartBB, assignEndBB)
+          }
+        }
+      }
+    }
+
+    throw new NoMatchingStatementException("in genIrAssignStmt()", stmt.expr.nodeLoc)
   }
 
   def genIrReturnStmt(
