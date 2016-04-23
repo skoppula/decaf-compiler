@@ -4,7 +4,7 @@ import compile.Ir._
 import compile.exceptionhandling._
 import compile.symboltables.{MethodsTable, SymbolTable}
 import compile.descriptors._
-import compile.tac.OpTypes.{ADD, SUB, LT, SIZE}
+import compile.tac.OpTypes._
 import compile.tac.TempVariableGenie
 import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
@@ -152,8 +152,8 @@ object CFGGen {
 
   def genBlockBB(
                   block: IrBlock,
-                  parentStart: NormalBB,
-                  parentEnd: NormalBB,
+                  parentStart: JumpDestBB,
+                  parentEnd: JumpDestBB,
                   tempGenie: TempVariableGenie,
                   symbolTable: SymbolTable): (NormalBB, NormalBB) = {
 
@@ -217,8 +217,8 @@ object CFGGen {
 
   def genStmtBB(
                stmt: IrStatement,
-               parentStart: NormalBB,
-               parentEnd: NormalBB,
+               parentStart: JumpDestBB,
+               parentEnd: JumpDestBB,
                tempGenie: TempVariableGenie,
                symbolTable: SymbolTable,
                symbolTable2: SymbolTable = null
@@ -240,9 +240,9 @@ object CFGGen {
       case s: IrForStmt => {
         return genIrForStmtBB(s, tempGenie, symbolTable)
       }
-//      case s: IrWhileStmt => {
-//        return genIrWhileStmt(s, tempGenie, symbolTable)
-//      }
+      case s: IrWhileStmt => {
+        return genIrWhileStmtBB(s, tempGenie, symbolTable)
+      }
       case s: IrReturnStmt => {
         return genIrReturnStmtBB(s, tempGenie, symbolTable)
       }
@@ -258,6 +258,54 @@ object CFGGen {
     }
   }
 
+  def genIrWhileStmtBB(
+                      stmt: IrWhileStmt,
+                      tempGenie: TempVariableGenie,
+                      symbolTable: SymbolTable
+                    ) : (NormalBB, NormalBB) = {
+
+    val whileStartBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    val whileEndBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+
+    val startLabel: String = tempGenie.generateLabel()
+    val endLabel: String = tempGenie.generateLabel()
+
+    whileStartBB.label = startLabel
+    whileEndBB.label = endLabel
+
+    val startLabelTAC = new TacLabel(tempGenie.generateTacNumber(), startLabel)
+    whileStartBB.instrs += startLabelTAC
+
+    val (condTemp, condStartBB, condEndBB) = genExprBB(stmt.boolExpr, tempGenie, symbolTable)
+    whileStartBB.child = condStartBB
+    condStartBB.parent = whileStartBB
+
+    val whileJmp = new BranchBB(symbolTable.getParentSymbolTable)
+    val jmpIfFalseTAC = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, endLabel)
+    whileJmp.instrs += jmpIfFalseTAC
+    whileJmp.parent = condEndBB
+    condEndBB.child = whileJmp
+
+
+    val (blockStartBB, blockEndBB) = genBlockBB(stmt.bodyBlock, whileStartBB, whileEndBB, tempGenie, symbolTable)
+
+    whileJmp.child = blockStartBB
+    blockStartBB.parent = whileJmp
+
+    whileJmp.child_else = whileEndBB
+    whileEndBB.parent = whileJmp
+
+    val loopBackTAC = new TacGoto(tempGenie.generateTacNumber(), startLabel)
+    blockEndBB.instrs += loopBackTAC
+
+    blockEndBB.child = whileStartBB
+
+    val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    whileEndBB.instrs += endLabelTAC
+
+    return (whileStartBB, whileEndBB)
+  }
+
   def genIrForStmtBB(
                     stmt: IrForStmt,
                     tempGenie: TempVariableGenie,
@@ -265,8 +313,8 @@ object CFGGen {
                   ) : (NormalBB, NormalBB) = {
 
     val forStartBB = new NormalBB(symbolTable.getParentSymbolTable) // Changed from TacGen
-    val forEndBB = new MergeBB(symbolTable.getParentSymbolTable) // Changed from TacGen
-    val forPreIncrementBB = new NormalBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    val forEndBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    val forPreIncrementBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
 
     val trueStartLabel: String = tempGenie.generateLabel()
     val jumpStartLabel: String = tempGenie.generateLabel()
@@ -285,7 +333,6 @@ object CFGGen {
     initValBB.instrs += copyIntoVar
 
     val forLoopBeginBB = new NormalBB(symbolTable.getParentSymbolTable)
-    forLoopBeginBB.label = trueStartLabel
     forLoopBeginBB.parent = initValBB
     initValBB.child = forLoopBeginBB
 
@@ -358,8 +405,8 @@ object CFGGen {
 
   def genIrIfStmtBB(
                    stmt: IrIfStmt,
-                   parentStart: NormalBB,
-                   parentEnd: NormalBB,
+                   parentStart: JumpDestBB,
+                   parentEnd: JumpDestBB,
                    tempGenie: TempVariableGenie,
                    symbolTable: SymbolTable,
                    symbolTable2: SymbolTable = null
@@ -475,6 +522,7 @@ object CFGGen {
         val tac = new TacMethodCallStmt(tempGenie.generateTacNumber(), name, tempArgs.toList)
         methodCallBB.parent = currParent
         currParent.child = methodCallBB
+        methodCallBB.instrs += tac
       }
     }
     return (methodStartBB, methodCallBB)
@@ -689,7 +737,7 @@ object CFGGen {
 
   def genIrBreakStmtBB(
                       stmt: IrBreakStmt,
-                      parentEnd: NormalBB,
+                      parentEnd: JumpDestBB,
                       tempGenie: TempVariableGenie,
                       symbolTable: SymbolTable
                     ) : (NormalBB, NormalBB) = {
@@ -697,12 +745,13 @@ object CFGGen {
     val gotoTac = new TacGoto(tempGenie.generateTacNumber(), parentEnd.label)
     breakBB.instrs += gotoTac
     breakBB.child = parentEnd
+    parentEnd.jmpParents += breakBB
     return (breakBB, breakBB)
   }
 
   def genIrContinueStmtBB(
                          stmt: IrContinueStmt,
-                         parentStart: NormalBB,
+                         parentStart: JumpDestBB,
                          tempGenie: TempVariableGenie,
                          symbolTable: SymbolTable
                        ): (NormalBB, NormalBB) = {
@@ -710,6 +759,7 @@ object CFGGen {
     val gotoTac = new TacGoto(tempGenie.generateTacNumber(), parentStart.label)
     continueBB.instrs += gotoTac
     continueBB.child = parentStart
+    parentStart.jmpParents += continueBB
     return (continueBB, continueBB)
   }
 
@@ -719,30 +769,30 @@ object CFGGen {
                symbolTable: SymbolTable
              ) : (String, NormalBB, NormalBB) = {
     expr match {
-//      case singleLoc: IrSingleLocation => {
-//        return genIrSingleLocation(singleLoc, tempGenie, symbolTable)
-//      }
-//      case arrayLoc: IrArrayLocation => {
-//        return genIrArrayLocation(arrayLoc, tempGenie, symbolTable)
-//      }
-//      case methodCall: IrMethodCallExpr => {
-//        return genIrMethodCallExpr(methodCall, tempGenie, symbolTable)
-//      }
-//      case intLit: IrIntLiteral => {
-//        return genIrIntLiteral(intLit, tempGenie, symbolTable)
-//      }
-//      case charLit: IrCharLiteral => {
-//        return genIrCharLiteral(charLit, tempGenie, symbolTable)
-//      }
-//      case boolLit: IrBooleanLiteral => {
-//        return genIrBooleanLiteral(boolLit, tempGenie, symbolTable)
-//      }
-//      case binOpExpr: IrBinOpExpr => {
-//        return genIrBinOpExpr(binOpExpr, tempGenie, symbolTable)
-//      }
-//      case unOpExpr: IrUnOpExpr => {
-//        return genIrUnOpExpr(unOpExpr, tempGenie, symbolTable)
-//      }
+      case singleLoc: IrSingleLocation => {
+        return genIrSingleLocationBB(singleLoc, tempGenie, symbolTable)
+      }
+      case arrayLoc: IrArrayLocation => {
+        return genIrArrayLocationBB(arrayLoc, tempGenie, symbolTable)
+      }
+      case methodCall: IrMethodCallExpr => {
+        return genIrMethodCallExprBB(methodCall, tempGenie, symbolTable)
+      }
+      case intLit: IrIntLiteral => {
+        return genIrIntLiteralBB(intLit, tempGenie, symbolTable)
+      }
+      case charLit: IrCharLiteral => {
+        return genIrCharLiteralBB(charLit, tempGenie, symbolTable)
+      }
+      case boolLit: IrBooleanLiteral => {
+        return genIrBooleanLiteralBB(boolLit, tempGenie, symbolTable)
+      }
+      case binOpExpr: IrBinOpExpr => {
+        return genIrBinOpExprBB(binOpExpr, tempGenie, symbolTable)
+      }
+      case unOpExpr: IrUnOpExpr => {
+        return genIrUnOpExprBB(unOpExpr, tempGenie, symbolTable)
+      }
 //      case ternOpExpr: IrTernOpExpr => {
 //        return genIrTernOpExpr(ternOpExpr, tempGenie, symbolTable)
 //      }
@@ -750,5 +800,251 @@ object CFGGen {
         return null
       }
     }
+  }
+
+  def genIrUnOpExprBB(
+                     unOpExpr: IrUnOpExpr,
+                     tempGenie: TempVariableGenie,
+                     symbolTable: SymbolTable
+                   ) : (String, NormalBB, NormalBB) = {
+
+    val unOpStartBB = new NormalBB(symbolTable)
+    val unOpEndBB = new NormalBB(symbolTable)
+
+    val temp: String = tempGenie.generateName()
+
+    val (exprTemp, exprStartBB, exprEndBB) = genExprBB(unOpExpr.expr, tempGenie, symbolTable)
+    unOpStartBB.child = exprStartBB
+    exprStartBB.parent = unOpStartBB
+
+    exprEndBB.child = unOpEndBB
+    unOpEndBB.parent = exprEndBB
+
+    var op: UnOpEnumVal = null
+    unOpExpr.unop match {
+      case minus: IrMinusOp => {
+        op = MINUS
+        symbolTable.insert(temp, new IntTypeDescriptor)
+      }
+      case not: IrNotOp => {
+        op = NOT
+        symbolTable.insert(temp, new BoolTypeDescriptor)
+      }
+      case size: IrArraySizeOp => {
+        op = SIZE
+        symbolTable.insert(temp, new IntTypeDescriptor)
+      }
+    }
+
+    val tac = new TacUnOp(tempGenie.generateTacNumber(), temp, op, exprTemp)
+    unOpEndBB.instrs += tac
+
+    return (temp, unOpStartBB, unOpEndBB)
+  }
+
+  def genIrBinOpExprBB(
+                      binOpExpr: IrBinOpExpr,
+                      tempGenie: TempVariableGenie,
+                      symbolTable: SymbolTable
+                    ) : (String, NormalBB, NormalBB) = {
+
+    val binOpStartBB = new NormalBB(symbolTable)
+    val binOpEndBB = new NormalBB(symbolTable)
+
+    val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+
+    val (leftTemp, leftStartBB, leftEndBB) = genExprBB(binOpExpr.leftExpr, tempGenie, symbolTable)
+    binOpStartBB.child = leftStartBB
+    leftStartBB.parent = binOpStartBB
+
+    val endLabel = tempGenie.generateLabel()
+
+    // If leftTemp is false, and Op is AND, copy leftTemp to temp, and skip over binOp evaluation and short circuit 2
+    // If leftTemp is true, and Op is OR, copy leftTemp to temp, and skip over binOp evaluation
+    val scBB = new NormalBB(symbolTable)
+    scBB.parent = leftEndBB
+    leftEndBB.child = scBB
+    val scJmpBB = new BranchBB(symbolTable)
+    scBB.child = scJmpBB
+    scJmpBB.parent = scBB
+    scJmpBB.child_else = binOpEndBB
+
+    val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+    scBB.instrs += copyTac
+
+    if(binOpExpr.binOp.isInstanceOf[IrAndOp]) {
+      val ifTac = new TacIfFalse(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      scJmpBB.instrs += ifTac
+    } else if(binOpExpr.binOp.isInstanceOf[IrOrOp]) {
+      val ifTac = new TacIf(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      scJmpBB.instrs += ifTac
+    }
+
+    val (rightTemp, rightStartBB, rightEndBB) = genExprBB(binOpExpr.rightExpr, tempGenie, symbolTable)
+    scJmpBB.child = rightStartBB
+
+    var op : BinOpEnumVal = null
+    binOpExpr.binOp match {
+      case IrMulOp() => op = MULT
+      case IrDivOp() => op = DIV
+      case IrModOp() => op = MOD
+      case IrAddOp() => op = ADD
+      case IrSubOp() => op = SUB
+      case IrAndOp() => op = AND
+      case IrOrOp()  => op = OR
+      case IrLtOp()  => op = LT
+      case IrLteOp() => op = LTE
+      case IrGtOp()  => op = GT
+      case IrGteOp() => op = GTE
+      case IrEqualOp()  => op = EQ
+      case IrNotEqualOp() => op = NEQ
+    }
+
+    val opBB = new NormalBB(symbolTable)
+    rightEndBB.child = opBB
+    opBB.parent = rightEndBB
+    opBB.child = binOpEndBB
+
+    val tac = new TacBinOp(tempGenie.generateTacNumber(), temp, leftTemp, op, rightTemp)
+    opBB.instrs += tac
+
+    val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    binOpEndBB.instrs += endLabelTAC
+
+    return (temp, binOpStartBB, binOpEndBB)
+  }
+
+  def genIrMethodCallExprBB(
+                           methodExpr: IrMethodCallExpr,
+                           tempGenie: TempVariableGenie,
+                           symbolTable: SymbolTable
+                         ) : (String, NormalBB, NormalBB) =  {
+
+    val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+
+    var tempArgs: ListBuffer[String] = ListBuffer.empty[String]
+
+    val methodStartBB = new NormalBB(symbolTable)
+    var methodCallBB : NormalBB = null
+    var currParent = methodStartBB
+    val name : String = methodExpr.name
+
+    for (arg <- methodExpr.args) {
+      arg match {
+        case IrCallExprArg(argExpr, _) => {
+          val (argTemp, argStartBB, argEndBB) = genExprBB(argExpr, tempGenie, symbolTable)
+          currParent.child = argStartBB
+          argStartBB.parent = currParent
+
+          currParent = argEndBB
+          tempArgs += argTemp
+        }
+
+        case IrCallStringArg(strLit, _) => {
+          val stringArgBB = new NormalBB(symbolTable)
+          val strLitLabel = tempGenie.generateLabel()
+          val strTac = new TacStringLiteral(tempGenie.generateTacNumber(), strLitLabel, strLit.value)
+          stringArgBB.instrs += strTac
+          currParent.child = stringArgBB
+          stringArgBB.parent = currParent
+
+          currParent = stringArgBB
+          tempArgs += strLitLabel
+        }
+      }
+    }
+    methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+    methodCallBB.parent = currParent
+    currParent.child = methodCallBB
+
+    val tac = new TacMethodCallExpr(tempGenie.generateTacNumber(), temp, name, tempArgs.toList)
+    methodCallBB.instrs += tac
+
+    return (temp, methodStartBB, methodCallBB)
+  }
+
+  def genIrArrayLocationBB(
+                          arrayLoc: IrArrayLocation,
+                          tempGenie: TempVariableGenie,
+                          symbolTable: SymbolTable
+                        ) : (String, NormalBB, NormalBB) = {
+
+    val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+
+    val (index, indexStartBB, indexEndBB) = genExprBB(arrayLoc.index, tempGenie, symbolTable)
+    val (checkStartBB, checkEndBB) = checkArrayBoundsBB(arrayLoc.name, index, tempGenie, symbolTable)
+    indexEndBB.child = checkStartBB
+    checkStartBB.parent = indexEndBB
+    val tac = new TacArrayRight(tempGenie.generateTacNumber(), temp, arrayLoc.name, index)
+    checkEndBB.instrs += tac
+    return (temp, indexStartBB, checkEndBB)
+  }
+
+  def genIrSingleLocationBB(
+                           singleLoc: IrSingleLocation,
+                           tempGenie: TempVariableGenie,
+                           symbolTable: SymbolTable
+                         ) : (String, NormalBB, NormalBB) = {
+    val slBB = new NormalBB(symbolTable)
+    val temp: String = tempGenie.generateName()
+    val locType = symbolTable.lookupID(singleLoc.name)
+    locType match {
+      case a: ArrayBaseDescriptor => {
+        symbolTable.insert(temp, new IntArrayTypeDescriptor(a.length))
+      }
+      case p: PrimitiveBaseDescriptor => {
+        symbolTable.insert(temp, new IntTypeDescriptor)
+      }
+    }
+
+    val tac = new TacCopy(tempGenie.generateTacNumber(), temp, singleLoc.name)
+    slBB.instrs += tac
+    return (temp, slBB, slBB)
+  }
+
+  def genIrBooleanLiteralBB(
+                           boolLit: IrBooleanLiteral,
+                           tempGenie: TempVariableGenie,
+                           symbolTable: SymbolTable
+                         ) : (String, NormalBB, NormalBB) = {
+    val boolLitBB = new NormalBB(symbolTable)
+    val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+    val tac = new TacCopyBoolean(tempGenie.generateTacNumber(), temp, boolLit.value)
+    boolLitBB.instrs += tac
+    return (temp, boolLitBB, boolLitBB)
+  }
+
+  def genIrIntLiteralBB(
+                       intLit: IrIntLiteral,
+                       tempGenie: TempVariableGenie,
+                       symbolTable: SymbolTable
+                     ) : (String, NormalBB, NormalBB) = {
+    val intLitBB = new NormalBB(symbolTable)
+    val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+    if(!intLit.value.isDefined) {
+      throw new CompilerProblem("Trying to assemble int literal copy, int literal has no value tho!", intLit.loc)
+    }
+    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, intLit.value.get.toLong)
+    intLitBB.instrs += tac
+    return (temp, intLitBB, intLitBB)
+  }
+
+  // Character literals evaluate to their integer ASCII value
+  def genIrCharLiteralBB(
+                        charLit: IrCharLiteral,
+                        tempGenie: TempVariableGenie,
+                        symbolTable: SymbolTable
+                      ) : (String, NormalBB, NormalBB) = {
+    val charLitBB = new NormalBB(symbolTable)
+    val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+    val tac = new TacCopyInt(tempGenie.generateTacNumber(), temp, charLit.value.toLong)
+    charLitBB.instrs += tac
+    return (temp, charLitBB, charLitBB)
   }
 }
