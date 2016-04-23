@@ -237,9 +237,9 @@ object CFGGen {
           return genIrIfStmtBB(s, parentStart, parentEnd, tempGenie, symbolTable)
         }
       }
-//      case s: IrForStmt => {
-//        return genIrForStmt(s, tempGenie, symbolTable)
-//      }
+      case s: IrForStmt => {
+        return genIrForStmtBB(s, tempGenie, symbolTable)
+      }
 //      case s: IrWhileStmt => {
 //        return genIrWhileStmt(s, tempGenie, symbolTable)
 //      }
@@ -257,6 +257,104 @@ object CFGGen {
       }
     }
   }
+
+  def genIrForStmtBB(
+                    stmt: IrForStmt,
+                    tempGenie: TempVariableGenie,
+                    symbolTable: SymbolTable
+                  ) : (NormalBB, NormalBB) = {
+
+    val forStartBB = new NormalBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    val forEndBB = new MergeBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    val forPreIncrementBB = new NormalBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+
+    val trueStartLabel: String = tempGenie.generateLabel()
+    val jumpStartLabel: String = tempGenie.generateLabel()
+    forPreIncrementBB.label = jumpStartLabel
+    val endLabel: String = tempGenie.generateLabel()
+    forEndBB.label = endLabel
+
+    val (initValTemp, initValStartBB, initValEndBB) = genExprBB(stmt.initVal, tempGenie, symbolTable)
+    forStartBB.child = initValStartBB
+    initValStartBB.parent = forStartBB
+
+    val copyIntoVar = new TacCopy(tempGenie.generateTacNumber(), stmt.irLoc.name, initValTemp)
+    val initValBB = new NormalBB(symbolTable.getParentSymbolTable)
+    initValBB.parent = initValEndBB
+    initValEndBB.child = initValBB
+    initValBB.instrs += copyIntoVar
+
+    val forLoopBeginBB = new NormalBB(symbolTable.getParentSymbolTable)
+    forLoopBeginBB.label = trueStartLabel
+    forLoopBeginBB.parent = initValBB
+    initValBB.child = forLoopBeginBB
+
+    val forBeginTAC = new TacLabel(tempGenie.generateTacNumber(), trueStartLabel) // beginning of the for loop
+    forLoopBeginBB.instrs += forBeginTAC
+
+    val (endValTemp, endValStartBB, endValEndBB) = genExprBB(stmt.endVal, tempGenie, symbolTable)
+    endValStartBB.parent = forLoopBeginBB
+    forLoopBeginBB.child = endValStartBB
+
+    // lessThan is boolean representing if index < endVal
+    val lessThan: String = tempGenie.generateName()
+    symbolTable.insert(lessThan, new BoolTypeDescriptor())
+    val forCondCmpTAC = new TacBinOp(tempGenie.generateTacNumber(), lessThan, initValTemp, LT, endValTemp)
+    forLoopBeginBB.instrs += forCondCmpTAC
+
+    val forJmpBB = new BranchBB(symbolTable.getParentSymbolTable)
+    forJmpBB.parent = forLoopBeginBB
+    val forIfFalseTAC = new TacIfFalse(tempGenie.generateTacNumber(), lessThan, endLabel) //if index >= endVal, exit for loop
+    forJmpBB.instrs += forIfFalseTAC
+
+    val (blockStartBB, blockEndBB) = genBlockBB(stmt.bodyBlock, forPreIncrementBB, forEndBB, tempGenie, symbolTable)
+    blockStartBB.parent = forJmpBB
+    forJmpBB.child = blockStartBB
+    forJmpBB.child_else = forEndBB
+    forEndBB.parent = forJmpBB
+
+    blockEndBB.child = forPreIncrementBB
+    forPreIncrementBB.parent = blockEndBB
+
+    val incrementBB = new NormalBB(symbolTable.getParentSymbolTable)
+
+    if (stmt.inc.isDefined) {
+      val (incTemp, incStartBB, incEndBB) = genExprBB(stmt.inc.get, tempGenie, symbolTable)
+      forPreIncrementBB.child = incStartBB
+      incStartBB.parent = forPreIncrementBB
+
+      val forIncTAC = new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by inc
+      incrementBB.instrs += forIncTAC
+
+      val copyIntoVar = new TacCopy(tempGenie.generateTacNumber(), stmt.irLoc.name, initValTemp)
+      incrementBB.instrs += copyIntoVar
+
+      incrementBB.parent = incEndBB
+      incEndBB.child = incrementBB
+
+    } else {
+      val incTemp : String = tempGenie.generateName()
+      symbolTable.insert(incTemp, new IntTypeDescriptor())
+      val loadIncTAC = new TacCopyInt(tempGenie.generateTacNumber(), incTemp, 1)
+      val incOpTAC = new TacBinOp(tempGenie.generateTacNumber(), initValTemp, initValTemp, ADD, incTemp) // increment index by 1
+      val copyIntoVar = new TacCopy(tempGenie.generateTacNumber(), stmt.irLoc.name, initValTemp)
+
+      incrementBB.instrs += loadIncTAC
+      incrementBB.instrs += incOpTAC
+      incrementBB.instrs += copyIntoVar
+      incrementBB.parent = forPreIncrementBB
+      forPreIncrementBB.child = incrementBB
+    }
+    val loopTAC = new TacGoto(tempGenie.generateTacNumber(), trueStartLabel) // continue looping
+    incrementBB.instrs += loopTAC
+    incrementBB.child = forLoopBeginBB
+
+    val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    forEndBB.instrs += endLabelTAC
+
+    return (forStartBB, forEndBB)
+  }
+
 
   def genIrIfStmtBB(
                    stmt: IrIfStmt,

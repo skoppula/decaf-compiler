@@ -30,6 +30,7 @@ class MethodCallBB(
 class BranchBB(
                 currSymbolTable : SymbolTable
               ) extends NormalBB(currSymbolTable) {
+  // There should be only one instr in the list above (invariant)
   var child_else : NormalBB = null
 }
 

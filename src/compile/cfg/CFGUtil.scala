@@ -7,4 +7,5 @@ class CFGUtil {
   // TODO COPY SYMBOL TABLES SO THAT IT ACTUALLY WORKS
   // TODO compress the CFG
   // SSA
+  // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
 }
