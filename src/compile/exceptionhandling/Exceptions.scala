@@ -113,6 +113,7 @@ case class CompilerProblem(message: String, loc: NodeLocation) extends Exception
 case class CompilerProblemNoLocation(message: String) extends Exception(message)
 
 case class ExpectedSubBlockCountNotActualException(message: String) extends Exception(message)
+case class StmtAfterContinueBreakReturnException(message: String) extends Exception(message)
 
 case class NoMatchingStatementException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 

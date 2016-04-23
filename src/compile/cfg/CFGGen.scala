@@ -7,9 +7,11 @@ import compile.descriptors._
 import compile.tac.OpTypes.{ADD, SUB, LT, SIZE}
 import compile.tac.TempVariableGenie
 import compile.tac.ThreeAddressCode._
-import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
+import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
 
-class CFGGen {
+object CFGGen {
+
+  val bbMethodMap : LinkedHashMap[String, (NormalBB, NormalBB)] = LinkedHashMap.empty[String, (NormalBB, NormalBB)]
 
   def genCFG(
               program: IrProgram,
@@ -17,8 +19,6 @@ class CFGGen {
               methodsTable: MethodsTable,
               tacAsmMap: LinkedHashMap[Tac, List[String]]
             ): (NormalBB, LinkedHashMap[String, (NormalBB, NormalBB)]) = {
-
-    val bbMethodMap = LinkedHashMap.empty[String, (NormalBB, NormalBB)]
 
     for (method <- program.methodDecls) {
       val methodDesc = methodsTable.lookupID(method.name)
@@ -175,8 +175,14 @@ class CFGGen {
     var stmtBBs : (NormalBB, NormalBB) = (null, null)
     var stmtStartBB : NormalBB = null
     var stmtEndBB : NormalBB = null
+    var jmpEncountered : Boolean = false //check to make sure no stmts after return/continue/break found
+    var jmpCheck : Boolean = true
 
     for (stmt <- block.stmts) {
+      if(jmpEncountered) {
+        jmpCheck = false
+      }
+      // pass down the correct symbol table
       if(stmt.isInstanceOf[IrIfStmt] && stmt.asInstanceOf[IrIfStmt].elseBlock.isDefined) {
         stmtBBs = genStmtBB(stmt, parentStart, parentEnd, tempGenie, childrenTables(subblockCount), childrenTables(subblockCount+1))
         subblockCount += 2
@@ -186,18 +192,24 @@ class CFGGen {
       } else {
         stmtBBs = genStmtBB(stmt, parentStart, parentEnd, tempGenie, symbolTable)
       }
+
+      // the specific genStmtBB handles the parent-child setting relationships depending if stmt is continue/break/return
       stmtStartBB = stmtBBs._1
       stmtEndBB = stmtBBs._2
-      currParent.child = stmtStartBB
       stmtStartBB.parent = currParent
+      currParent.child = stmtStartBB
+
+      if(stmt.isInstanceOf[IrReturnStmt] || !stmt.isInstanceOf[IrContinueStmt] || !stmt.isInstanceOf[IrBreakStmt]) {
+        jmpEncountered = true
+      }
 
       currParent = stmtEndBB
     }
 
     if(expectedNumSubBlocks != subblockCount) {
       throw new ExpectedSubBlockCountNotActualException("Expected " + expectedNumSubBlocks.toString  + " but got " + subblockCount.toString)
-    } else if (stmtEndBB == null) {
-      throw new ExpectedSubBlockCountNotActualException("Something went horribly wrong here")
+    } else if (!jmpCheck) {
+      throw new StmtAfterContinueBreakReturnException("Statement after continue/break/return")
     }
 
     return (currParent, stmtEndBB)
@@ -215,16 +227,16 @@ class CFGGen {
       case s: IrAssignStmt => {
         return genIrAssignStmtBB(s, tempGenie, symbolTable)
       }
-//      case s: IrMethodCallStmt => {
-//        return genIrMethodCallStmt(s, tempGenie, symbolTable)
-//      }
-//      case s: IrIfStmt => {
-//        if(s.elseBlock.isDefined) {
-//          return genIrIfStmt(s, parentStart, parentEnd, tempGenie, symbolTable, symbolTable2)
-//        } else {
-//          return genIrIfStmt(s, parentStart, parentEnd, tempGenie, symbolTable)
-//        }
-//      }
+      case s: IrMethodCallStmt => {
+        return genIrMethodCallStmtBB(s, tempGenie, symbolTable)
+      }
+      case s: IrIfStmt => {
+        if(s.elseBlock.isDefined) {
+          return genIrIfStmtBB(s, parentStart, parentEnd, tempGenie, symbolTable, symbolTable2)
+        } else {
+          return genIrIfStmtBB(s, parentStart, parentEnd, tempGenie, symbolTable)
+        }
+      }
 //      case s: IrForStmt => {
 //        return genIrForStmt(s, tempGenie, symbolTable)
 //      }
@@ -245,6 +257,131 @@ class CFGGen {
       }
     }
   }
+
+  def genIrIfStmtBB(
+                   stmt: IrIfStmt,
+                   parentStart: NormalBB,
+                   parentEnd: NormalBB,
+                   tempGenie: TempVariableGenie,
+                   symbolTable: SymbolTable,
+                   symbolTable2: SymbolTable = null
+                 ) : (NormalBB, NormalBB) = {
+
+    val ifStartBB = new NormalBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    val ifEndBB = new MergeBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    val (condTemp, condStartBB, condEndBB) = genExprBB(stmt.cond, tempGenie, symbolTable.getParentSymbolTable)
+    ifStartBB.child = condStartBB
+    condStartBB.parent = ifStartBB
+
+    val ifJmpBB = new BranchBB(symbolTable.getParentSymbolTable)
+    condEndBB.child = ifJmpBB
+    ifJmpBB.parent = condEndBB
+
+    val endLabel: String = tempGenie.generateLabel()
+    val endLabelTac = new TacLabel(tempGenie.generateTacNumber(), endLabel)
+    ifEndBB.instrs += endLabelTac
+
+    if (stmt.elseBlock.isDefined) {
+      // Generate jmp-if-false and if-block
+      val elseLabel: String = tempGenie.generateLabel()
+      val ifFalseTac = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, elseLabel) // jump to the else block
+      ifJmpBB.instrs += ifFalseTac
+
+      val (ifTrueBlockStartBB, ifTrueBlockEndBB) = genBlockBB(stmt.ifBlock, parentStart, parentEnd, tempGenie, symbolTable)
+      ifJmpBB.child = ifTrueBlockStartBB
+      ifTrueBlockStartBB.parent = ifJmpBB
+
+      val gotoEndTac = new TacGoto(tempGenie.generateTacNumber(), endLabel)
+      ifTrueBlockEndBB.instrs += gotoEndTac
+      if(ifTrueBlockEndBB.child == null) {
+        ifTrueBlockEndBB.child = ifEndBB
+        ifEndBB.parent = ifTrueBlockEndBB
+      }
+
+      val elseBlockStart = new NormalBB(symbolTable2)
+      val elseLabelTac = new TacLabel(tempGenie.generateTacNumber(), elseLabel)
+      elseBlockStart.instrs += elseLabelTac
+      elseBlockStart.parent = ifJmpBB
+      ifJmpBB.child_else = elseBlockStart
+
+
+      val (ifFalseBlockStartBB, ifFalseBlockEndBB) = genBlockBB(stmt.elseBlock.get, parentStart, parentEnd, tempGenie, symbolTable2)
+      elseBlockStart.child = ifFalseBlockStartBB
+      ifFalseBlockStartBB.parent = elseBlockStart
+
+      if(ifTrueBlockEndBB.child == null) {
+        ifFalseBlockEndBB.child = ifEndBB
+        ifEndBB.parent_else = ifFalseBlockEndBB
+      }
+
+    } else {
+      val ifFalseTac = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, endLabel) // jump to the end of the if
+      ifJmpBB.instrs += ifFalseTac
+
+      val (ifTrueBlockStartBB, ifTrueBlockEndBB) = genBlockBB(stmt.ifBlock, parentStart, parentEnd, tempGenie, symbolTable)
+      ifJmpBB.child = ifTrueBlockStartBB
+      ifTrueBlockStartBB.parent = ifJmpBB
+
+      if(ifTrueBlockEndBB.child == null) {
+        ifTrueBlockEndBB.child = ifEndBB
+        ifEndBB.parent = ifTrueBlockEndBB
+      }
+
+      ifJmpBB.child_else = ifEndBB
+      ifEndBB.parent_else = ifJmpBB
+    }
+
+    return (ifStartBB, ifEndBB)
+  }
+
+  def genIrMethodCallStmtBB(
+                           stmt: IrMethodCallStmt,
+                           tempGenie: TempVariableGenie,
+                           symbolTable: SymbolTable
+                         ) : (NormalBB, NormalBB) = {
+
+    val callExpr: IrCallExpr = stmt.methCall
+    var tempArgs: ListBuffer[String] = ListBuffer.empty[String]
+
+    val methodStartBB = new NormalBB(symbolTable)
+    var methodCallBB : NormalBB = null
+    var currParent = methodStartBB
+
+    callExpr match {
+      case IrMethodCallExpr(name, args, _) => {
+        for (arg <- args) {
+          arg match {
+            case IrCallExprArg(argExpr, _) => {
+              val (argTemp, argStartBB, argEndBB) = genExprBB(argExpr, tempGenie, symbolTable)
+              currParent.child = argStartBB
+              argStartBB.parent = currParent
+
+              currParent = argEndBB
+              tempArgs += argTemp
+            }
+
+            case IrCallStringArg(strLit, _) => {
+              val stringArgBB = new NormalBB(symbolTable)
+              val strLitLabel = tempGenie.generateLabel()
+              val strTac = new TacStringLiteral(tempGenie.generateTacNumber(), strLitLabel, strLit.value)
+              stringArgBB.instrs += strTac
+              currParent.child = stringArgBB
+              stringArgBB.parent = currParent
+
+              currParent = stringArgBB
+              tempArgs += strLitLabel
+            }
+          }
+        }
+        methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+        val tac = new TacMethodCallStmt(tempGenie.generateTacNumber(), name, tempArgs.toList)
+        methodCallBB.parent = currParent
+        currParent.child = methodCallBB
+      }
+    }
+    return (methodStartBB, methodCallBB)
+  }
+
 
   def checkArrayBoundsBB(
                         arrayName : String,
@@ -458,10 +595,11 @@ class CFGGen {
                       tempGenie: TempVariableGenie,
                       symbolTable: SymbolTable
                     ) : (NormalBB, NormalBB) = {
-    val continueBB = new NormalBB(symbolTable)
+    val breakBB = new NormalBB(symbolTable)
     val gotoTac = new TacGoto(tempGenie.generateTacNumber(), parentEnd.label)
-    continueBB.instrs += gotoTac
-    return (continueBB, continueBB)
+    breakBB.instrs += gotoTac
+    breakBB.child = parentEnd
+    return (breakBB, breakBB)
   }
 
   def genIrContinueStmtBB(
@@ -473,6 +611,7 @@ class CFGGen {
     val continueBB = new NormalBB(symbolTable)
     val gotoTac = new TacGoto(tempGenie.generateTacNumber(), parentStart.label)
     continueBB.instrs += gotoTac
+    continueBB.child = parentStart
     return (continueBB, continueBB)
   }
 
