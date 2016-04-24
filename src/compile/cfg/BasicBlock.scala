@@ -13,6 +13,7 @@ class NormalBB(
   var parent : NormalBB = null
   var methodTop = false
   var programStart = false
+  var symbolTable = currSymbolTable
 }
 
 // Stores the start and end basic blocks of the method that it's calling
@@ -21,6 +22,8 @@ class MethodCallBB(
                 methodStart : NormalBB,
                 methodEnd : NormalBB
               ) extends NormalBB(currSymbolTable) {
+  var methodStartBB : NormalBB = methodStart
+  var methodEndBB : NormalBB = methodEnd
 }
 
 class BranchBB(
