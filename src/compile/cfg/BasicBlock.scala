@@ -34,7 +34,6 @@ class MergeBB(
                 currSymbolTable : SymbolTable
               ) extends NormalBB(currSymbolTable) {
   var parent_else : NormalBB = null
-  var child_else : NormalBB = null
 }
 
 class JumpDestBB(
