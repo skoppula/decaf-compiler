@@ -5,11 +5,9 @@ import compile.symboltables.SymbolTable
 import compile.tac.{AsmGen}
 
 object CFGUtil {
-  // Method to convert CFG to assembly (Austin : tentative implementation done)
   // TODO Method to print out CFG
-  // TODO eventually BasicBlockremove AsmGen calls in TacGen, instead create TAC list, then CFG, then optimizations if any, then ASM
-  // TODO COPY SYMBOL TABLES so we can run TacGen and CFGGen simulataneously
   // TODO compress the CFG
+  // TODO Remove NOP, check new parent symbol table call didn't affect anythign
   // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
 
   def getStringLiteralTacs(bb : NormalBB, doNotTraverseBBs : List[String]) : List[TacStringLiteral] = {
