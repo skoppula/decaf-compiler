@@ -2,6 +2,7 @@ package compile
 
 import _root_.util.CLI
 import java.io._
+import compile.cfg.{CFGUtil, CFGGen}
 import compile.exceptionhandling._
 import sext._
 
@@ -14,9 +15,11 @@ import compile.tac._
 import compile.tac.ThreeAddressCode._
 import TacGen._
 
+import compile.util.Util.dprint
+import compile.util.Util.dprintln
+
 import scala.Console
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 // Begin parser/scanner imports
 import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenTypes }
@@ -50,29 +53,47 @@ object Compiler {
     }
   }
 
+
   def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
     val tempGenie : TempVariableGenie = new TempVariableGenie
-    val tacAsmMap = gen(program, tempGenie, methodsTable)
 
-    if (CLI.outfile == null || CLI.outfile.isEmpty) {
+    var asmStr : String = ""
+    if(CLI.tacgen) {
+      val tacAsmMap = gen(program, tempGenie, methodsTable)
       for (list <- tacAsmMap.values) {
-        outFile.println(list mkString "")
+        asmStr += list mkString "" + "\n"
+      }
+
+      if(CLI.debug) {
+        SymbolTableUtil.printSymbolTableStructure(methodsTable)
+        println("\n" + tacAsmMap.keys mkString "")
       }
     } else {
-      val pw = new PrintWriter(new File(CLI.outfile))
-      for (list <- tacAsmMap.values) {
-        pw.write(list mkString "" + "\n")
+      dprintln("Using the new CFG method!")
+      dprintln("Generating CFG...")
+      val (programStartBB, methodsBBMap) = CFGGen.genCFG(program, tempGenie, methodsTable)
+
+      dprintln("Converting CFG to a TAC list...")
+      var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
+      for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
+        tacs = tacs ::: CFGUtil.cfgToTacs(methodStartBB, List())
       }
+
+      dprintln("Finished creation of TAC list. TACs:")
+      dprintln("\n" + tacs mkString "")
+      dprintln("Generating assembly...")
+
+      asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
+    }
+
+    if (CLI.outfile == null || CLI.outfile.isEmpty) {
+      outFile.println(asmStr)
+    } else {
+      val pw = new PrintWriter(new File(CLI.outfile))
+      pw.write(asmStr)
       pw.close
     }
 
-    if(CLI.debug) {
-      SymbolTableUtil.printSymbolTableStructure(methodsTable)
-      println()
-      for (tac <- tacAsmMap.keys) {
-        println(tac)
-      }
-    }
   }
 
   def scan(fileName: String) {

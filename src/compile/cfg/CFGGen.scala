@@ -177,6 +177,8 @@ object CFGGen {
 
     for (stmt <- block.stmts) {
       if(jmpEncountered) {
+        println("bad jmpcheck!!!")
+        println(stmt)
         jmpCheck = false
       }
       // pass down the correct symbol table
@@ -196,7 +198,7 @@ object CFGGen {
       stmtStartBB.parent = currParent
       currParent.child = stmtStartBB
 
-      if(stmt.isInstanceOf[IrReturnStmt] || !stmt.isInstanceOf[IrContinueStmt] || !stmt.isInstanceOf[IrBreakStmt]) {
+      if(stmt.isInstanceOf[IrReturnStmt] || stmt.isInstanceOf[IrContinueStmt] || stmt.isInstanceOf[IrBreakStmt]) {
         jmpEncountered = true
       }
 
@@ -523,7 +525,12 @@ object CFGGen {
             }
           }
         }
-        methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+        if(bbMethodMap.get(name).isEmpty) {
+          // Must be a callout
+          methodCallBB = new MethodCallBB(symbolTable, null, null)
+        } else {
+          methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+        }
         val tac = new TacMethodCallStmt(tempGenie.generateTacNumber(), name, tempArgs.toList)
         methodCallBB.parent = currParent
         currParent.child = methodCallBB
@@ -1033,7 +1040,12 @@ object CFGGen {
         }
       }
     }
-    methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+    if(bbMethodMap.get(name).isEmpty) {
+      // Must be a callout
+      methodCallBB = new MethodCallBB(symbolTable, null, null)
+    } else {
+      methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+    }
     methodCallBB.parent = currParent
     currParent.child = methodCallBB
 

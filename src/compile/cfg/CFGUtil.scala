@@ -111,6 +111,7 @@ object CFGUtil {
 
     for((tac, symbolTable) <- tacs) {
       asm = asm ::: AsmGen.asmGen(tac, symbolTable)
+      asm = asm :+ "\n"
     }
 
     return asm
