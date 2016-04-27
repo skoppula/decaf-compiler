@@ -14,6 +14,7 @@ class NormalBB(
   var methodTop = false
   var programStart = false
   var symbolTable = currSymbolTable
+  var id = BasicBlockGenie.generateBBName()
 }
 
 // Stores the start and end basic blocks of the method that it's calling
@@ -31,6 +32,7 @@ class BranchBB(
               ) extends NormalBB(currSymbolTable) {
   // There should be only one instr in the list above (invariant)
   var child_else : NormalBB = null
+  var preincrement : NormalBB = null // Pointer to Preincrement in a For Branch to generate TAC/Asm
 }
 
 class MergeBB(

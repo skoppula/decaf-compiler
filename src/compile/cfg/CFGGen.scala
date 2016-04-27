@@ -16,13 +16,14 @@ object CFGGen {
   def genCFG(
               program: IrProgram,
               tempGenie: TempVariableGenie,
-              methodsTable: MethodsTable,
-              tacAsmMap: LinkedHashMap[Tac, List[String]]
+              methodsTable: MethodsTable
             ): (NormalBB, LinkedHashMap[String, (NormalBB, NormalBB)]) = {
 
+    var stringLiteralTacs : List[TacStringLiteral] = List()
     for (method <- program.methodDecls) {
       val methodDesc = methodsTable.lookupID(method.name)
       val methodBBs = genMethodDeclBB(method, tempGenie, methodDesc)
+      stringLiteralTacs = stringLiteralTacs ::: CFGUtil.getStringLiteralTacs(methodBBs._1, List())
       bbMethodMap(method.name) = methodBBs
     }
 
@@ -33,12 +34,8 @@ object CFGGen {
     val strStart = new TacStringLiteralStart(tempGenie.generateTacNumber())
     psBB.instrs += strStart
 
-    val tacs = tacAsmMap.keySet
-    for (tac <- tacs) {
-      if (tac.isInstanceOf[TacStringLiteral]) {
-        psBB.instrs += tac
-        tacAsmMap.remove(tac)
-      }
+    for (slTac <- stringLiteralTacs) {
+        psBB.instrs += slTac
     }
 
     val strEnd = new TacStringLiteralEnd(tempGenie.generateTacNumber())
@@ -289,10 +286,10 @@ object CFGGen {
 
     val (blockStartBB, blockEndBB) = genBlockBB(stmt.bodyBlock, whileStartBB, whileEndBB, tempGenie, symbolTable)
 
-    whileJmp.child = blockStartBB
+    whileJmp.child_else = blockStartBB
     blockStartBB.parent = whileJmp
 
-    whileJmp.child_else = whileEndBB
+    whileJmp.child = whileEndBB
     whileEndBB.parent = whileJmp
 
     val loopBackTAC = new TacGoto(tempGenie.generateTacNumber(), startLabel)
@@ -313,8 +310,13 @@ object CFGGen {
                   ) : (NormalBB, NormalBB) = {
 
     val forStartBB = new NormalBB(symbolTable.getParentSymbolTable) // Changed from TacGen
-    val forEndBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    // init value creation
+    // label: start_loop
+    // check condition
+    // .... block shit
     val forPreIncrementBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
+    // increment, loop back to start_loop
+    val forEndBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
 
     val trueStartLabel: String = tempGenie.generateLabel()
     val jumpStartLabel: String = tempGenie.generateLabel()
@@ -357,9 +359,11 @@ object CFGGen {
 
     val (blockStartBB, blockEndBB) = genBlockBB(stmt.bodyBlock, forPreIncrementBB, forEndBB, tempGenie, symbolTable)
     blockStartBB.parent = forJmpBB
-    forJmpBB.child = blockStartBB
-    forJmpBB.child_else = forEndBB
+    forJmpBB.child_else = blockStartBB
+    forJmpBB.child = forEndBB
     forEndBB.parent = forJmpBB
+
+    forJmpBB.preincrement = forPreIncrementBB
 
     blockEndBB.child = forPreIncrementBB
     forPreIncrementBB.parent = blockEndBB
@@ -434,7 +438,7 @@ object CFGGen {
       ifJmpBB.instrs += ifFalseTac
 
       val (ifTrueBlockStartBB, ifTrueBlockEndBB) = genBlockBB(stmt.ifBlock, parentStart, parentEnd, tempGenie, symbolTable)
-      ifJmpBB.child = ifTrueBlockStartBB
+      ifJmpBB.child_else = ifTrueBlockStartBB
       ifTrueBlockStartBB.parent = ifJmpBB
 
       val gotoEndTac = new TacGoto(tempGenie.generateTacNumber(), endLabel)
@@ -448,7 +452,7 @@ object CFGGen {
       val elseLabelTac = new TacLabel(tempGenie.generateTacNumber(), elseLabel)
       elseBlockStart.instrs += elseLabelTac
       elseBlockStart.parent = ifJmpBB
-      ifJmpBB.child_else = elseBlockStart
+      ifJmpBB.child = elseBlockStart
 
 
       val (ifFalseBlockStartBB, ifFalseBlockEndBB) = genBlockBB(stmt.elseBlock.get, parentStart, parentEnd, tempGenie, symbolTable2)
@@ -473,7 +477,7 @@ object CFGGen {
         ifEndBB.parent = ifTrueBlockEndBB
       }
 
-      ifJmpBB.child_else = ifEndBB
+      ifJmpBB.child = ifEndBB
       ifEndBB.parent_else = ifJmpBB
     }
 
@@ -842,7 +846,7 @@ object CFGGen {
     jmpTernOpBB.instrs += tac
 
     val (leftTemp, leftStartBB, leftEndBB) = genExprBB(ternOpExpr.leftExpr, tempGenie, symbolTable)
-    jmpTernOpBB.child = leftStartBB
+    jmpTernOpBB.child_else = leftStartBB
     leftStartBB.parent = jmpTernOpBB
     val leftCopy = TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
     leftEndBB.instrs += leftCopy
@@ -851,7 +855,7 @@ object CFGGen {
 
     val elseBB = new NormalBB(symbolTable)
     elseBB.parent = jmpTernOpBB
-    jmpTernOpBB.child_else = elseBB
+    jmpTernOpBB.child = elseBB
     elseBB.instrs += elseLabelTac
 
     val (rightTemp, rightStartBB, rightEndBB) = genExprBB(ternOpExpr.rightExpr, tempGenie, symbolTable)
@@ -926,29 +930,37 @@ object CFGGen {
 
     val endLabel = tempGenie.generateLabel()
 
-    // If leftTemp is false, and Op is AND, copy leftTemp to temp, and skip over binOp evaluation and short circuit 2
-    // If leftTemp is true, and Op is OR, copy leftTemp to temp, and skip over binOp evaluation
-    val scBB = new NormalBB(symbolTable)
-    scBB.parent = leftEndBB
-    leftEndBB.child = scBB
-    val scJmpBB = new BranchBB(symbolTable)
-    scBB.child = scJmpBB
-    scJmpBB.parent = scBB
-    scJmpBB.child_else = binOpEndBB
-
-    val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
-    scBB.instrs += copyTac
-
-    if(binOpExpr.binOp.isInstanceOf[IrAndOp]) {
-      val ifTac = new TacIfFalse(tempGenie.generateTacNumber(), leftTemp, endLabel)
-      scJmpBB.instrs += ifTac
-    } else if(binOpExpr.binOp.isInstanceOf[IrOrOp]) {
-      val ifTac = new TacIf(tempGenie.generateTacNumber(), leftTemp, endLabel)
-      scJmpBB.instrs += ifTac
-    }
-
     val (rightTemp, rightStartBB, rightEndBB) = genExprBB(binOpExpr.rightExpr, tempGenie, symbolTable)
-    scJmpBB.child = rightStartBB
+
+    if(binOpExpr.binOp.isInstanceOf[IrAndOp] || binOpExpr.binOp.isInstanceOf[IrOrOp]) {
+      // If leftTemp is false, and Op is AND, copy leftTemp to temp, and skip over binOp evaluation and short circuit 2
+      // If leftTemp is true, and Op is OR, copy leftTemp to temp, and skip over binOp evaluation
+      val scBB = new NormalBB(symbolTable)
+      scBB.parent = leftEndBB
+      leftEndBB.child = scBB
+      val scJmpBB = new BranchBB(symbolTable)
+      scBB.child = scJmpBB
+      scJmpBB.parent = scBB
+      scJmpBB.child = binOpEndBB
+
+      val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+      scBB.instrs += copyTac
+
+      if(binOpExpr.binOp.isInstanceOf[IrAndOp]) {
+        val ifTac = new TacIfFalse(tempGenie.generateTacNumber(), leftTemp, endLabel)
+        scJmpBB.instrs += ifTac
+      } else if(binOpExpr.binOp.isInstanceOf[IrOrOp]) {
+        val ifTac = new TacIf(tempGenie.generateTacNumber(), leftTemp, endLabel)
+        scJmpBB.instrs += ifTac
+      }
+
+      scJmpBB.child_else = rightStartBB
+      rightStartBB.parent = scJmpBB
+
+    } else {
+      leftEndBB.child = rightStartBB
+      rightStartBB.parent = leftEndBB
+    }
 
     var op : BinOpEnumVal = null
     binOpExpr.binOp match {
