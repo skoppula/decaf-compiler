@@ -8,6 +8,7 @@ import compile.tac.OpTypes._
 import compile.tac.TempVariableGenie
 import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
+import compile.util.Util.dprintln
 
 object CFGGen {
 

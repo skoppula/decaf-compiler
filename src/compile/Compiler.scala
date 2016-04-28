@@ -65,7 +65,6 @@ object Compiler {
       }
 
       if(CLI.debug) {
-        // SymbolTableUtil.printSymbolTableStructure(methodsTable)
         for(tac <- tacAsmMap.keys) {
           dprintln(tac + "\n")
         }
@@ -75,6 +74,10 @@ object Compiler {
       dprintln("Generating CFG...")
       val (programStartBB, methodsBBMap) = CFGGen.genCFG(program, tempGenie, methodsTable)
 
+      if(CLI.debug) {
+        SymbolTableUtil.printSymbolTableStructure(methodsTable)
+      }
+
       dprintln("Converting CFG to a TAC list...")
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
@@ -83,7 +86,7 @@ object Compiler {
 
       dprintln("Finished creation of TAC list. TACs:")
       for((tac,st) <- tacs) {
-        dprintln(tac + "\n")
+        dprintln(tac.toString)
       }
       dprintln("Generating assembly...")
 
