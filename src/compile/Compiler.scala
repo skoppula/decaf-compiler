@@ -65,8 +65,10 @@ object Compiler {
       }
 
       if(CLI.debug) {
-        SymbolTableUtil.printSymbolTableStructure(methodsTable)
-        println("\n" + tacAsmMap.keys mkString "")
+        // SymbolTableUtil.printSymbolTableStructure(methodsTable)
+        for(tac <- tacAsmMap.keys) {
+          dprintln(tac + "\n")
+        }
       }
     } else {
       dprintln("Using the new CFG method!")
@@ -80,7 +82,9 @@ object Compiler {
       }
 
       dprintln("Finished creation of TAC list. TACs:")
-      dprintln("\n" + tacs mkString "")
+      for((tac,st) <- tacs) {
+        dprintln(tac + "\n")
+      }
       dprintln("Generating assembly...")
 
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
