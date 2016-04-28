@@ -84,6 +84,20 @@ object Compiler {
       dprintln("Generating assembly...")
 
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
+
+      // === Dot file generation end ===
+      /*
+      var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())
+      for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
+        map = CFGUtil.mergeMaps(map, CFGUtil.cfgToMap(methodStartBB, List()))
+      }
+
+      var dot : List[String] = CFGUtil.mapToDot(map)
+      dprintln("Dumping dot graph output...")
+      dprintln(dot.mkString)
+       */
+      // === Dot file generation end ===
+
     }
 
     if (CLI.outfile == null || CLI.outfile.isEmpty) {

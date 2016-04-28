@@ -117,4 +117,101 @@ object CFGUtil {
     return asm
   }
 
+  def mapToDot(map : Map[String, Set[String]]) : List[String] = {
+    var dot : List[String] = List()
+    dot = dot :+ "digraph G {\n"
+
+    println(map)
+
+    for ((parent,children) <- map) {
+      dot = dot :+ "\t%s;\n".format(parent)
+      for (child <- children) {
+        dot = dot :+ "\t%s -> %s;\n".format(parent, child)
+      }
+    }
+
+    dot = dot :+ "}\n"
+    return dot
+  }
+
+  def cfgToMap(bb: NormalBB, doNotTraverseBBs : List[String]) : Map[String,Set[String]] = {
+    // This returns a map of bb ids -> set of bb ids
+    var currentBB : NormalBB = bb
+    var map : Map[String, Set[String]] = Map()
+
+    while (currentBB != null) {
+      if (currentBB.isInstanceOf[MethodCallBB]) {
+        val MCBB : MethodCallBB = currentBB.asInstanceOf[MethodCallBB]
+        map = addNodeToMap(map, MCBB)
+      } else if (currentBB.isInstanceOf[BranchBB]) {
+
+        val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
+        map = addNodeToMap(map, BBB)
+
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(currentBB.child.id)) {
+          if(BBB.preincrement == null) {
+            val elseMap : Map[String,Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.child.id)
+            map = mergeMaps(map, elseMap)
+          } else {
+            val elseMap1 : Map[String, Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+            val elseMap2 : Map[String, Set[String]] = cfgToMap(BBB.preincrement, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+            map = mergeMaps(map, elseMap1)
+            map = mergeMaps(map, elseMap2)
+
+          }
+        } else if (BBB.child_else == null) {
+          print("Uh oh! For some reason the compiler detected a child else basic block that was null!")
+        }
+
+      } else if (currentBB.isInstanceOf[MergeBB]) {
+        val MBB : MergeBB = currentBB.asInstanceOf[MergeBB]
+        map = addNodeToMap(map, MBB)
+      } else if (currentBB.isInstanceOf[JumpDestBB]) {
+        val JDBB : JumpDestBB = currentBB.asInstanceOf[JumpDestBB]
+        map = addNodeToMap(map, JDBB)
+      } else { // Just an ordinary NormalBB otherwise
+        map = addNodeToMap(map, currentBB)
+      }
+
+      if(currentBB.child != null && doNotTraverseBBs.contains(currentBB.child.id)) {
+        currentBB = null
+      } else {
+        currentBB = currentBB.child
+      }
+
+    }
+
+    return map
+  }
+
+  def addNodeToMap(map:Map[String,Set[String]], node:NormalBB) : Map[String,Set[String]] = {   
+    val parent : String = node.id
+    var set : Set[String] =
+      map.get(parent) match {
+        case Some(s) => s
+        case None => Set()
+      }
+
+    if (node.child != null) {
+      val child : String = node.child.id
+      set += child
+    } 
+      return (map - parent) + {parent -> set}
+  }
+
+  def mergeMaps(map1:Map[String, Set[String]], map2:Map[String, Set[String]]) : Map[String, Set[String]]= {
+    var map : Map[String, Set[String]] = map1
+
+    for ((k,v) <- map2) {
+      var set : Set[String] =
+        map.get(k) match {
+          case Some(s) => s
+          case None => Set()
+        }
+      set = set & v
+      map = (map - k) + {k -> set}
+    }
+    return map
+  }
+
 }
