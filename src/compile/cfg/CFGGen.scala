@@ -434,14 +434,14 @@ object CFGGen {
                    symbolTable2: SymbolTable = null
                  ) : (NormalBB, NormalBB) = {
 
-    val ifStartBB = new NormalBB(symbolTable) // Changed from TacGen
+    val ifStartBB = new NormalBB(symbolTable.getParentSymbolTable) // Changed from TacGen
     val ifEndBB = new MergeBB(symbolTable) // Changed from TacGen
 
     val (condTemp, condStartBB, condEndBB) = genExprBB(stmt.cond, tempGenie, symbolTable.getParentSymbolTable) // Changed from TacGen
     ifStartBB.child = condStartBB
     condStartBB.parent = ifStartBB
 
-    val ifJmpBB = new BranchBB(symbolTable) // Changed from TacGen
+    val ifJmpBB = new BranchBB(symbolTable.getParentSymbolTable) // Changed from TacGen
     condEndBB.child = ifJmpBB
     ifJmpBB.parent = condEndBB
 
