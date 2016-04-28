@@ -5,6 +5,7 @@ import compile.symboltables.SymbolTable
 import scala.collection.mutable
 import _root_.compile.tac.ThreeAddressCode.Tac
 
+
 class NormalBB(
                 currSymbolTable : SymbolTable
               ) {
@@ -15,6 +16,7 @@ class NormalBB(
   var programStart = false
   var symbolTable = currSymbolTable
   var id = BasicBlockGenie.generateBBName()
+  BasicBlockGenie.idToBBReference.put(id, this)
 }
 
 // Stores the start and end basic blocks of the method that it's calling
