@@ -88,22 +88,57 @@ object CFGUtil {
         currentBB = currentBB.child
 
       } else { // MethodCallBB, MergeBB, JumpDestBB, or an ordinary NormalBB
-        if (isOrdinaryBB(currentBB.child)) { // Just an ordinary NormalBB
+               // Otherwise, only merge in ordinary NormalBB children
+
+        if (currentBB.parent != null && currentBB.instrs.size == 0) {
+          // If current block is empty, then remove it and connect its parent and child together
+          // We already checked that currentBB.child is not null
+
           if (doNotTraverseBBs.contains(currentBB.child.id)) {
             currentBB = null
           } else {
-            for (tac <- currentBB.child.instrs) {
-              currentBB.instrs += tac
-            }
-            currentBB.child = currentBB.child.child
-            if (currentBB.child != null) {
-              currentBB.child.parent = currentBB
-            }
-          }
-        } else {
-          currentBB = currentBB.child
-        }
+            // Connecting child's parent pointer to the parent
+            currentBB.child.parent = currentBB.parent
 
+            // All the messy stuff to deal with connecting the parent's child pointer to the child
+            if (currentBB.parent.isInstanceOf[BranchBB]) {
+              val BBBParent : BranchBB = currentBB.parent.asInstanceOf[BranchBB]
+              if (BBBParent.child_else != null && BBBParent.child_else.id == currentBB.id) {
+                BBBParent.child_else = currentBB.child
+              } else {
+                BBBParent.child = currentBB.child
+              }
+            } else {
+              currentBB.parent.child = currentBB.child
+            }
+
+            // Continue compression with the child
+            currentBB = currentBB.child
+          }
+
+        } else { // Otherwise, merge in any ordinary child basic blocks
+
+          if (isOrdinaryBB(currentBB.child)) {
+            if (doNotTraverseBBs.contains(currentBB.child.id)) {
+              currentBB = null
+            } else {
+              // Get all the child's tacs and then merge it into ours
+              for (tac <- currentBB.child.instrs) {
+                currentBB.instrs += tac
+              }
+              // Remove the child and connect to its child
+              currentBB.child = currentBB.child.child
+              if (currentBB.child != null) {
+                // Update the new child's parent pointer
+                currentBB.child.parent = currentBB
+              }
+            }
+          } else {
+            // Continue compression with the child
+            currentBB = currentBB.child
+          }
+
+        }
       }
 
     }
