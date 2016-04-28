@@ -205,9 +205,10 @@ object CFGUtil {
           case Some(s) => s
           case None => Set()
         }
-      set = set & v
+      set = set | v
       map = (map - k) + {k -> set}
     }
+
     return map
   }
 
