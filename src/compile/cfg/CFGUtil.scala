@@ -119,12 +119,11 @@ object CFGUtil {
     var dot : List[String] = List()
     dot = dot :+ "digraph G {\n"
 
-    println(map)
-
     for ((parent,children) <- map) {
-      dot = dot :+ "\t%s;\n".format(parent)
+      val instrs = BasicBlockGenie.idToBBReference(parent).instrs
+      dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\"];\n".format(parent.substring(1), parent.substring(1), instrs.mkString("\\n"))
       for (child <- children) {
-        dot = dot :+ "\t%s -> %s;\n".format(parent, child)
+        dot = dot :+ "\t%s -> %s;\n".format(parent.substring(1), child.substring(1))
       }
     }
 
@@ -206,9 +205,10 @@ object CFGUtil {
           case Some(s) => s
           case None => Set()
         }
-      set = set & v
+      set = set | v
       map = (map - k) + {k -> set}
     }
+
     return map
   }
 

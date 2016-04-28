@@ -2,7 +2,7 @@ package compile
 
 import _root_.util.CLI
 import java.io._
-import compile.cfg.{CFGUtil, CFGGen}
+import compile.cfg.{CFGUtil, CFGGen, NormalBB}
 import compile.exceptionhandling._
 import sext._
 
@@ -58,6 +58,9 @@ object Compiler {
     val tempGenie : TempVariableGenie = new TempVariableGenie
 
     var asmStr : String = ""
+
+    var dot : List[String] = List()
+
     if(CLI.tacgen) {
       val tacAsmMap = gen(program, tempGenie, methodsTable)
       for (list <- tacAsmMap.values) {
@@ -93,27 +96,31 @@ object Compiler {
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
 
       // === Dot file generation end ===
-      /*
       var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
-        map = CFGUtil.mergeMaps(map, CFGUtil.cfgToMap(methodStartBB, List()))
+        map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
       }
-
-      var dot : List[String] = CFGUtil.mapToDot(map)
-      dprintln("Dumping dot graph output...")
-      dprintln(dot.mkString)
-       */
+      dot = CFGUtil.mapToDot(map)
       // === Dot file generation end ===
-
+      // Should compile dot file into png using
+      // dot -Tpng ~/graph.dot -o ~/graph.png
     }
-
     if (CLI.outfile == null || CLI.outfile.isEmpty) {
-      outFile.println(asmStr)
+      if (CLI.dot) {
+        outFile.println(dot.mkString)
+      } else {
+        outFile.println(asmStr)
+      }
     } else {
       val pw = new PrintWriter(new File(CLI.outfile))
-      pw.write(asmStr)
+      if (CLI.dot) {
+        pw.write(dot.mkString)
+      } else {
+        pw.write(asmStr)
+      }
       pw.close
     }
+
 
   }
 
