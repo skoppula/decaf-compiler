@@ -438,6 +438,7 @@ object CFGGen {
     val loopTAC = new TacGoto(tempGenie.generateTacNumber(), trueStartLabel) // continue looping
     incrementBB.instrs += loopTAC
     incrementBB.child = forLoopBeginBB
+    forLoopBeginBB.jmpParents += incrementBB
 
     val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
     forEndBB.instrs += endLabelTAC
