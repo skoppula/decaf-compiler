@@ -43,6 +43,8 @@ main:
 
 	jmp	.L2
 
+.L3:
+
 .L2:
 
 	movq	$.L5, %r10
@@ -52,6 +54,4 @@ main:
 
 	leave
 	ret
-
-.L3:
 

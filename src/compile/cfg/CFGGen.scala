@@ -459,6 +459,11 @@ object CFGGen {
       ifJmpBB.child_else = ifTrueBlockStartBB
       ifTrueBlockStartBB.parent = ifJmpBB
 
+      if(ifTrueBlockEndBB.child == null) {
+        ifTrueBlockEndBB.child = ifEndBB
+        ifEndBB.parent = ifTrueBlockEndBB
+      }
+
       val gotoEndTac = new TacGoto(tempGenie.generateTacNumber(), endLabel)
       ifTrueBlockEndBB.instrs += gotoEndTac
 
@@ -475,7 +480,7 @@ object CFGGen {
       elseBlockStart.child = ifFalseBlockStartBB
       ifFalseBlockStartBB.parent = elseBlockStart
 
-      if(ifTrueBlockEndBB.child == null) {
+      if(ifFalseBlockEndBB.child == null) {
         ifFalseBlockEndBB.child = ifEndBB
         ifEndBB.parent_else = ifFalseBlockEndBB
       }
