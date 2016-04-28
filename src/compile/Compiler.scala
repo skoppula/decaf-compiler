@@ -82,6 +82,14 @@ object Compiler {
       }
 
       dprintln("Converting CFG to a TAC list...")
+
+      // == Compressing CFG ==
+      CFGUtil.compressCfg(programStartBB, List())
+      for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
+        CFGUtil.compressCfg(methodStartBB, List())
+      }
+
+      // == Compressing CFG End ==
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         tacs = tacs ::: CFGUtil.cfgToTacs(methodStartBB, List())

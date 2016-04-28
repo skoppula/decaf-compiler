@@ -48,6 +48,61 @@ object CFGUtil {
   }
 
   // TODO : Untested
+  def compressCfg(bb: NormalBB, doNotTraverseBBs : List[String]) : Boolean = { // Dummy boolean return type
+    var currentBB : NormalBB = bb
+    var tacs : List[(Tac, SymbolTable)] = List()
+
+    while(currentBB != null && currentBB.child != null) {
+
+      if (currentBB.isInstanceOf[BranchBB]) {
+        val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(currentBB.child.id)) {
+          if(BBB.preincrement == null) {
+            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.child.id)
+          } else {
+            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+            compressCfg(BBB.preincrement, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+          }
+        }
+
+        currentBB = currentBB.child
+
+      } else { // MethodCallBB, MergeBB, JumpDestBB, or an ordinary NormalBB
+        if (isOrdinaryBB(currentBB.child)) { // Just an ordinary NormalBB
+          if (doNotTraverseBBs.contains(currentBB.child.id)) {
+            currentBB = null
+          } else {
+            for (tac <- currentBB.child.instrs) {
+              currentBB.instrs += tac
+            }
+            currentBB.child = currentBB.child.child
+            if (currentBB.child != null) {
+              currentBB.child.parent = currentBB
+            }
+          }
+        } else {
+          currentBB = currentBB.child
+        }
+
+      }
+
+    }
+
+    return true
+    
+  }
+
+
+  def isOrdinaryBB(bb: NormalBB) : Boolean = {
+    // Checks that we don't have any of the fancy basic blocks
+    return (!bb.isInstanceOf[MethodCallBB]) && (!bb.isInstanceOf[BranchBB]) && (!bb.isInstanceOf[MergeBB]) && (!bb.isInstanceOf[JumpDestBB])
+  }
+
+  def compressNormalBB(bb1: NormalBB, bb2: NormalBB) {
+
+  }
+
+  // TODO : Untested
   def cfgToTacs(bb: NormalBB, doNotTraverseBBs : List[String]): List[(Tac, SymbolTable)] = {
     var currentBB : NormalBB = bb
     var tacs : List[(Tac, SymbolTable)] = List()
