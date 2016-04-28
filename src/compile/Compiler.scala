@@ -76,6 +76,7 @@ object Compiler {
       dprintln("Using the new CFG method!")
       dprintln("Generating CFG...")
       val (programStartBB, methodsBBMap) = CFGGen.genCFG(program, tempGenie, methodsTable)
+      dprintln("Done generating CFG")
 
       if(CLI.debug) {
         SymbolTableUtil.printSymbolTableStructure(methodsTable)
@@ -84,10 +85,10 @@ object Compiler {
       dprintln("Converting CFG to a TAC list...")
 
       // == Compressing CFG ==
-      CFGUtil.compressCfg(programStartBB, List())
+      /*CFGUtil.compressCfg(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         CFGUtil.compressCfg(methodStartBB, List())
-      }
+      }*/
       // == Compressing CFG End ==
 
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())

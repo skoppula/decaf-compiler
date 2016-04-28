@@ -1,5 +1,7 @@
 package compile.cfg
 
+import java.io.{PrintWriter, File}
+
 import compile.Ir._
 import compile.exceptionhandling._
 import compile.symboltables.{MethodsTable, SymbolTable}
@@ -7,6 +9,7 @@ import compile.descriptors._
 import compile.tac.OpTypes._
 import compile.tac.TempVariableGenie
 import compile.tac.ThreeAddressCode._
+import util.CLI
 import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap}
 import compile.util.Util.dprintln
 
@@ -24,6 +27,7 @@ object CFGGen {
     for (method <- program.methodDecls) {
       val methodDesc = methodsTable.lookupID(method.name)
       val methodBBs = genMethodDeclBB(method, tempGenie, methodDesc)
+
       stringLiteralTacs = stringLiteralTacs ::: CFGUtil.getStringLiteralTacs(methodBBs._1, List())
       bbMethodMap(method.name) = methodBBs
     }
@@ -78,6 +82,7 @@ object CFGGen {
 
     val methodEnterTac = new TacMethodEnter(tempGenie.generateTacNumber(), methodDesc)
     mtBB.instrs += methodEnterTac
+
 
     if (methodDesc.methodType.isInstanceOf[VoidTypeDescriptor]) {
       val voidExit = new TacReturn(tempGenie.generateTacNumber())
@@ -381,6 +386,7 @@ object CFGGen {
 
     forJmpBB.preincrement = forPreIncrementBB
     forJmpBB.merge = forEndBB
+    forJmpBB.forstart = forLoopBeginBB
 
     blockEndBB.child = forPreIncrementBB
     forPreIncrementBB.parent = blockEndBB
@@ -414,6 +420,7 @@ object CFGGen {
       incrementBB.parent = forPreIncrementBB
       forPreIncrementBB.child = incrementBB
     }
+
     val loopTAC = new TacGoto(tempGenie.generateTacNumber(), trueStartLabel) // continue looping
     incrementBB.instrs += loopTAC
     incrementBB.child = forLoopBeginBB
