@@ -349,8 +349,12 @@ object CFGGen {
     val forEndBB = new JumpDestBB(symbolTable) // Changed from TacGen
 
     val trueStartLabel: String = tempGenie.generateLabel()
+
     val jumpStartLabel: String = tempGenie.generateLabel()
     forPreIncrementBB.label = jumpStartLabel
+    val preIncLabelTAC = new TacLabel(tempGenie.generateTacNumber(), jumpStartLabel)
+    forPreIncrementBB.instrs += preIncLabelTAC
+
     val endLabel: String = tempGenie.generateLabel()
     forEndBB.label = endLabel
 
