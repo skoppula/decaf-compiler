@@ -81,21 +81,24 @@ object Compiler {
         SymbolTableUtil.printSymbolTableStructure(methodsTable)
       }
 
-      dprintln("Converting CFG to a TAC list...")
-
       // == Compressing CFG ==
+      dprintln("Attempting CFG Compression...")
+
       CFGUtil.compressCfg(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         CFGUtil.compressCfg(methodStartBB, List())
       }
+
+      dprintln("CFG Compression complete!")
       // == Compressing CFG End ==
 
+      dprintln("Converting CFG to a TAC list...")
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         tacs = tacs ::: CFGUtil.cfgToTacs(methodStartBB, List())
       }
-
       dprintln("Finished creation of TAC list. TACs:")
+
       for((tac,st) <- tacs) {
         dprintln(tac.toString)
       }

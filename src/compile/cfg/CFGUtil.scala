@@ -62,8 +62,6 @@ object CFGUtil {
   // TODO : Untested
   def compressCfg(bb: NormalBB, doNotTraverseBBs : List[String]) : Boolean = { // Dummy boolean return type
     var currentBB : NormalBB = bb
-    var tacs : List[(Tac, SymbolTable)] = List()
-
     while(currentBB != null && currentBB.child != null) {
 
       if (currentBB.isInstanceOf[BranchBB]) {
@@ -75,6 +73,7 @@ object CFGUtil {
           } else if (BBB.preincrement == null) {
             // Must be while statement
             compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+
           } else if (BBB.whilestart == null) {
             compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
             compressCfg(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
@@ -93,7 +92,6 @@ object CFGUtil {
         if (currentBB.parent != null && currentBB.instrs.size == 0) {
           // If current block is empty, then remove it and connect its parent and child together
           // We already checked that currentBB.child is not null
-
           if (doNotTraverseBBs.contains(currentBB.child.id)) {
             currentBB = null
           } else {
@@ -118,10 +116,8 @@ object CFGUtil {
 
         } else { // Otherwise, merge in any ordinary child basic blocks
 
-          if (isOrdinaryBB(currentBB.child)) {
-            if (doNotTraverseBBs.contains(currentBB.child.id)) {
-              currentBB = null
-            } else {
+          if (isOrdinaryBB(currentBB.child) && !doNotTraverseBBs.contains(currentBB.child.id)) {
+
               // Get all the child's tacs and then merge it into ours
               for (tac <- currentBB.child.instrs) {
                 currentBB.instrs += tac
@@ -132,7 +128,9 @@ object CFGUtil {
                 // Update the new child's parent pointer
                 currentBB.child.parent = currentBB
               }
-            }
+            
+          } else if (doNotTraverseBBs.contains(currentBB.child.id)) {
+            currentBB = null
           } else {
             // Continue compression with the child
             currentBB = currentBB.child

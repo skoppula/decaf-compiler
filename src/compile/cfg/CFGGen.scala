@@ -275,7 +275,7 @@ object CFGGen {
                       symbolTable: SymbolTable
                     ) : (NormalBB, NormalBB) = {
 
-    val whileStartBB = new JumpDestBB(symbolTable) // Changed from TacGen
+    val whileStartBB = new JumpDestBB(symbolTable.getParentSymbolTable) // Changed from TacGen
     val whileEndBB = new JumpDestBB(symbolTable) // Changed from TacGen
 
     val startLabel: String = tempGenie.generateLabel()
@@ -287,31 +287,41 @@ object CFGGen {
     val startLabelTAC = new TacLabel(tempGenie.generateTacNumber(), startLabel)
     whileStartBB.instrs += startLabelTAC
 
-    val (condTemp, condStartBB, condEndBB) = genExprBB(stmt.boolExpr, tempGenie, symbolTable)
+    val (condTemp, condStartBB, condEndBB) = genExprBB(stmt.boolExpr, tempGenie, symbolTable.getParentSymbolTable)
     whileStartBB.child = condStartBB
     condStartBB.parent = whileStartBB
 
-    val whileJmp = new BranchBB(symbolTable) // Changed from TacGen
-    val jmpIfFalseTAC = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, endLabel)
-    whileJmp.instrs += jmpIfFalseTAC
+    val whileJmp = new BranchBB(symbolTable.getParentSymbolTable) // Changed from TacGen
     whileJmp.parent = condEndBB
     condEndBB.child = whileJmp
+
+    val jmpIfFalseTAC = new TacIfFalse(tempGenie.generateTacNumber(), condTemp, endLabel)
+    whileJmp.instrs += jmpIfFalseTAC
 
     whileJmp.whilestart = whileStartBB
     whileJmp.merge = whileEndBB
 
     val (blockStartBB, blockEndBB) = genBlockBB(stmt.bodyBlock, whileStartBB, whileEndBB, tempGenie, symbolTable)
 
+    // Connect whileJmp to blockStartBB
     whileJmp.child_else = blockStartBB
     blockStartBB.parent = whileJmp
 
-    whileJmp.child = whileEndBB
-    whileEndBB.parent = whileJmp
+    // TODO: do we need to do the .child check here necessary?
+    // I believe the end needs to be the same as the while end here for breaks
+    if (whileJmp.child == null) {
+      whileJmp.child = whileEndBB
+      whileEndBB.parent = whileJmp
+    }
 
     val loopBackTAC = new TacGoto(tempGenie.generateTacNumber(), startLabel)
     blockEndBB.instrs += loopBackTAC
 
-    blockEndBB.child = whileStartBB
+    // TODO: .child check here necessary?
+    if (blockEndBB.child == null) {
+      // TODO: Add a new parent to whileStartBB?
+      blockEndBB.child = whileStartBB
+    }
 
     val endLabelTAC = new TacLabel(tempGenie.generateTacNumber(), endLabel)
     whileEndBB.instrs += endLabelTAC
