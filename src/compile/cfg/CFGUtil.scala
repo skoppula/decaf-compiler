@@ -98,10 +98,6 @@ object CFGUtil {
     return (!bb.isInstanceOf[MethodCallBB]) && (!bb.isInstanceOf[BranchBB]) && (!bb.isInstanceOf[MergeBB]) && (!bb.isInstanceOf[JumpDestBB])
   }
 
-  def compressNormalBB(bb1: NormalBB, bb2: NormalBB) {
-
-  }
-
   // TODO : Untested
   def cfgToTacs(bb: NormalBB, doNotTraverseBBs : List[String]): List[(Tac, SymbolTable)] = {
     var currentBB : NormalBB = bb
