@@ -119,10 +119,8 @@ object CFGUtil {
     var dot : List[String] = List()
     dot = dot :+ "digraph G {\n"
 
-    println(map)
-
     for ((parent,children) <- map) {
-      dot = dot :+ "\t%s;\n".format(parent)
+      dot = dot :+ "\t%s [label="%s"];\n".format(parent, "dummy")
       for (child <- children) {
         dot = dot :+ "\t%s -> %s;\n".format(parent, child)
       }

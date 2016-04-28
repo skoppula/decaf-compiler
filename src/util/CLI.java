@@ -92,6 +92,7 @@ public class CLI {
   public static boolean debug;
   public static boolean irdebug;
   public static boolean tacgen;
+  public static boolean dot;
 
   /**
    * Sets up default values for all of the
@@ -134,6 +135,8 @@ public class CLI {
     for (int i = 0; i < args.length; i++) {
       if (args[i].equals("--tacgen")) {
         tacgen = true;
+      } else if (args[i].equals("--dot")) {
+        dot = true;
       } else if (args[i].equals("--irdebug")) {
         irdebug = true;
       } else if (args[i].equals("--debug") || args[i].equals("-d")) {
