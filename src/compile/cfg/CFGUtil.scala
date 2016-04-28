@@ -61,23 +61,48 @@ object CFGUtil {
   }
 
   // TODO : Untested
-  def compressCfg(bb: NormalBB, doNotTraverseBBs : List[String]) : Boolean = { // Dummy boolean return type
+  def compressCfg(bb: NormalBB, doNotTraverseBBs : List[String], updateMap : Map[String, String]) : Map[String, String] = {
+    // Returns map of removed block -> new block
     var currentBB : NormalBB = bb
+    var map : Map[String, String] = updateMap // This map keeps track of block merges
+    var doNotTraverseBBList : List[String] = doNotTraverseBBs
+
     while(currentBB != null && currentBB.child != null) {
+      //println("current bb id: %s".format(currentBB.id))
+
+      // Fixing child
+      while (map.keySet.exists(_ == currentBB.child.id)) {
+        //println("fixing child! was %s now is %s".format(currentBB.child.id, map(currentBB.child.id)))
+        currentBB.child = BasicBlockGenie.idToBBReference(map(currentBB.child.id))
+      }
 
       if (currentBB.isInstanceOf[BranchBB]) {
         val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
-        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+        if(BBB.child_else != null && !doNotTraverseBBList.contains(BBB.child_else.id)) {
           if(BBB.preincrement == null && BBB.whilestart == null) {
             // Must be if statement
-            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id)
+            // TODO update the references
+            updateBranchBBReferences(BBB, map)
+            map = mergeCompressMaps(map, compressCfg(BBB.child_else, doNotTraverseBBList :+ BBB.merge.id, map))
+            updateBranchBBReferences(BBB, map)
           } else if (BBB.preincrement == null) {
             // Must be while statement
-            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+            map = mergeCompressMaps(map, compressCfg(BBB.child_else, doNotTraverseBBList :+ BBB.merge.id :+ BBB.whilestart.id, map))
+            updateBranchBBReferences(BBB, map)
 
           } else if (BBB.whilestart == null) {
-            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
-            compressCfg(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
+            // Must be (?) for statement
+            //println("for reached.. attempting recursive compression")
+
+            map = mergeCompressMaps(map, compressCfg(BBB.child_else, doNotTraverseBBList :+ BBB.merge.id :+ BBB.preincrement.id, map))
+            //println("for reached.. first recursion complete")
+
+            updateBranchBBReferences(BBB, map)
+            map = mergeCompressMaps(map, compressCfg(BBB.preincrement, doNotTraverseBBList :+ BBB.merge.id :+ BBB.forstart.id, map))
+            //println("for reached.. second recursion complete")
+
+            updateBranchBBReferences(BBB, map)
+
           } else {
             throw new NotForIfWhileStmtException("Oh no.")
           }
@@ -90,46 +115,72 @@ object CFGUtil {
       } else { // MethodCallBB, MergeBB, JumpDestBB, or an ordinary NormalBB
                // Otherwise, only merge in ordinary NormalBB children
 
-        if (currentBB.parent != null && currentBB.instrs.size == 0) {
+        if (currentBB.parent != null && currentBB.instrs.size == 0 && isOrdinaryBB(currentBB)) {
+          // We really should only be having empty ordinary BB blocks, but the isOrdinaryBB check is there in case
           // If current block is empty, then remove it and connect its parent and child together
           // We already checked that currentBB.child is not null
-          if (doNotTraverseBBs.contains(currentBB.child.id)) {
+          if (doNotTraverseBBList.contains(currentBB.child.id)) {
             currentBB = null
           } else {
+            // Update the map to reflect block merge
+            map = map + {currentBB.id -> currentBB.child.id}
+
             // Connecting child's parent pointer to the parent
             currentBB.child.parent = currentBB.parent
 
             // All the messy stuff to deal with connecting the parent's child pointer to the child
             if (currentBB.parent.isInstanceOf[BranchBB]) {
               val BBBParent : BranchBB = currentBB.parent.asInstanceOf[BranchBB]
+
+              // Fixing the child pointer
               if (BBBParent.child_else != null && BBBParent.child_else.id == currentBB.id) {
                 BBBParent.child_else = currentBB.child
               } else {
                 BBBParent.child = currentBB.child
               }
+
             } else {
               currentBB.parent.child = currentBB.child
+            }
+
+            // Fix the doNotTraverse list
+            // This actually shouldn't matter because we wouldn't reach this if this bb was in the list
+            if (doNotTraverseBBList.contains(currentBB.id)) {
+              doNotTraverseBBList = doNotTraverseBBList.filter(_ != currentBB.id)
+              doNotTraverseBBList = doNotTraverseBBList :+ currentBB.child.id
             }
 
             // Continue compression with the child
             currentBB = currentBB.child
           }
 
-        } else { // Otherwise, merge in any ordinary child basic blocks
+        } else { // Otherwise, merge in any ordinary child basic blocks 
 
           if (isOrdinaryBB(currentBB.child) && !doNotTraverseBBs.contains(currentBB.child.id)) {
 
-              // Get all the child's tacs and then merge it into ours
+            // Update the map to reflect block merge
+            map = map + {currentBB.child.id -> currentBB.id}
+
+            // Get all the child's tacs and then merge it into ours, only if the symbol tables are the same
+            if (currentBB.child.instrs.size > 0 && currentBB.symbolTable == currentBB.child.symbolTable) {
+              // Merge tacs
               for (tac <- currentBB.child.instrs) {
                 currentBB.instrs += tac
               }
-              // Remove the child and connect to its child
+
+            }
+
+            // If the symbol tables are the same, or the child has no tacs, then remove the child and connect to its child
+            if (currentBB.child.instrs.size == 0 || currentBB.symbolTable == currentBB.child.symbolTable) {
               currentBB.child = currentBB.child.child
               if (currentBB.child != null) {
                 // Update the new child's parent pointer
                 currentBB.child.parent = currentBB
               }
-            
+            } else { // Otherwise, just proceed onto the child
+              currentBB = currentBB.child
+            }
+
           } else if (doNotTraverseBBs.contains(currentBB.child.id)) {
             currentBB = null
           } else {
@@ -142,7 +193,7 @@ object CFGUtil {
 
     }
 
-    return true
+    return map
     
   }
 
@@ -238,16 +289,28 @@ object CFGUtil {
         val merge = if(parentBranchBB.merge == null) "" else parentBranchBB.merge.id
         val preinc = if(parentBranchBB.preincrement == null) "" else parentBranchBB.preincrement.id
         val ws = if(parentBranchBB.whilestart == null) "" else parentBranchBB.whilestart.id
-        dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+        val forstart = if(parentBranchBB.forstart == null) "" else parentBranchBB.forstart.id
+        val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
+        val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
+
+
+        dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
           parent.substring(1),
           parent.substring(1),
+          "type: " + getBBType(parentBB),
           "merge: " + merge,
           "preinc: " + preinc,
           "whilest: " + ws,
+          "forstart: " + forstart,
+          "child: " + child,
+          "child else: " + child_else,
           instrs.mkString("\\n")
         )
       } else {
-        dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\"];\n".format(parent.substring(1), parent.substring(1), instrs.mkString("\\n"))
+        dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\"];\n".format(parent.substring(1), parent.substring(1), 
+          "type: " + getBBType(parentBB),
+          instrs.mkString("\\n")
+        )
       }
       for (child <- children) {
         dot = dot :+ "\t%s -> %s;\n".format(parent.substring(1), child.substring(1))
@@ -347,7 +410,7 @@ object CFGUtil {
       return (map - parent) + {parent -> set}
   }
 
-  def mergeMaps(map1:Map[String, Set[String]], map2:Map[String, Set[String]]) : Map[String, Set[String]]= {
+  def mergeMaps(map1:Map[String, Set[String]], map2:Map[String, Set[String]]) : Map[String, Set[String]] = {
     var map : Map[String, Set[String]] = map1
 
     for ((k,v) <- map2) {
@@ -362,5 +425,80 @@ object CFGUtil {
 
     return map
   }
+
+  def mergeCompressMaps(map1:Map[String, String], map2:Map[String, String]) : Map[String, String] = {
+    var map : Map[String, String] = map1
+
+    for ((k,v) <- map2) {
+      var check : String =
+        map.get(k) match {
+          case Some(s) => s
+          case None => ""
+        }
+
+      if (check != "" && check != v) {
+        println("Error: Found key %s has value %s in map1 and value %s in map2".format(k, check, v))
+      }
+      map = map + {k -> v}
+    }
+
+    return map
+  }
+
+  def updateBranchBBReferences(bb:BranchBB, map: Map[String, String]) = {
+
+    // Fixing merge
+    while (bb.merge != null && map.keySet.exists(_ == bb.merge.id)) {
+      var id : String = map(bb.merge.id)
+      bb.merge = BasicBlockGenie.idToBBReference(map(bb.merge.id))
+      if (bb.merge == null) {
+        println("Error: Tried to update merge but got null for id %s".format(id))
+      }
+    }
+
+    // Fixing preinc
+    while (bb.preincrement != null && map.keySet.exists(_ == bb.preincrement.id)) {
+      var id : String = map(bb.preincrement.id)
+      bb.preincrement = BasicBlockGenie.idToBBReference(map(bb.preincrement.id))
+      if (bb.merge == null) {
+        println("Error: Tried to update preincrement but got null for id %s".format(id))
+      }
+    }
+
+    // Fixing whilestart
+    while (bb.whilestart != null && map.keySet.exists(_ == bb.whilestart.id)) {
+      var id : String = map(bb.whilestart.id)
+      bb.whilestart = BasicBlockGenie.idToBBReference(map(bb.whilestart.id))
+      if (bb.whilestart == null) {
+        println("Error: Tried to update preincrement but got null for id %s".format(id))
+      }
+    }
+
+    // Fixing forstart
+    while (bb.forstart != null && map.keySet.exists(_ == bb.forstart.id)) {
+      var id : String = map(bb.forstart.id)
+      bb.forstart = BasicBlockGenie.idToBBReference(map(bb.forstart.id))
+      if (bb.forstart == null) {
+        println("Error: Tried to update forstart but got null for id %s".format(id))
+      }
+    }
+
+  }
+
+  def getBBType(bb:NormalBB) : String = {
+    if (bb.isInstanceOf[MethodCallBB]) {
+      return "MethodCallBB"
+    } else if (bb.isInstanceOf[BranchBB]) {
+      return "BranchBB"
+    } else if (bb.isInstanceOf[MergeBB]) {
+      return "MergeBB"
+    } else if (bb.isInstanceOf[JumpDestBB]) {
+      return "JumpDestBB"
+    } else {
+      return "NormalBB"
+    }
+  }
+
+
 
 }

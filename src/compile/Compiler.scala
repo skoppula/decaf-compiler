@@ -85,11 +85,13 @@ object Compiler {
       // == Compressing CFG ==
       dprintln("Attempting CFG Compression...")
 
-      CFGUtil.compressCfg(programStartBB, List())
-      for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
-        CFGUtil.compressCfg(methodStartBB, List())
-      }
+      var blankmap : Map[String, String] = Map()
 
+      CFGUtil.compressCfg(programStartBB, List(), blankmap)
+      for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
+        CFGUtil.compressCfg(methodStartBB, List(), blankmap)
+      }
+ 
       dprintln("CFG Compression complete!")
 
       dprintln("Converting CFG to a TAC list...")

@@ -339,7 +339,6 @@ object CFGGen {
                     tempGenie: TempVariableGenie,
                     symbolTable: SymbolTable
                   ) : (NormalBB, NormalBB) = {
-
     val forStartBB = new NormalBB(symbolTable) // Changed from TacGen
     // init value creation
     // label: start_loop
@@ -365,7 +364,8 @@ object CFGGen {
     initValEndBB.child = initValBB
     initValBB.instrs += copyIntoVar
 
-    val forLoopBeginBB = new NormalBB(symbolTable) // Changed from TacGen
+    // Austin: changed forStartBB to a JumpDestBB type; don't forget to check that this is OK / still correct. This is necessary to prevent the compressor from merging forLoopBeginBB with earlier blocks
+    val forLoopBeginBB = new JumpDestBB(symbolTable) // Changed from TacGen
     forLoopBeginBB.parent = initValBB
     initValBB.child = forLoopBeginBB
 
