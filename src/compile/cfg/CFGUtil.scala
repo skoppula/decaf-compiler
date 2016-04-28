@@ -120,9 +120,10 @@ object CFGUtil {
     dot = dot :+ "digraph G {\n"
 
     for ((parent,children) <- map) {
-      dot = dot :+ "\t%s [label="%s"];\n".format(parent, "dummy")
+      val instrs = BasicBlockGenie.idToBBReference(parent).instrs
+      dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\"];\n".format(parent.substring(1), parent.substring(1), instrs.mkString("\\n"))
       for (child <- children) {
-        dot = dot :+ "\t%s -> %s;\n".format(parent, child)
+        dot = dot :+ "\t%s -> %s;\n".format(parent.substring(1), child.substring(1))
       }
     }
 

@@ -93,19 +93,14 @@ object Compiler {
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
 
       // === Dot file generation end ===
-      var bb1 = new NormalBB(null)
-      var bb2 = new NormalBB(null)
-      var bb3 = new NormalBB(null)
-
-      bb1.child = bb2
-      bb2.parent = bb1
-      bb2.child = bb3
-      bb3.parent = bb2
-      
-
-      var map : Map[String,Set[String]] = CFGUtil.cfgToMap(bb1, List())
+      var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())
+      for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
+        map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
+      }
       dot = CFGUtil.mapToDot(map)
       // === Dot file generation end ===
+      // Should compile dot file into png using
+      // dot -Tpng ~/graph.dot -o ~/graph.png
     }
     if (CLI.outfile == null || CLI.outfile.isEmpty) {
       if (CLI.dot) {
