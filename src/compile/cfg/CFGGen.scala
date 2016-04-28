@@ -155,6 +155,7 @@ object CFGGen {
                   symbolTable: SymbolTable): (NormalBB, NormalBB) = {
 
     val blockStartBB = new NormalBB(symbolTable)
+    val blockEndBB = new NormalBB(symbolTable)
 
     for((name, desc) <- symbolTable.symbolTableMap) {
       if(name.length() < 2 || name.substring(0,2) != ".T") {
@@ -168,10 +169,16 @@ object CFGGen {
 
     // set child of the thing above
     // set the parent of the upcoming thing
-    var currParent = blockStartBB
-    var stmtBBs : (NormalBB, NormalBB) = (null, null)
-    var stmtStartBB : NormalBB = null
-    var stmtEndBB : NormalBB = null
+
+    // blank initializations
+    var stmtStartBB : NormalBB = new NormalBB(symbolTable)
+    var stmtEndBB : NormalBB = new NormalBB(symbolTable)
+    blockStartBB.child = stmtStartBB
+    stmtStartBB.parent = blockStartBB
+    stmtStartBB.child = stmtEndBB
+    stmtEndBB.parent = stmtStartBB
+    var currParent = stmtEndBB
+
     var jmpEncountered : Boolean = false //check to make sure no stmts after return/continue/break found
     var jmpCheck : Boolean = true
 
@@ -182,6 +189,7 @@ object CFGGen {
         jmpCheck = false
       }
       // pass down the correct symbol table
+      var stmtBBs : (NormalBB, NormalBB) = (null, null)
       if(stmt.isInstanceOf[IrIfStmt] && stmt.asInstanceOf[IrIfStmt].elseBlock.isDefined) {
         stmtBBs = genStmtBB(stmt, parentStart, parentEnd, tempGenie, childrenTables(subblockCount), childrenTables(subblockCount+1))
         subblockCount += 2
@@ -211,7 +219,10 @@ object CFGGen {
       throw new StmtAfterContinueBreakReturnException("Statement after continue/break/return")
     }
 
-    return (currParent, stmtEndBB)
+    stmtEndBB.child = blockEndBB
+    blockEndBB.parent = stmtEndBB
+
+    return (blockStartBB, blockEndBB)
   }
 
   def genStmtBB(
