@@ -1,14 +1,17 @@
 package compile.cfg
 
+import compile.exceptionhandling.{NotForIfWhileStmtException, NullElseBlockException}
 import compile.tac.ThreeAddressCode.{TacStringLiteral, Tac}
 import compile.symboltables.SymbolTable
 import compile.tac.{AsmGen}
+import compile.util.Util.dprintln
 
 object CFGUtil {
   // TODO Method to print out CFG
   // TODO compress the CFG
   // TODO Remove NOP, check new parent symbol table call didn't affect anythign
   // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
+  // TODO change the symboltable.getparenttable 'Changed from TacGen'
 
   def getStringLiteralTacs(bb : NormalBB, doNotTraverseBBs : List[String]) : List[TacStringLiteral] = {
     var currentBB : NormalBB = bb
@@ -65,15 +68,21 @@ object CFGUtil {
           tacs = tacs :+ (tac, BBB.symbolTable)
         }
 
-        if(BBB.child_else != null && !doNotTraverseBBs.contains(currentBB.child.id)) {
-          if(BBB.preincrement == null) {
-            tacs = tacs ::: cfgToTacs(BBB.child_else, doNotTraverseBBs :+ BBB.child.id)
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+          if(BBB.preincrement == null && BBB.whilestart == null) {
+            // Must be if statement
+            tacs = tacs ::: cfgToTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id)
+          } else if (BBB.preincrement == null) {
+            // Must be while statement
+            tacs = tacs ::: cfgToTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+          } else if (BBB.whilestart == null) {
+            tacs = tacs ::: cfgToTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
+            tacs = tacs ::: cfgToTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
           } else {
-            tacs = tacs ::: cfgToTacs(BBB.child_else, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
-            tacs = tacs ::: cfgToTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+            throw new NotForIfWhileStmtException("Oh no.")
           }
         } else if (BBB.child_else == null) {
-          print("Uh oh! For some reason the compiler detected a child else basic block that was null!")
+          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
         }
 
       } else if (currentBB.isInstanceOf[MergeBB]) {
@@ -145,19 +154,26 @@ object CFGUtil {
         val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
         map = addNodeToMap(map, BBB)
 
-        if(BBB.child_else != null && !doNotTraverseBBs.contains(currentBB.child.id)) {
-          if(BBB.preincrement == null) {
-            val elseMap : Map[String,Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.child.id)
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+          map = addChildElseNodeToMap(map, BBB)
+          if(BBB.preincrement == null && BBB.whilestart == null) {
+            // Must be if statement
+            val elseMap : Map[String,Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id)
             map = mergeMaps(map, elseMap)
-          } else {
-            val elseMap1 : Map[String, Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
-            val elseMap2 : Map[String, Set[String]] = cfgToMap(BBB.preincrement, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+          } else if (BBB.preincrement == null) {
+            // Must be while statement
+            val elseMap : Map[String,Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+            map = mergeMaps(map, elseMap)
+          } else if (BBB.whilestart == null) {
+            val elseMap1 : Map[String, Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
+            val elseMap2 : Map[String, Set[String]] = cfgToMap(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
             map = mergeMaps(map, elseMap1)
             map = mergeMaps(map, elseMap2)
-
+          } else {
+            throw new NotForIfWhileStmtException("Oh no.")
           }
         } else if (BBB.child_else == null) {
-          print("Uh oh! For some reason the compiler detected a child else basic block that was null!")
+          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
         }
 
       } else if (currentBB.isInstanceOf[MergeBB]) {
@@ -179,6 +195,21 @@ object CFGUtil {
     }
 
     return map
+  }
+
+  def addChildElseNodeToMap(map:Map[String,Set[String]], node:BranchBB) : Map[String,Set[String]] = {
+    val parent : String = node.id
+    var set : Set[String] =
+      map.get(parent) match {
+        case Some(s) => s
+        case None => Set()
+      }
+
+    if (node.child_else != null) {
+      val child : String = node.child_else.id
+      set += child
+    }
+    return (map - parent) + {parent -> set}
   }
 
   def addNodeToMap(map:Map[String,Set[String]], node:NormalBB) : Map[String,Set[String]] = {   

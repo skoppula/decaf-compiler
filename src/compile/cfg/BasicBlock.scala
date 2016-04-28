@@ -34,7 +34,10 @@ class BranchBB(
               ) extends NormalBB(currSymbolTable) {
   // There should be only one instr in the list above (invariant)
   var child_else : NormalBB = null
+
   var preincrement : NormalBB = null // Pointer to Preincrement in a For Branch to generate TAC/Asm
+  var merge : NormalBB = null // Pointer to Preincrement in a For Branch to generate TAC/Asm
+  var whilestart : NormalBB = null // Pointer to Continue BB in a While
 }
 
 class MergeBB(

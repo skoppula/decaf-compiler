@@ -718,11 +718,6 @@ object AsmGen{
      * A local variable reference will be of the form: offset(%rbp)
      * A string literal label with prefix .L will be of the form: $.L___
      */
-    if(table.lookupID(name) == null) {
-      dprintln("\nHELLO")
-      dprintln(table.toString)
-      dprintln(name)
-    }
 
     if (name.length >= 2 && name.substring(0,2) == ".L") {
       // String literal handler
