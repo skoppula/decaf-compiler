@@ -19,6 +19,7 @@ object CFGUtil {
     var slTacs : List[TacStringLiteral] = List()
 
     while (currentBB != null) {
+      // dprintln("Problem in this while.")
       for (tac <- currentBB.instrs) {
         if(tac.isInstanceOf[TacStringLiteral]) {
           slTacs = slTacs :+ tac.asInstanceOf[TacStringLiteral]
@@ -38,7 +39,7 @@ object CFGUtil {
             slTacs = slTacs ::: getStringLiteralTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
           } else if (BBB.whilestart == null) {
             slTacs = slTacs ::: getStringLiteralTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
-            slTacs = slTacs ::: getStringLiteralTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
+            slTacs = slTacs ::: getStringLiteralTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
           } else {
             throw new NotForIfWhileStmtException("Oh no.")
           }
@@ -76,7 +77,7 @@ object CFGUtil {
 
           } else if (BBB.whilestart == null) {
             compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
-            compressCfg(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
+            compressCfg(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
           } else {
             throw new NotForIfWhileStmtException("Oh no.")
           }
@@ -178,7 +179,7 @@ object CFGUtil {
             tacs = tacs ::: cfgToTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
           } else if (BBB.whilestart == null) {
             tacs = tacs ::: cfgToTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
-            tacs = tacs ::: cfgToTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
+            tacs = tacs ::: cfgToTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
           } else {
             throw new NotForIfWhileStmtException("Oh no.")
           }
@@ -282,8 +283,10 @@ object CFGUtil {
             val elseMap : Map[String,Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
             map = mergeMaps(map, elseMap)
           } else if (BBB.whilestart == null) {
+            // Must be for statment
             val elseMap1 : Map[String, Set[String]] = cfgToMap(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
-            val elseMap2 : Map[String, Set[String]] = cfgToMap(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
+            val elseMap2 : Map[String, Set[String]] = cfgToMap(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
+
             map = mergeMaps(map, elseMap1)
             map = mergeMaps(map, elseMap2)
           } else {

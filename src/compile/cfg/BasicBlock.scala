@@ -38,6 +38,7 @@ class BranchBB(
   var preincrement : NormalBB = null // Pointer to Preincrement in a For Branch to generate TAC/Asm
   var merge : NormalBB = null // Pointer to Preincrement in a For Branch to generate TAC/Asm
   var whilestart : NormalBB = null // Pointer to Continue BB in a While
+  var forstart : NormalBB = null // Pointer to start of a loop BB in a For
 }
 
 class MergeBB(
