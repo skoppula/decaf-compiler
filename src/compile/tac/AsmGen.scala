@@ -723,6 +723,13 @@ object AsmGen{
       // String literal handler
       return "$%s".format(name)
     } else {
+
+      if(table.lookupID(name) == null) {
+        dprintln("\nHELLO")
+        dprintln(table.toString)
+        dprintln(name)
+      }
+
       if (table.isGlobal(name)) {
         table.lookupID(name) match {
           case d:PrimitiveBaseDescriptor => {

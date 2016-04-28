@@ -437,7 +437,7 @@ object CFGGen {
     val ifStartBB = new NormalBB(symbolTable) // Changed from TacGen
     val ifEndBB = new MergeBB(symbolTable) // Changed from TacGen
 
-    val (condTemp, condStartBB, condEndBB) = genExprBB(stmt.cond, tempGenie, symbolTable) // Changed from TacGen
+    val (condTemp, condStartBB, condEndBB) = genExprBB(stmt.cond, tempGenie, symbolTable.getParentSymbolTable) // Changed from TacGen
     ifStartBB.child = condStartBB
     condStartBB.parent = ifStartBB
 
@@ -493,7 +493,7 @@ object CFGGen {
         ifEndBB.parent = ifTrueBlockEndBB
       }
 
-      ifJmpBB.merge = ifJmpBB
+      ifJmpBB.merge = ifEndBB
 
       ifJmpBB.child = ifEndBB
       ifEndBB.parent_else = ifJmpBB

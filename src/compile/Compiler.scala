@@ -99,8 +99,8 @@ object Compiler {
       for((tac,st) <- tacs) {
         dprintln(tac.toString)
       }
-      dprintln("Generating assembly...")
 
+      dprintln("Generating assembly...")
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
 
       // === Dot file generation end ===

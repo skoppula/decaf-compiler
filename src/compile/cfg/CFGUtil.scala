@@ -12,6 +12,7 @@ object CFGUtil {
   // TODO Remove NOP, check new parent symbol table call didn't affect anythign
   // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
   // TODO change the symboltable.getparenttable 'Changed from TacGen'
+  // TODO remove Noops, efficient use of constant zero
 
   def getStringLiteralTacs(bb : NormalBB, doNotTraverseBBs : List[String]) : List[TacStringLiteral] = {
     var currentBB : NormalBB = bb
@@ -24,17 +25,25 @@ object CFGUtil {
           currentBB.instrs -= tac
         }
       }
+
+
       if (currentBB.isInstanceOf[BranchBB]) {
         val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
-        if(BBB.child_else != null && !doNotTraverseBBs.contains(currentBB.child.id)) {
-          if(BBB.preincrement == null) {
-            slTacs = slTacs ::: getStringLiteralTacs(BBB.child_else, doNotTraverseBBs :+ BBB.child.id)
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+          if(BBB.preincrement == null && BBB.whilestart == null) {
+            // Must be if statement
+            slTacs = slTacs ::: getStringLiteralTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id)
+          } else if (BBB.preincrement == null) {
+            // Must be while statement
+            slTacs = slTacs ::: getStringLiteralTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+          } else if (BBB.whilestart == null) {
+            slTacs = slTacs ::: getStringLiteralTacs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
+            slTacs = slTacs ::: getStringLiteralTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
           } else {
-            slTacs = slTacs ::: getStringLiteralTacs(BBB.child_else, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
-            slTacs = slTacs ::: getStringLiteralTacs(BBB.preincrement, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+            throw new NotForIfWhileStmtException("Oh no.")
           }
         } else if (BBB.child_else == null) {
-          print("Uh oh! For some reason the compiler detected a child else basic block that was null!")
+          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
         }
 
       }
@@ -59,13 +68,21 @@ object CFGUtil {
 
       if (currentBB.isInstanceOf[BranchBB]) {
         val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
-        if(BBB.child_else != null && !doNotTraverseBBs.contains(currentBB.child.id)) {
-          if(BBB.preincrement == null) {
-            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.child.id)
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+          if(BBB.preincrement == null && BBB.whilestart == null) {
+            // Must be if statement
+            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id)
+          } else if (BBB.preincrement == null) {
+            // Must be while statement
+            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+          } else if (BBB.whilestart == null) {
+            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
+            compressCfg(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id)
           } else {
-            compressCfg(BBB.child_else, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
-            compressCfg(BBB.preincrement, doNotTraverseBBs :+ BBB.child.id :+ BBB.preincrement.id)
+            throw new NotForIfWhileStmtException("Oh no.")
           }
+        } else if (BBB.child_else == null) {
+          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
         }
 
         currentBB = currentBB.child
@@ -180,8 +197,24 @@ object CFGUtil {
     dot = dot :+ "digraph G {\n"
 
     for ((parent,children) <- map) {
-      val instrs = BasicBlockGenie.idToBBReference(parent).instrs
-      dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\"];\n".format(parent.substring(1), parent.substring(1), instrs.mkString("\\n"))
+      val parentBB = BasicBlockGenie.idToBBReference(parent)
+      val instrs = parentBB.instrs
+      if(parentBB.isInstanceOf[BranchBB]) {
+        val parentBranchBB = parentBB.asInstanceOf[BranchBB]
+        val merge = if(parentBranchBB.merge == null) "" else parentBranchBB.merge.id
+        val preinc = if(parentBranchBB.preincrement == null) "" else parentBranchBB.preincrement.id
+        val ws = if(parentBranchBB.whilestart == null) "" else parentBranchBB.whilestart.id
+        dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+          parent.substring(1),
+          parent.substring(1),
+          "merge: " + merge,
+          "preinc: " + preinc,
+          "whilest: " + ws,
+          instrs.mkString("\\n")
+        )
+      } else {
+        dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\"];\n".format(parent.substring(1), parent.substring(1), instrs.mkString("\\n"))
+      }
       for (child <- children) {
         dot = dot :+ "\t%s -> %s;\n".format(parent.substring(1), child.substring(1))
       }
