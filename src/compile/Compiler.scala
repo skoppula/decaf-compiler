@@ -88,8 +88,8 @@ object Compiler {
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         CFGUtil.compressCfg(methodStartBB, List())
       }
-
       // == Compressing CFG End ==
+
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         tacs = tacs ::: CFGUtil.cfgToTacs(methodStartBB, List())
@@ -110,6 +110,7 @@ object Compiler {
       }
       dot = CFGUtil.mapToDot(map)
       // === Dot file generation end ===
+
       // Should compile dot file into png using
       // dot -Tpng ~/graph.dot -o ~/graph.png
     }
