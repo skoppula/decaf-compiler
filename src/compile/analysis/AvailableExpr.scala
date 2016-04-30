@@ -25,7 +25,8 @@ object AvailableExpr {
     }
 
     while (!changed.isEmpty) {
-      for ( (id, bb) <- bbIdMap ) {
+      for ( id <- changed ) {
+        val bb = BasicBlockGenie.idToBBReference(id)
         changed -= id
 
         bb.in = ArrayBuffer.fill(length)(0)

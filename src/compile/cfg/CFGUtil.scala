@@ -276,7 +276,7 @@ object CFGUtil {
     return asm
   }
 
-  def mapToDot(map : Map[String, Set[String]]) : List[String] = {
+  def mapToDot(map : Map[String, Set[String]], printAvailability : Boolean = false, printTacs : Boolean = false) : List[String] = {
     var dot : List[String] = List()
     dot = dot :+ "digraph G {\n"
 
@@ -291,6 +291,13 @@ object CFGUtil {
         val forstart = if(parentBranchBB.forstart == null) "" else parentBranchBB.forstart.id
         val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
+        if(printAvailability) {
+          val inStr = if(parentBranchBB.in.isEmpty) "" else parentBranchBB.in.mkString("")
+          val outStr = if(parentBranchBB.out.isEmpty) "" else parentBranchBB.out.mkString("")
+          val tacs = ""
+          // NOT DONE YET
+          // TODO
+        }
 
 
         dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
