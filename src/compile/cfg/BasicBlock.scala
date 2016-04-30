@@ -12,8 +12,10 @@ class NormalBB(
   val instrs : mutable.ArrayBuffer[Tac] = mutable.ArrayBuffer.empty
   var child : NormalBB = null
   var parent : NormalBB = null
+
   var in : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
   var out : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
+
   var methodTop = false
   var programStart = false
   var symbolTable = currSymbolTable
@@ -21,7 +23,8 @@ class NormalBB(
   BasicBlockGenie.idToBBReference.put(id, this)
 
   def getParents() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](parent)
-  def getChildren() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](child) 
+  def getChildren() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](child)
+
   override def toString : String = {
     return "NormalBB(" + this.id + ")"
   }
@@ -52,7 +55,8 @@ class BranchBB(
   var whilestart : NormalBB = null // Pointer to Continue BB in a While
   var forstart : NormalBB = null // Pointer to start of a loop BB in a For
 
-  override def getChildren() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](child, child_else) 
+  override def getChildren() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](child, child_else)
+
   override def toString : String = {
     val m : String = if(merge == null) "" else merge.id
     val w : String = if(whilestart == null) "" else whilestart.id
@@ -68,6 +72,7 @@ class MergeBB(
   var parent_else : NormalBB = null
 
   override def getParents() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](parent, parent_else)
+
   override def toString : String = {
     return "MergeBB(" + this.id + ")"
   }
@@ -79,6 +84,7 @@ class JumpDestBB(
              ) extends NormalBB(currSymbolTable) {
   var label : String = null
   val jmpParents : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer.empty
+
   override def getParents() : mutable.ArrayBuffer[NormalBB] = jmpParents
 
   override def toString : String = {

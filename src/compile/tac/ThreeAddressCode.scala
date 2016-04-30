@@ -16,6 +16,7 @@ object ThreeAddressCode {
     override val isAssign = true
     override val lhs = addr1
   } // addr1 = addr2 op addr3
+
   case class TacUnOp(id: Int, addr1: String, op: OpTypes.UnOpEnumVal, addr2: String) extends Tac{
     override val isAssign = true
     override val lhs = addr1
@@ -32,6 +33,7 @@ object ThreeAddressCode {
     override val isAssign = true
     override val lhs = addr1
   } // x = y
+
   case class TacCopyInt(id: Int, addr1: String, int: Long) extends Tac{} // x = 5
   case class TacCopyBoolean(id: Int, addr1: String, bool: Boolean) extends Tac{
     override val isAssign = true
@@ -44,6 +46,7 @@ object ThreeAddressCode {
     override val isAssign = true
     override val lhs = addr1
   } // x = foo(args*)
+
   case class TacMethodCallStmt(id: Int, method: String, args: List[String]) extends Tac{} // foo(args*) (statement)
 
   case class TacStringLiteralStart(id: Int) extends Tac{}
@@ -57,7 +60,8 @@ object ThreeAddressCode {
   case class TacArrayLeft(id: Int, addr1: String, index: String, addr2: String) extends Tac{
     override val isAssign = true
     override val lhs = addr1
-  } // x[index] = y (index is a temp variable as well) 
+  } // x[index] = y (index is a temp variable as well)
+
   case class TacArrayRight(id: Int, addr1: String, addr2: String, index: String) extends Tac{
     override val isAssign = true
     override val lhs = addr1

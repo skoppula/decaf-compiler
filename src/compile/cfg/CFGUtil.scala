@@ -16,7 +16,6 @@ object CFGUtil {
     var slTacs : List[TacStringLiteral] = List()
 
     while (currentBB != null) {
-      // dprintln("Problem in this while.")
       for (tac <- currentBB.instrs) {
         if(tac.isInstanceOf[TacStringLiteral]) {
           slTacs = slTacs :+ tac.asInstanceOf[TacStringLiteral]

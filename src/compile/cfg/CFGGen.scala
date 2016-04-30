@@ -74,14 +74,14 @@ object CFGGen {
 
     val endMethodBB = new NormalBB(methodParamTable)
 
+    val methodEnterTac = new TacMethodEnter(tempGenie.generateTacNumber(), methodDesc)
+    mtBB.instrs += methodEnterTac
+
     val (childStartBB, childEndBB) = genBlockBB(methodDecl.bodyBlock, null, null, tempGenie, methodParamTable)
     mtBB.child = childStartBB
     childStartBB.parent = mtBB
     childEndBB.child = endMethodBB
     endMethodBB.parent = childEndBB
-
-    val methodEnterTac = new TacMethodEnter(tempGenie.generateTacNumber(), methodDesc)
-    mtBB.instrs += methodEnterTac
 
 
     if (methodDesc.methodType.isInstanceOf[VoidTypeDescriptor]) {

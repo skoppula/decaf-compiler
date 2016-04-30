@@ -1,28 +1,26 @@
 package compile.analysis
 
-import math.max
 import compile.cfg.NormalBB
 import compile.cfg.BasicBlockGenie
-import compile.tac.OpTypes._
 import compile.tac.ThreeAddressCode._
 import compile.analysis.BitvectorKey._
-import scala.collection.mutable.{ListBuffer, ArrayBuffer, LinkedHashMap, HashMap}
+import scala.collection.mutable.{ArrayBuffer, LinkedHashMap, HashMap}
 
-object available {
-  def available(
-                bbMethodMap : LinkedHashMap[String, (NormalBB, NormalBB)]
-               ) : Unit = {
-    val vecMap = vec()
-    val l = vecMap.size
+object AvailableExpr {
+  def computeAvailableExpr(
+                            bbMethodMap : LinkedHashMap[String, (NormalBB, NormalBB)]
+                          ) : Unit = {
+    val vecMap = initBitVectorMap()
+    val length = vecMap.size
 
-    var (start, _) = bbMethodMap("main")
-    start.in = ArrayBuffer.fill(l)(0)
+    val (start, _) = bbMethodMap("main")
+    start.in = ArrayBuffer.fill(length)(0)
     start.out = availableGen(start, vecMap)
 
-    val bbIdMap = BasicBlockGenie.idToBBReference 
+    val bbIdMap = BasicBlockGenie.idToBBReference
 
     var changed = Set[String]()
-    for ( (id, bb) <- bbIdMap ) {
+    for ((id, bb) <- bbIdMap) {
       changed += id
     }
 
@@ -30,35 +28,35 @@ object available {
       for ( (id, bb) <- bbIdMap ) {
         changed -= id
 
-        bb.in = ArrayBuffer.fill(l)(0)
-        
+        bb.in = ArrayBuffer.fill(length)(0)
+
         for ( parent <- bb.getParents() ) {
-          bb.in = intersect(bb.in, parent.out) 
+          bb.in = intersect(bb.in, parent.out)
         }
-        val oldOut = bb.out  
+        val oldOut = bb.out
         bb.out = union(availableGen(bb, vecMap), minus(bb.in, availableKill(bb, vecMap)))
 
         if (oldOut != bb.out) {
           for ( child <- bb.getChildren()) {
-            changed += child.id 
+            changed += child.id
           }
         }
       }
-    } 
-  } 
+    }
+  }
 
-  // walks through the basic blocks and *somehow* figures out the different types of expressions. 
+  // walks through the basic blocks and *somehow* figures out the different types of expressions.
   // Then, these are stored and mapped to their position in the bitvector
-  def vec() : HashMap[BitvectorKey, Int] = {
-      var vecMap = new HashMap[BitvectorKey, Int]
-      for ( (id, bb) <- BasicBlockGenie.idToBBReference) { 
-        for (instr <- bb.instrs) { 
-            val code = convertTAC(instr)
-            if (!vecMap.contains(code)) { 
-              vecMap += (code -> vecMap.size)
-            }
+  def initBitVectorMap() : HashMap[BitvectorKey, Int] = {
+    var vecMap = new HashMap[BitvectorKey, Int]
+    for ( (id, bb) <- BasicBlockGenie.idToBBReference) {
+      for (instr <- bb.instrs) {
+        val code = convertTAC(instr)
+        if (!vecMap.contains(code)) {
+          vecMap += (code -> vecMap.size)
         }
       }
+    }
     return vecMap
   }
  
