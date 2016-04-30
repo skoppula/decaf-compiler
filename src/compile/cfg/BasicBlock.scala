@@ -13,8 +13,8 @@ class NormalBB(
   var child : NormalBB = null
   var parent : NormalBB = null
 
-  var in : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
-  var out : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
+  var avail_in : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
+  var avail_out : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
 
   var methodTop = false
   var programStart = false

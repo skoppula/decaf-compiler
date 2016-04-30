@@ -121,7 +121,7 @@ object Compiler {
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
       }
-      dot = CFGUtil.mapToDot(map)
+      dot = CFGUtil.mapToDot(map, true)
       // === Dot file generation end ===
 
       // Should compile dot file into png using

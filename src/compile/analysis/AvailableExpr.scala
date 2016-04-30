@@ -14,8 +14,8 @@ object AvailableExpr {
     val length = vecMap.size
 
     val (start, _) = bbMethodMap("main")
-    start.in = ArrayBuffer.fill(length)(0)
-    start.out = availableGen(start, vecMap)
+    start.avail_in = ArrayBuffer.fill(length)(0)
+    start.avail_out = availableGen(start, vecMap)
 
     val bbIdMap = BasicBlockGenie.idToBBReference
 
@@ -29,15 +29,15 @@ object AvailableExpr {
         val bb = BasicBlockGenie.idToBBReference(id)
         changed -= id
 
-        bb.in = ArrayBuffer.fill(length)(0)
+        bb.avail_in = ArrayBuffer.fill(length)(0)
 
         for ( parent <- bb.getParents() ) {
-          bb.in = intersect(bb.in, parent.out)
+          bb.avail_in = intersect(bb.avail_in, parent.avail_out)
         }
-        val oldOut = bb.out
-        bb.out = union(availableGen(bb, vecMap), minus(bb.in, availableKill(bb, vecMap)))
+        val oldOut = bb.avail_out
+        bb.avail_out = union(availableGen(bb, vecMap), minus(bb.avail_in, availableKill(bb, vecMap)))
 
-        if (oldOut != bb.out) {
+        if (oldOut != bb.avail_out) {
           for ( child <- bb.getChildren()) {
             changed += child.id
           }

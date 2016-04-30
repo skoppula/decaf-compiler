@@ -202,7 +202,6 @@ object CFGUtil {
     return (!bb.isInstanceOf[MethodCallBB]) && (!bb.isInstanceOf[BranchBB]) && (!bb.isInstanceOf[MergeBB]) && (!bb.isInstanceOf[JumpDestBB])
   }
 
-  // TODO : Untested
   def cfgToTacs(bb: NormalBB, doNotTraverseBBs : List[String]): List[(Tac, SymbolTable)] = {
     var currentBB : NormalBB = bb
     var tacs : List[(Tac, SymbolTable)] = List()
@@ -276,7 +275,7 @@ object CFGUtil {
     return asm
   }
 
-  def mapToDot(map : Map[String, Set[String]], printAvailability : Boolean = false, printTacs : Boolean = false) : List[String] = {
+  def mapToDot(map : Map[String, Set[String]], printAvailability : Boolean = false) : List[String] = {
     var dot : List[String] = List()
     dot = dot :+ "digraph G {\n"
 
@@ -291,32 +290,54 @@ object CFGUtil {
         val forstart = if(parentBranchBB.forstart == null) "" else parentBranchBB.forstart.id
         val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
+        val availInStr = if(parentBranchBB.avail_in.isEmpty) "" else parentBranchBB.avail_in.mkString("")
+        val availOutStr = if(parentBranchBB.avail_out.isEmpty) "" else parentBranchBB.avail_out.mkString("")
         if(printAvailability) {
-          val inStr = if(parentBranchBB.in.isEmpty) "" else parentBranchBB.in.mkString("")
-          val outStr = if(parentBranchBB.out.isEmpty) "" else parentBranchBB.out.mkString("")
-          val tacs = ""
-          // NOT DONE YET
-          // TODO
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+            parent.substring(1),
+            parent.substring(1),
+            "availin: " + availInStr,
+            "availout: " + availOutStr,
+            "type: " + getBBType(parentBB),
+            "merge: " + merge,
+            "preinc: " + preinc,
+            "whilest: " + ws,
+            "forstart: " + forstart,
+            "child: " + child,
+            "child else: " + child_else,
+            instrs.mkString("\\n")
+          )
+        } else {
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+            parent.substring(1),
+            parent.substring(1),
+            "type: " + getBBType(parentBB),
+            "merge: " + merge,
+            "preinc: " + preinc,
+            "whilest: " + ws,
+            "forstart: " + forstart,
+            "child: " + child,
+            "child else: " + child_else,
+            instrs.mkString("\\n")
+          )
         }
 
 
-        dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
-          parent.substring(1),
-          parent.substring(1),
-          "type: " + getBBType(parentBB),
-          "merge: " + merge,
-          "preinc: " + preinc,
-          "whilest: " + ws,
-          "forstart: " + forstart,
-          "child: " + child,
-          "child else: " + child_else,
-          instrs.mkString("\\n")
-        )
       } else {
-        dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\"];\n".format(parent.substring(1), parent.substring(1), 
-          "type: " + getBBType(parentBB),
-          instrs.mkString("\\n")
-        )
+        val availInStr = if(parentBB.avail_in.isEmpty) "" else parentBB.avail_in.mkString("")
+        val availOutStr = if(parentBB.avail_out.isEmpty) "" else parentBB.avail_out.mkString("")
+        if(printAvailability) {
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
+            parent.substring(1),
+            parent.substring(1),
+            "type: " + getBBType(parentBB),
+            "availin: " + availInStr,
+            "availout: " + availOutStr,
+            instrs.mkString("\\n")
+          )
+        } else {
+
+        }
       }
       for (child <- children) {
         dot = dot :+ "\t%s -> %s;\n".format(parent.substring(1), child.substring(1))
