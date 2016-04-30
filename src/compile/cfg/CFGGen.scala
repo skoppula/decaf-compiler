@@ -209,8 +209,11 @@ object CFGGen {
       // the specific genStmtBB handles the parent-child setting relationships depending if stmt is continue/break/return
       stmtStartBB = stmtBBs._1
       stmtEndBB = stmtBBs._2
-      stmtStartBB.parent = currParent
-      currParent.child = stmtStartBB
+
+      if(currParent.child == null) {
+        stmtStartBB.parent = currParent
+        currParent.child = stmtStartBB
+      }
 
       if(stmt.isInstanceOf[IrReturnStmt] || stmt.isInstanceOf[IrContinueStmt] || stmt.isInstanceOf[IrBreakStmt]) {
         jmpEncountered = true
@@ -225,8 +228,10 @@ object CFGGen {
       throw new StmtAfterContinueBreakReturnException("Statement after continue/break/return")
     }
 
-    stmtEndBB.child = blockEndBB
-    blockEndBB.parent = stmtEndBB
+    if(currParent.child == null) {
+      stmtEndBB.child = blockEndBB
+      blockEndBB.parent = stmtEndBB
+    }
 
     return (blockStartBB, blockEndBB)
   }
@@ -402,8 +407,10 @@ object CFGGen {
     forJmpBB.merge = forEndBB
     forJmpBB.forstart = forLoopBeginBB
 
-    blockEndBB.child = forPreIncrementBB
-    forPreIncrementBB.parent = blockEndBB
+    if(blockEndBB.child == null) {
+      blockEndBB.child = forPreIncrementBB
+      forPreIncrementBB.parent = blockEndBB
+    }
 
     val incrementBB = new NormalBB(symbolTable)
 

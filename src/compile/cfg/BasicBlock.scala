@@ -17,6 +17,10 @@ class NormalBB(
   var symbolTable = currSymbolTable
   var id = BasicBlockGenie.generateBBName()
   BasicBlockGenie.idToBBReference.put(id, this)
+
+  override def toString : String = {
+    return "NormalBB(" + this.id + ")"
+  }
 }
 
 // Stores the start and end basic blocks of the method that it's calling
@@ -27,6 +31,10 @@ class MethodCallBB(
               ) extends NormalBB(currSymbolTable) {
   var methodStartBB : NormalBB = methodStart
   var methodEndBB : NormalBB = methodEnd
+
+  override def toString : String = {
+    return "MethodCallBB(" + this.id + ")"
+  }
 }
 
 class BranchBB(
@@ -39,12 +47,24 @@ class BranchBB(
   var merge : NormalBB = null // Pointer to Preincrement in a For Branch to generate TAC/Asm
   var whilestart : NormalBB = null // Pointer to Continue BB in a While
   var forstart : NormalBB = null // Pointer to start of a loop BB in a For
+
+  override def toString : String = {
+    val m : String = if(merge == null) "" else merge.id
+    val w : String = if(whilestart == null) "" else whilestart.id
+    val f : String = if(preincrement == null) "" else preincrement.id
+    val p : String = if(forstart == null) "" else forstart.id
+    return "BranchBB(" + this.id + "merge:" + m + ", whilestart:" + w + "forstart:" + f + "preincrement" + p + ")"
+  }
 }
 
 class MergeBB(
                 currSymbolTable : SymbolTable
               ) extends NormalBB(currSymbolTable) {
   var parent_else : NormalBB = null
+
+  override def toString : String = {
+    return "MergeBB(" + this.id + ")"
+  }
 }
 
 class JumpDestBB(
@@ -52,5 +72,9 @@ class JumpDestBB(
              ) extends NormalBB(currSymbolTable) {
   var label : String = null
   val jmpParents : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer.empty
+
+  override def toString : String = {
+    return "JumpDestBB(" + this.id + ")"
+  }
 }
 
