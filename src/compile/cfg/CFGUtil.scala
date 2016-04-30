@@ -7,11 +7,8 @@ import compile.tac.{AsmGen}
 import compile.util.Util.dprintln
 
 object CFGUtil {
-  // TODO Method to print out CFG
-  // TODO compress the CFG
   // TODO Remove NOP, check new parent symbol table call didn't affect anythign
   // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
-  // TODO change the symboltable.getparenttable 'Changed from TacGen'
   // TODO remove Noops, efficient use of constant zero
   // TODO visualizing parents
   // TODO make sure parent <-> child relations are all correct
