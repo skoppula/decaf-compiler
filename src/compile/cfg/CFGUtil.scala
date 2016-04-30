@@ -66,11 +66,11 @@ object CFGUtil {
     var doNotTraverseBBList : List[String] = doNotTraverseBBs
 
     while(currentBB != null && currentBB.child != null) {
-      //println("current bb id: %s".format(currentBB.id))
+      //dprintln("current bb id: %s".format(currentBB.id))
 
       // Fixing child
       while (map.keySet.exists(_ == currentBB.child.id)) {
-        //println("fixing child! was %s now is %s".format(currentBB.child.id, map(currentBB.child.id)))
+        //dprintln("fixing child! was %s now is %s".format(currentBB.child.id, map(currentBB.child.id)))
         currentBB.child = BasicBlockGenie.idToBBReference(map(currentBB.child.id))
       }
 
@@ -90,14 +90,14 @@ object CFGUtil {
 
           } else if (BBB.whilestart == null) {
             // Must be (?) for statement
-            //println("for reached.. attempting recursive compression")
+            //dprintln("for reached.. attempting recursive compression")
 
             map = mergeCompressMaps(map, compressCfg(BBB.child_else, doNotTraverseBBList :+ BBB.merge.id :+ BBB.preincrement.id, map))
-            //println("for reached.. first recursion complete")
+            //dprintln("for reached.. first recursion complete")
 
             updateBranchBBReferences(BBB, map)
             map = mergeCompressMaps(map, compressCfg(BBB.preincrement, doNotTraverseBBList :+ BBB.merge.id :+ BBB.forstart.id, map))
-            //println("for reached.. second recursion complete")
+            //dprintln("for reached.. second recursion complete")
 
             updateBranchBBReferences(BBB, map)
 
@@ -464,7 +464,7 @@ object CFGUtil {
         }
 
       if (check != "" && check != v) {
-        println("Error: Found key %s has value %s in map1 and value %s in map2".format(k, check, v))
+        dprintln("Error: Found key %s has value %s in map1 and value %s in map2".format(k, check, v))
       }
       map = map + {k -> v}
     }
@@ -479,7 +479,7 @@ object CFGUtil {
       var id : String = map(bb.merge.id)
       bb.merge = BasicBlockGenie.idToBBReference(map(bb.merge.id))
       if (bb.merge == null) {
-        println("Error: Tried to update merge but got null for id %s".format(id))
+        dprintln("Error: Tried to update merge but got null for id %s".format(id))
       }
     }
 
@@ -488,7 +488,7 @@ object CFGUtil {
       var id : String = map(bb.preincrement.id)
       bb.preincrement = BasicBlockGenie.idToBBReference(map(bb.preincrement.id))
       if (bb.merge == null) {
-        println("Error: Tried to update preincrement but got null for id %s".format(id))
+        dprintln("Error: Tried to update preincrement but got null for id %s".format(id))
       }
     }
 
@@ -497,7 +497,7 @@ object CFGUtil {
       var id : String = map(bb.whilestart.id)
       bb.whilestart = BasicBlockGenie.idToBBReference(map(bb.whilestart.id))
       if (bb.whilestart == null) {
-        println("Error: Tried to update preincrement but got null for id %s".format(id))
+        dprintln("Error: Tried to update preincrement but got null for id %s".format(id))
       }
     }
 
@@ -506,7 +506,7 @@ object CFGUtil {
       var id : String = map(bb.forstart.id)
       bb.forstart = BasicBlockGenie.idToBBReference(map(bb.forstart.id))
       if (bb.forstart == null) {
-        println("Error: Tried to update forstart but got null for id %s".format(id))
+        dprintln("Error: Tried to update forstart but got null for id %s".format(id))
       }
     }
 

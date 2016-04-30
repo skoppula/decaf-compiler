@@ -228,9 +228,9 @@ object Compiler {
     // Step 1
     val ir = IrConstruction.constructIR(parse(fileName), exceptionGenie)
     if(CLI.irdebug && CLI.target == CLI.Action.INTER) {
-      println("\nIR decomposition:")
-      println(ir.treeString)
-      println()
+      dprintln("\nIR decomposition:")
+      dprintln(ir.treeString)
+      dprintln("")
     }
 
     // Step 2.a.

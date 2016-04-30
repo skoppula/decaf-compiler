@@ -4,9 +4,16 @@ import compile.cfg.NormalBB
 import compile.cfg.BasicBlockGenie
 import compile.tac.ThreeAddressCode._
 import compile.analysis.BitvectorKey._
+import compile.util.Util.dprintln
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap, HashMap}
 
 object AvailableExpr {
+
+  def replaceAvailableExpr(vecMap : HashMap[BitvectorKey, Int]) : Unit = {
+    var latestExprValue : HashMap[String, Any] = new HashMap[String, Any] 
+    //TODO: this doesn't actually do anything yet
+  }
+
   def computeAvailableExpr(
                             bbMethodMap : LinkedHashMap[String, (NormalBB, NormalBB)]
                           ) : Unit = {
@@ -52,7 +59,7 @@ object AvailableExpr {
     var vecMap = new HashMap[BitvectorKey, Int]
     for ( (id, bb) <- BasicBlockGenie.idToBBReference) {
       for (instr <- bb.instrs) {
-        val code = convertTAC(instr)
+        val code = convertTacToBvk(instr)
         if (!vecMap.contains(code)) {
           vecMap += (code -> vecMap.size)
         }
@@ -61,7 +68,7 @@ object AvailableExpr {
     return vecMap
   }
  
-  def convertTAC(
+  def convertTacToBvk(
                  tac: Tac
                 ) : BitvectorKey = {
       tac match {
@@ -85,13 +92,11 @@ object AvailableExpr {
                   ) : ArrayBuffer[Int] = {
       var bitvector = ArrayBuffer[Int](vecMap.size)
       for (tac <- bb.instrs) {
-        val code = convertTAC(tac)
-        if (vecMap.contains(code)) {
-           //TODO: implement some sort of equivalence function instead of contains.
-           // Should have casework for different ops, e.g. + or * will be commutative, so a+b is the same as b+a 
-           bitvector(vecMap(code)) = 1
-        } else if (!code.isInstanceOf[EmptyBvk]) { 
-          println("Bad shit- found an expression not in the mapping:" + code)
+        val code = convertTacToBvk(tac)
+        for ( (bvk, int) <- vecMap ) {
+          if ( bvk.equals(code) ) {
+            bitvector(int) = 1 // TODO: remove this comment. scala y u no have break/continue
+          }
         } 
       }
       return bitvector
@@ -136,14 +141,13 @@ object AvailableExpr {
            ) : ArrayBuffer[Int] =
   {
     if (vec1.size != vec2.size) {
-      println("Bad shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
+      dprintln("Bad shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
     }
     var newVec = new ArrayBuffer[Int]()
 
     for ( i <- 0 until vec1.size ) {
       newVec += (math.max(vec1(i),vec2(i)))
     }
-
     return newVec
   }
 
@@ -153,14 +157,13 @@ object AvailableExpr {
            ) : ArrayBuffer[Int] =
   {
     if (vec1.size != vec2.size) {
-      println("Bad shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
+      dprintln("Bad shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
     }
     var newVec = new ArrayBuffer[Int]()
 
     for ( i <- 0 until vec1.size ) {
       newVec += (math.min(vec1(i)-vec2(i), 0))
     }  
-
     return newVec
   }
 
