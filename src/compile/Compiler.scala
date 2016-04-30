@@ -116,12 +116,14 @@ object Compiler {
       dprintln("Generating assembly...")
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
 
+      CFGUtil.setParentBasedOnChildPointers()
+
       // === Dot file generation end ===
       var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
       }
-      dot = CFGUtil.mapToDot(map, true)
+      dot = CFGUtil.mapToDot(map, true, true)
       // === Dot file generation end ===
 
       // Should compile dot file into png using

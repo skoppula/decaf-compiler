@@ -85,7 +85,9 @@ class JumpDestBB(
   var label : String = null
   val jmpParents : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer.empty
 
-  override def getParents() : mutable.ArrayBuffer[NormalBB] = jmpParents
+  override def getParents() : mutable.ArrayBuffer[NormalBB] = {
+    return mutable.ArrayBuffer.empty[NormalBB] ++ (jmpParents.toList :+ this.parent).toArray
+  }
 
   override def toString : String = {
     return "JumpDestBB(" + this.id + ")"

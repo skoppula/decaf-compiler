@@ -6,6 +6,8 @@ import compile.symboltables.SymbolTable
 import compile.tac.{AsmGen}
 import compile.util.Util.dprintln
 
+import scala.collection.mutable
+
 object CFGUtil {
   // TODO Remove NOP, check new parent symbol table call didn't affect anythign
   // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
@@ -275,7 +277,7 @@ object CFGUtil {
     return asm
   }
 
-  def mapToDot(map : Map[String, Set[String]], printAvailability : Boolean = false) : List[String] = {
+  def mapToDot(map : Map[String, Set[String]], printParents : Boolean = true, printAvailability : Boolean = false) : List[String] = {
     var dot : List[String] = List()
     dot = dot :+ "digraph G {\n"
 
@@ -343,6 +345,19 @@ object CFGUtil {
         dot = dot :+ "\t%s -> %s;\n".format(parent.substring(1), child.substring(1))
       }
     }
+
+    // graph parent relations now
+    if(printParents) {
+      for((id, child) <- BasicBlockGenie.idToBBReference) {
+        val parents = child.getParents()
+        for (parent <- parents) {
+          if(parent != null) {
+            dot = dot :+ "\t%s -> %s;\n".format(child.id.substring(1), parent.id.substring(1))
+          }
+        }
+      }
+    }
+
 
     dot = dot :+ "}\n"
     return dot
@@ -526,6 +541,51 @@ object CFGUtil {
     }
   }
 
+  def setParentBasedOnChildPointers(): Unit = {
+    for((id, parent) <- BasicBlockGenie.idToBBReference) {
+      val children = parent.getChildren()
+      for (child <- children) {
+        if(child != null) {
+          if(child.isInstanceOf[JumpDestBB]) {
+            val childJD = child.asInstanceOf[JumpDestBB]
+            childJD.jmpParents.clear()
+            childJD.parent = null
+          } else if (child.isInstanceOf[MergeBB]) {
+            val childM = child.asInstanceOf[MergeBB]
+            childM.parent_else = null
+            childM.parent = null
+          } else {
+            child.parent = null
+          }
+        }
+      }
+    }
+
+  for((id, parent) <- BasicBlockGenie.idToBBReference) {
+    val children = parent.getChildren()
+    for (child <- children) {
+      if(child != null) {
+        if (child.isInstanceOf[JumpDestBB]) {
+          val childJD = child.asInstanceOf[JumpDestBB]
+          if (childJD.parent == null) {
+            childJD.parent = parent
+          } else {
+            childJD.jmpParents.append(parent)
+          }
+        } else if (child.isInstanceOf[MergeBB]) {
+          val childM = child.asInstanceOf[MergeBB]
+          if (childM.parent_else == null) {
+            childM.parent_else = parent
+          } else {
+            childM.parent = parent
+          }
+        } else {
+          child.parent = parent
+        }
+      }
+    }
+   }
+  }
 
 
 }
