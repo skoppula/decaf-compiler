@@ -149,11 +149,6 @@ object CFGUtil {
               doNotTraverseBBList = doNotTraverseBBList :+ currentBB.child.id
             }
 
-            // remove ourself from bb db
-            currentBB.parent = null
-            currentBB.child = null
-            BasicBlockGenie.idToBBReference -= currentBB.id
-
             // Continue compression with the child
             currentBB = currentBB.child
           }
@@ -161,9 +156,6 @@ object CFGUtil {
         } else { // Otherwise, merge in any ordinary child basic blocks 
 
           if (isOrdinaryBB(currentBB.child) && !doNotTraverseBBs.contains(currentBB.child.id)) {
-
-            // Update the map to reflect block merge
-            map = map + {currentBB.child.id -> currentBB.id}
 
             // Get all the child's tacs and then merge it into ours, only if the symbol tables are the same
             if (currentBB.child.instrs.size > 0 && currentBB.symbolTable == currentBB.child.symbolTable) {
@@ -176,13 +168,11 @@ object CFGUtil {
 
             // If the symbol tables are the same, or the child has no tacs, then remove the child and connect to its child
             if (currentBB.child.instrs.size == 0 || currentBB.symbolTable == currentBB.child.symbolTable) {
-              // remove old child from bb db
-              val oldChild = currentBB.child
-              currentBB.child = currentBB.child.child // Update to the new child
-              oldChild.parent = null
-              oldChild.child = null
-              BasicBlockGenie.idToBBReference -= oldChild.id
 
+              // Update the map to reflect block merge
+              map = map + {currentBB.child.id -> currentBB.id}
+
+              currentBB.child = currentBB.child.child // Update to the new child
               if (currentBB.child != null) {
                 // Update the new child's parent pointer
                 currentBB.child.parent = currentBB
