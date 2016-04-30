@@ -85,6 +85,17 @@ object CFGGen {
 
 
     if (methodDesc.methodType.isInstanceOf[VoidTypeDescriptor]) {
+      // Return zero from main so that the exit code is correct
+      if (methodDecl.name == "main") {
+        // TODO: Probably wasteful to allocate a temp just for zero
+        val constantZeroTemp = tempGenie.generateName()
+        methodParamTable.insert(constantZeroTemp, new IntTypeDescriptor)
+        val copyConstantZero = new TacCopyInt(tempGenie.generateTacNumber(), constantZeroTemp, 0)
+        endMethodBB.instrs += copyConstantZero
+        val returnZero = new TacReturnValue(tempGenie.generateTacNumber(), constantZeroTemp)
+        endMethodBB.instrs += returnZero
+      }
+
       val voidExit = new TacReturn(tempGenie.generateTacNumber())
       endMethodBB.instrs += voidExit
     } else {
