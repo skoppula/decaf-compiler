@@ -2,7 +2,7 @@ package compile
 
 import _root_.util.CLI
 import java.io._
-import compile.cfg.{CFGUtil, CFGGen, NormalBB}
+import compile.cfg.{CFGUtil, CFGGen, NormalBB, BasicBlockGenie}
 import compile.exceptionhandling._
 import sext._
 
@@ -87,9 +87,16 @@ object Compiler {
 
       var blankmap : Map[String, String] = Map()
 
-      CFGUtil.compressCfg(programStartBB, List(), blankmap)
+      var deletedBBidMap : Map[String, String] = Map()
+
+      deletedBBidMap = CFGUtil.compressCfg(programStartBB, List(), blankmap)
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
-        CFGUtil.compressCfg(methodStartBB, List(), blankmap)
+        deletedBBidMap = CFGUtil.mergeCompressMaps(deletedBBidMap, CFGUtil.compressCfg(methodStartBB, List(), blankmap))
+      }
+ 
+      // Update basic block genie to remove references to blocks that no longer exist
+      for ((deletedId, trueId) <- deletedBBidMap) {
+        BasicBlockGenie.idToBBReference -= deletedId
       }
  
       dprintln("CFG Compression complete!")
@@ -99,6 +106,7 @@ object Compiler {
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         tacs = tacs ::: CFGUtil.cfgToTacs(methodStartBB, List())
       }
+
       dprintln("Finished creation of TAC list. TACs:")
 
       for((tac,st) <- tacs) {

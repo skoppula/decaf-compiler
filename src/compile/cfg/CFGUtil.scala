@@ -10,6 +10,8 @@ object CFGUtil {
   // TODO Remove NOP, check new parent symbol table call didn't affect anythign
   // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
   // TODO remove Noops, efficient use of constant zero
+  // TODO visualizing parents
+  // TODO make sure parent <-> child relations are all correct
 
   def getStringLiteralTacs(bb : NormalBB, doNotTraverseBBs : List[String]) : List[TacStringLiteral] = {
     var currentBB : NormalBB = bb
@@ -154,9 +156,6 @@ object CFGUtil {
 
           if (isOrdinaryBB(currentBB.child) && !doNotTraverseBBs.contains(currentBB.child.id)) {
 
-            // Update the map to reflect block merge
-            map = map + {currentBB.child.id -> currentBB.id}
-
             // Get all the child's tacs and then merge it into ours, only if the symbol tables are the same
             if (currentBB.child.instrs.size > 0 && currentBB.symbolTable == currentBB.child.symbolTable) {
               // Merge tacs
@@ -168,7 +167,11 @@ object CFGUtil {
 
             // If the symbol tables are the same, or the child has no tacs, then remove the child and connect to its child
             if (currentBB.child.instrs.size == 0 || currentBB.symbolTable == currentBB.child.symbolTable) {
-              currentBB.child = currentBB.child.child
+
+              // Update the map to reflect block merge
+              map = map + {currentBB.child.id -> currentBB.id}
+
+              currentBB.child = currentBB.child.child // Update to the new child
               if (currentBB.child != null) {
                 // Update the new child's parent pointer
                 currentBB.child.parent = currentBB
