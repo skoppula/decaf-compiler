@@ -87,7 +87,9 @@ object available {
       var bitvector = ArrayBuffer[Int](vecMap.size)
       for (tac <- bb.instrs) {
         val code = convertTAC(tac)
-        if (vecMap.contains(code)) { 
+        if (vecMap.contains(code)) {
+           //TODO: implement some sort of equivalence function instead of contains.
+           // Should have casework for different ops, e.g. + or * will be commutative, so a+b is the same as b+a 
            bitvector(vecMap(code)) = 1
         } else if (!code.isInstanceOf[EmptyBvk]) { 
           println("Bad shit- found an expression not in the mapping:" + code)
