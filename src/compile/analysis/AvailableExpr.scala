@@ -19,17 +19,19 @@ object AvailableExpr {
                           ) : Unit = {
     val vecMap = initBitVectorMap()
     val length = vecMap.size
-
-    val (start, _) = bbMethodMap("main")
-    start.avail_in = ArrayBuffer.fill(length)(0)
-    start.avail_out = availableGen(start, vecMap)
-
     val bbIdMap = BasicBlockGenie.idToBBReference
 
     var changed = Set[String]()
     for ((id, bb) <- bbIdMap) {
       changed += id
+      bb.avail_out = ArrayBuffer.fill(length)(0)
     }
+
+    val (start, _) = bbMethodMap("main")
+    start.avail_in = ArrayBuffer.fill(length)(0)
+    start.avail_out = availableGen(start, vecMap)
+
+    changed -= start.id 
 
     while (!changed.isEmpty) {
       for ( id <- changed ) {
@@ -39,12 +41,17 @@ object AvailableExpr {
         bb.avail_in = ArrayBuffer.fill(length)(0)
 
         for ( parent <- bb.getParents() ) {
+          println("Current bb:" + bb + "its parent(s):" + parent)
           bb.avail_in = intersect(bb.avail_in, parent.avail_out)
         }
         val oldOut = bb.avail_out
-        bb.avail_out = union(availableGen(bb, vecMap), minus(bb.avail_in, availableKill(bb, vecMap)))
-
+        val bbKill = availableKill(bb, vecMap)
+        val bbGen = availableGen(bb, vecMap)
+        println("bb in:" + bb.avail_in + " bb out:" + bb.avail_out + " bbKill: " + bbKill + " bbGen: " + bbGen)
+        bb.avail_out = union(bbGen, minus(bb.avail_in, bbKill))
+        println("new bb out:" + bb.avail_out)
         if (oldOut != bb.avail_out) {
+          println("bb: " + bb + " children: " + bb.getChildren())
           for ( child <- bb.getChildren()) {
             changed += child.id
           }
@@ -60,7 +67,7 @@ object AvailableExpr {
     for ( (id, bb) <- BasicBlockGenie.idToBBReference) {
       for (instr <- bb.instrs) {
         val code = convertTacToBvk(instr)
-        if (!vecMap.contains(code)) {
+        if (!code.isInstanceOf[EmptyBvk] && !vecMap.contains(code)) {
           vecMap += (code -> vecMap.size)
         }
       }
@@ -90,7 +97,7 @@ object AvailableExpr {
                    bb: NormalBB, 
                    vecMap: HashMap[BitvectorKey, Int]
                   ) : ArrayBuffer[Int] = {
-      var bitvector = ArrayBuffer[Int](vecMap.size)
+      var bitvector = ArrayBuffer.fill(vecMap.size)(0)
       for (tac <- bb.instrs) {
         val code = convertTacToBvk(tac)
         for ( (bvk, int) <- vecMap ) {
@@ -108,7 +115,7 @@ object AvailableExpr {
                     bb: NormalBB, 
                     vecMap: HashMap[BitvectorKey, Int]
                    ) : ArrayBuffer[Int] = {
-    var bitvector = ArrayBuffer[Int](vecMap.size)
+    var bitvector = ArrayBuffer.fill(vecMap.size)(0)
     for (tac <- bb.instrs) { 
       for ( (key, index) <- vecMap) {
         if (tac.isAssign && (key.asInstanceOf[Bvk].setVars contains tac.lhs)) {
@@ -125,7 +132,7 @@ object AvailableExpr {
                ) : ArrayBuffer[Int] =
   {
     if (vec1.size != vec2.size) {
-      println("Bad shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
+      println("Bad intersect shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
     }  
     var newVec = new ArrayBuffer[Int]()
 
@@ -141,7 +148,7 @@ object AvailableExpr {
            ) : ArrayBuffer[Int] =
   {
     if (vec1.size != vec2.size) {
-      dprintln("Bad shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
+      dprintln("Bad union shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
     }
     var newVec = new ArrayBuffer[Int]()
 
@@ -157,12 +164,12 @@ object AvailableExpr {
            ) : ArrayBuffer[Int] =
   {
     if (vec1.size != vec2.size) {
-      dprintln("Bad shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
+      dprintln("Bad minus shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
     }
     var newVec = new ArrayBuffer[Int]()
 
     for ( i <- 0 until vec1.size ) {
-      newVec += (math.min(vec1(i)-vec2(i), 0))
+      newVec += (math.max(vec1(i)-vec2(i), 0))
     }  
     return newVec
   }

@@ -9,12 +9,12 @@ import _root_.compile.tac.ThreeAddressCode.Tac
 class NormalBB(
                 currSymbolTable : SymbolTable
               ) {
-  val instrs : mutable.ArrayBuffer[Tac] = mutable.ArrayBuffer.empty
+  val instrs : mutable.ArrayBuffer[Tac] = mutable.ArrayBuffer.empty[Tac]
   var child : NormalBB = null
   var parent : NormalBB = null
 
-  var avail_in : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
-  var avail_out : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
+  var avail_in : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
+  var avail_out : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
 
   var methodTop = false
   var programStart = false
@@ -22,8 +22,8 @@ class NormalBB(
   var id = BasicBlockGenie.generateBBName()
   BasicBlockGenie.idToBBReference.put(id, this)
 
-  def getParents() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](parent)
-  def getChildren() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](child)
+  def getParents() : mutable.ArrayBuffer[NormalBB] = if (parent == null) mutable.ArrayBuffer.empty else mutable.ArrayBuffer[NormalBB](parent)
+  def getChildren() : mutable.ArrayBuffer[NormalBB] = if (child == null) mutable.ArrayBuffer.empty else mutable.ArrayBuffer[NormalBB](child)
 
   override def toString : String = {
     return "NormalBB(" + this.id + ")"
@@ -55,7 +55,16 @@ class BranchBB(
   var whilestart : NormalBB = null // Pointer to Continue BB in a While
   var forstart : NormalBB = null // Pointer to start of a loop BB in a For
 
-  override def getChildren() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](child, child_else)
+  override def getChildren() : mutable.ArrayBuffer[NormalBB] = {
+    val children = mutable.ArrayBuffer.empty[NormalBB] 
+    if (child != null) {
+      children += child
+    } 
+    if (child_else != null) {
+      children += child_else
+    }
+    return children
+  }
 
   override def toString : String = {
     val m : String = if(merge == null) "" else merge.id

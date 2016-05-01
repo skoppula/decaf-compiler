@@ -9,10 +9,9 @@ import compile.util.Util.dprintln
 import scala.collection.mutable
 
 object CFGUtil {
-  // TODO Remove NOP, check new parent symbol table call didn't affect anythign
+  // TODO Remove NOP, check new parent symbol table call didn't affect anything
   // Make sure that on every call to genBlockBB, check if end BB of block already has a child or is null
   // TODO remove Noops, efficient use of constant zero
-  // TODO visualizing parents
   // TODO make sure parent <-> child relations are all correct
 
   def getStringLiteralTacs(bb : NormalBB, doNotTraverseBBs : List[String]) : List[TacStringLiteral] = {

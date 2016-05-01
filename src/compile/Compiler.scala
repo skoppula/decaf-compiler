@@ -15,6 +15,8 @@ import compile.tac._
 import compile.tac.ThreeAddressCode._
 import TacGen._
 
+import compile.analysis.AvailableExpr
+
 import compile.util.Util.dprint
 import compile.util.Util.dprintln
 
@@ -101,6 +103,12 @@ object Compiler {
  
       dprintln("CFG Compression complete!")
 
+      // == Doing available expression analysis == 
+      dprintln("Attempting to do available expression analysis")
+      if (CLI.available) {
+        AvailableExpr.computeAvailableExpr(methodsBBMap)
+      }
+
       dprintln("Converting CFG to a TAC list...")
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
@@ -118,7 +126,7 @@ object Compiler {
 
       CFGUtil.setParentBasedOnChildPointers()
 
-      // === Dot file generation end ===
+      // === Dot file generation start ===
       var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))

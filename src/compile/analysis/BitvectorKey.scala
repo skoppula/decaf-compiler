@@ -23,6 +23,7 @@ object BitvectorKey {
           case _ => return false
         }
       }
+      case _ => return false
     }
   }
   case class EmptyBvk() extends BitvectorKey{} 

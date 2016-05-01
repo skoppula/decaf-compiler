@@ -9,7 +9,7 @@ object Util {
 
   def dprint(s : String) {
     if (CLI.debug) {
-      println(s)
+      print(s)
     }
   }
 
