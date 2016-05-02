@@ -116,6 +116,7 @@ case class ExpectedSubBlockCountNotActualException(message: String) extends Exce
 case class StmtAfterContinueBreakReturnException(message: String) extends Exception(message)
 case class NullElseBlockException(message: String) extends Exception(message)
 case class NotForIfWhileStmtException(message: String) extends Exception(message)
+case class NotAndOrOrOperatorException(message: String) extends Exception(message)
 
 case class NoMatchingStatementException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 

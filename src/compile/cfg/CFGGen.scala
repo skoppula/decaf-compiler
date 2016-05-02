@@ -982,11 +982,11 @@ object CFGGen {
     return (temp, unOpStartBB, unOpEndBB)
   }
 
-  def genIrBinOpExprBB(
-                      binOpExpr: IrBinOpExpr,
-                      tempGenie: TempVariableGenie,
-                      symbolTable: SymbolTable
-                    ) : (String, NormalBB, NormalBB) = {
+  def shortCircuitBinOpExprBB(
+                        binOpExpr: IrBinOpExpr,
+                        tempGenie: TempVariableGenie,
+                        symbolTable: SymbolTable
+                      ) : (String, NormalBB, NormalBB) = {
 
     val binOpStartBB = new NormalBB(symbolTable)
     val binOpEndBB = new MergeBB(symbolTable)
@@ -1005,51 +1005,36 @@ object CFGGen {
     val scBB = new NormalBB(symbolTable)
     val scJmpBB = new BranchBB(symbolTable)
 
-    if(binOpExpr.binOp.isInstanceOf[IrAndOp] || binOpExpr.binOp.isInstanceOf[IrOrOp]) {
-      // If leftTemp is false, and Op is AND, copy leftTemp to temp, and skip over binOp evaluation and short circuit 2
-      // If leftTemp is true, and Op is OR, copy leftTemp to temp, and skip over binOp evaluation
-      scBB.parent = leftEndBB
-      leftEndBB.child = scBB
-      scBB.child = scJmpBB
-      scJmpBB.parent = scBB
-      scJmpBB.child = binOpEndBB
+    // START IF
+    // If leftTemp is false, and Op is AND, copy leftTemp to temp, and skip over binOp evaluation and short circuit 2
+    // If leftTemp is true, and Op is OR, copy leftTemp to temp, and skip over binOp evaluation
+    scBB.parent = leftEndBB
+    leftEndBB.child = scBB
+    scBB.child = scJmpBB
+    scJmpBB.parent = scBB
+    scJmpBB.child = binOpEndBB
 
-      val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
-      scBB.instrs += copyTac
+    val copyTac = new TacCopy(tempGenie.generateTacNumber(), temp, leftTemp)
+    scBB.instrs += copyTac
 
-      if(binOpExpr.binOp.isInstanceOf[IrAndOp]) {
-        val ifTac = new TacIfFalse(tempGenie.generateTacNumber(), leftTemp, endLabel)
-        scJmpBB.instrs += ifTac
-      } else if(binOpExpr.binOp.isInstanceOf[IrOrOp]) {
-        val ifTac = new TacIf(tempGenie.generateTacNumber(), leftTemp, endLabel)
-        scJmpBB.instrs += ifTac
-      }
-
-      scJmpBB.child_else = rightStartBB
-      rightStartBB.parent = scJmpBB
-
-      scJmpBB.merge = binOpEndBB
-
-    } else {
-      leftEndBB.child = rightStartBB
-      rightStartBB.parent = leftEndBB
+    if(binOpExpr.binOp.isInstanceOf[IrAndOp]) {
+      val ifTac = new TacIfFalse(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      scJmpBB.instrs += ifTac
+    } else if(binOpExpr.binOp.isInstanceOf[IrOrOp]) {
+      val ifTac = new TacIf(tempGenie.generateTacNumber(), leftTemp, endLabel)
+      scJmpBB.instrs += ifTac
     }
+
+    scJmpBB.child_else = rightStartBB
+    rightStartBB.parent = scJmpBB
+
+    scJmpBB.merge = binOpEndBB
 
     var op : BinOpEnumVal = null
     binOpExpr.binOp match {
-      case IrMulOp() => op = MULT
-      case IrDivOp() => op = DIV
-      case IrModOp() => op = MOD
-      case IrAddOp() => op = ADD
-      case IrSubOp() => op = SUB
       case IrAndOp() => op = AND
       case IrOrOp()  => op = OR
-      case IrLtOp()  => op = LT
-      case IrLteOp() => op = LTE
-      case IrGtOp()  => op = GT
-      case IrGteOp() => op = GTE
-      case IrEqualOp()  => op = EQ
-      case IrNotEqualOp() => op = NEQ
+      case _ => throw new NotAndOrOrOperatorException("you called the function wrong dummy")
     }
 
     val opBB = new NormalBB(symbolTable)
@@ -1066,6 +1051,70 @@ object CFGGen {
     binOpEndBB.instrs += endLabelTAC
 
     return (temp, binOpStartBB, binOpEndBB)
+  }
+
+  def nonShortCircuitBinOpExprBB(
+                               binOpExpr: IrBinOpExpr,
+                               tempGenie: TempVariableGenie,
+                               symbolTable: SymbolTable
+                             ) : (String, NormalBB, NormalBB) = {
+
+    val binOpStartBB = new NormalBB(symbolTable)
+    val binOpEndBB = new NormalBB(symbolTable)
+
+    val temp: String = tempGenie.generateName()
+    symbolTable.insert(temp, new IntTypeDescriptor)
+
+    val (leftTemp, leftStartBB, leftEndBB) = genExprBB(binOpExpr.leftExpr, tempGenie, symbolTable)
+    binOpStartBB.child = leftStartBB
+    leftStartBB.parent = binOpStartBB
+
+    val (rightTemp, rightStartBB, rightEndBB) = genExprBB(binOpExpr.rightExpr, tempGenie, symbolTable)
+
+    leftEndBB.child = rightStartBB
+    rightStartBB.parent = leftEndBB
+
+    val opBB = new NormalBB(symbolTable)
+    rightEndBB.child = opBB
+    opBB.parent = rightEndBB
+    opBB.child = binOpEndBB
+    binOpEndBB.parent = opBB
+
+    var op : BinOpEnumVal = null
+    binOpExpr.binOp match {
+      case IrMulOp() => op = MULT
+      case IrDivOp() => op = DIV
+      case IrModOp() => op = MOD
+      case IrAddOp() => op = ADD
+      case IrSubOp() => op = SUB
+      case IrLtOp()  => op = LT
+      case IrLteOp() => op = LTE
+      case IrGtOp()  => op = GT
+      case IrGteOp() => op = GTE
+      case IrEqualOp()  => op = EQ
+      case IrNotEqualOp() => op = NEQ
+      case _ => throw new NotAndOrOrOperatorException("you really done fucked up.")
+    }
+
+    val tac = new TacBinOp(tempGenie.generateTacNumber(), temp, leftTemp, op, rightTemp)
+    opBB.instrs += tac
+
+    return (temp, binOpStartBB, binOpEndBB)
+  }
+
+  def genIrBinOpExprBB(
+                      binOpExpr: IrBinOpExpr,
+                      tempGenie: TempVariableGenie,
+                      symbolTable: SymbolTable
+                    ) : (String, NormalBB, NormalBB) = {
+
+
+    if(binOpExpr.binOp.isInstanceOf[IrAndOp] || binOpExpr.binOp.isInstanceOf[IrOrOp]) {
+      return shortCircuitBinOpExprBB(binOpExpr, tempGenie, symbolTable)
+    } else {
+      return nonShortCircuitBinOpExprBB(binOpExpr, tempGenie, symbolTable)
+    }
+
   }
 
   def genIrMethodCallExprBB(
