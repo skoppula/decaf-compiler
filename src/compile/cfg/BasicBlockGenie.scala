@@ -7,6 +7,7 @@ import scala.collection.mutable
 object BasicBlockGenie {
 
   val idToBBReference : mutable.Map[String, NormalBB] = mutable.Map.empty
+  // used in the legend to map bitvectors back to BB for easy graph reading
   val bvkToBB : mutable.Map[BitvectorKey, NormalBB] = mutable.Map.empty
 
   val bbNames = mutable.Set.empty[String]

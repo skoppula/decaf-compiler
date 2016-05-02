@@ -134,9 +134,9 @@ object Compiler {
       // == Doing available expression analysis == 
       dprintln("Attempting to do available expression analysis")
       // We want bvkHashMap to create a legend for the dot graph
-      var bvkHashMap : HashMap[BitvectorKey, Int] = new HashMap[BitvectorKey, Int]
+      var allMethodsBvkPositionMap = HashMap.empty[String, HashMap[BitvectorKey, Int]]
       if (CLI.available) {
-        bvkHashMap = AvailableExpr.computeAvailableExpr(methodsBBMap)
+        allMethodsBvkPositionMap = AvailableExpr.computeAvailableExpr(programStartBB, methodsBBMap)
       }
  
       dprintln("Converting CFG to a TAC list...")
@@ -169,16 +169,20 @@ object Compiler {
       val endBrace : String = dot.last
       dot = dot.dropRight(1)
 
-      var posToBvk : Map[Int, BitvectorKey] = Map() // Use this to get an ordering of bitvectors
       var bvkLegend : List[String] = List()
-      for ((bvk, pos) <- bvkHashMap) {
-        posToBvk = posToBvk + {pos -> bvk}
-      }
-      for (i <- 0 to bvkHashMap.size - 1) {
-        val bvk = posToBvk(i)
-        bvkLegend = bvkLegend :+ "%s: %s | %s\\l".format(i, bvk, BasicBlockGenie.bvkToBB(bvk).id)
-      }
+      for((methodName, bvkHashMap) <- allMethodsBvkPositionMap) {
+        var posToBvk : Map[Int, BitvectorKey] = Map() // Use this to get an ordering of bitvectors
+        for ((bvk, pos) <- bvkHashMap) {
+          posToBvk = posToBvk + {pos -> bvk}
+        }
 
+        bvkLegend = bvkLegend :+ "%s:\\l".format(methodName)
+        for (i <- 0 to bvkHashMap.size - 1) {
+          val bvk = posToBvk(i)
+          bvkLegend = bvkLegend :+ "\\t%s: %s  %s\\l".format(i, bvk, BasicBlockGenie.bvkToBB(bvk).id)
+        }
+
+      }
       dot = dot :+ "\tLegend [shape=box,label=\"Bitvectors\\n\\n%s\"];".format(bvkLegend.mkString)
       dot = dot :+ endBrace
 

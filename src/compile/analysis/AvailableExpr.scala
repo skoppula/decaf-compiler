@@ -1,11 +1,10 @@
 package compile.analysis
 
-import compile.cfg.NormalBB
-import compile.cfg.BasicBlockGenie
+import compile.cfg.{CFGUtil, NormalBB, BasicBlockGenie}
 import compile.tac.ThreeAddressCode._
 import compile.analysis.BitvectorKey._
 import compile.util.Util.dprintln
-import scala.collection.mutable.{ArrayBuffer, LinkedHashMap, HashMap}
+import scala.collection.mutable.{ArrayBuffer, LinkedHashMap, HashMap, Map}
 
 object AvailableExpr {
 
@@ -15,74 +14,104 @@ object AvailableExpr {
   }
 
   def computeAvailableExpr(
+                            programStartBB : NormalBB,
                             bbMethodMap : LinkedHashMap[String, (NormalBB, NormalBB)]
-                          ) : HashMap[BitvectorKey, Int] = {
-    val vecMap = initBitVectorMap()
-    val length = vecMap.size
-    val bbIdMap = BasicBlockGenie.idToBBReference
+                          ) : HashMap[String, HashMap[BitvectorKey, Int]] = {
 
-    var changed = Set[String]()
-    for ((id, bb) <- bbIdMap) {
-      changed += id
-      bb.avail_out = ArrayBuffer.fill(length)(0)
-    }
+    // Computer availability vectors for all basic blocks in a methods CFG tree
+    //    iterates over all methods
+    //    ignores programStartBB because no optimizations can be done on that
 
-    val (start, _) = bbMethodMap("main")
-    start.avail_in = ArrayBuffer.fill(length)(0)
-    start.avail_out = availableGen(start, vecMap)
+    val methodToBvkPositionMap = HashMap.empty[String, HashMap[BitvectorKey, Int]]
 
-    changed -= start.id
+    for((methodName, (methodStart, methodFinish)) <- bbMethodMap) {
 
-    dprintln("\n Starting availability fixed point algorithm...")
-    while (!changed.isEmpty) {
-      var new_changed = Set[String]() ++ changed
+      val methodIdBBMap = getMethodIdBBMap(methodStart)
+      val bvkPositionMap = initBitVectorMap(methodIdBBMap)
+      val length = bvkPositionMap.size
 
-      dprintln("Changed set: " + changed.mkString(","))
-      for ( id <- changed ) {
-        dprintln("\tHandling BB in changeset:" + id)
-        val bb = BasicBlockGenie.idToBBReference(id)
-        new_changed -= id
-
-        bb.avail_in = ArrayBuffer.fill(length)(0)
-
-        var parents_in = ""
-        for(parent <- bb.getParents()) {
-          parents_in += " " + parent.id + "_availin:" + parent.avail_out.mkString("")
-        }
-        dprintln("\t\tcurrent bb:" + bb + "\t parent:" + parents_in)
-
-        for ( parent <- bb.getParents() ) {
-          bb.avail_in = intersect(ArrayBuffer.fill(length)(1), parent.avail_out)
-        }
-        val oldOut = bb.avail_out
-        val bbKill = availableKill(bb, vecMap)
-        val bbGen = availableGen(bb, vecMap)
-        dprintln("\t\tbb in:" + bb.avail_in.mkString("") + " bb out:" + bb.avail_out.mkString("") + " bbKill: " + bbKill.mkString("") + " bbGen: " + bbGen.mkString(""))
-        bb.avail_out = union(bbGen, minus(bb.avail_in, bbKill))
-        dprintln("\t\tnew bb out:" + bb.avail_out)
-        if (oldOut != bb.avail_out) {
-          dprintln("\t\t" + bb + "'s avail_out changed to " + bb.avail_out)
-          dprintln("\t\t Adding children to changeset:" + bb.getChildren().mkString(","))
-          for ( child <- bb.getChildren()) {
-            new_changed += child.id
-          }
-        }
+      var changed = Set[String]()
+      for ((id, bb) <- methodIdBBMap) {
+        changed += id
+        bb.avail_out = ArrayBuffer.fill(length)(0)
       }
 
-      changed = new_changed
-    }
-    println("Finished availability fixed point algorithm...")
+      methodStart.avail_in = ArrayBuffer.fill(length)(0)
+      methodStart.avail_out = availableGen(methodStart, bvkPositionMap)
 
-    return vecMap
+      changed -= methodStart.id
+
+      dprintln("\n Starting availability fixed point algorithm for method %s...".format(methodName))
+      while (!changed.isEmpty) {
+        changed = iterationOfAvailabilityChangeAlg(changed, bvkPositionMap, methodIdBBMap)
+      }
+
+      methodToBvkPositionMap(methodName) = bvkPositionMap
+
+      dprintln("Finished availability fixed point algorithm for method %s...".format(methodName))
+    }
+
+    return methodToBvkPositionMap
+  }
+
+  def getMethodIdBBMap(methodStart : NormalBB) : Map[String, NormalBB] = {
+    val methodIdBBMap = Map.empty[String, NormalBB]
+    val methodIds = CFGUtil.cfgBBs(methodStart, List())
+    for(id <- methodIds) {
+      methodIdBBMap(id) = BasicBlockGenie.idToBBReference(id)
+    }
+    return methodIdBBMap
+  }
+
+  def iterationOfAvailabilityChangeAlg(changed : Set[String], bvkPositionMap : HashMap[BitvectorKey, Int], methodIdBBMap : Map[String, NormalBB]): Set[String] = {
+
+    var new_changed = Set[String]() ++ changed
+    val length = bvkPositionMap.size
+    dprintln("Changed set: " + changed.mkString(","))
+
+    for ( id <- changed ) {
+      dprintln("\tHandling BB in changeset:" + id)
+      val bb = methodIdBBMap(id)
+      new_changed -= id
+
+      bb.avail_in = ArrayBuffer.fill(length)(0)
+
+      var parents_in = ""
+      for(parent <- bb.getParents()) {
+        parents_in += " " + parent.id + "_availin:" + parent.avail_out.mkString("")
+      }
+      dprintln("\t\tcurrent bb:" + bb + "\t parent:" + parents_in)
+
+      for ( parent <- bb.getParents() ) {
+        bb.avail_in = intersect(ArrayBuffer.fill(length)(1), parent.avail_out)
+      }
+      val oldOut = bb.avail_out
+      val bbKill = availableKill(bb, bvkPositionMap)
+      val bbGen = availableGen(bb, bvkPositionMap)
+      dprintln("\t\tbb in:" + bb.avail_in.mkString("") + " bb out:" + bb.avail_out.mkString("") + " bbKill: " + bbKill.mkString("") + " bbGen: " + bbGen.mkString(""))
+      bb.avail_out = union(bbGen, minus(bb.avail_in, bbKill))
+      dprintln("\t\tnew bb out:" + bb.avail_out)
+      if (oldOut != bb.avail_out) {
+        dprintln("\t\t" + bb + "'s avail_out changed to " + bb.avail_out)
+        dprintln("\t\t Adding children to changeset:" + bb.getChildren().mkString(","))
+        for ( child <- bb.getChildren()) {
+          new_changed += child.id
+        }
+      }
+    }
+
+    return new_changed
+
   }
 
   // walks through the basic blocks and *somehow* figures out the different types of expressions.
   // Then, these are stored and mapped to their position in the bitvector
-  def initBitVectorMap() : HashMap[BitvectorKey, Int] = {
+  def initBitVectorMap(methodIdBBMap : Map[String, NormalBB]) : HashMap[BitvectorKey, Int] = {
     var vecMap = new HashMap[BitvectorKey, Int]
-    for ( (id, bb) <- BasicBlockGenie.idToBBReference) {
+    for ( (id, bb) <- methodIdBBMap) {
       for (instr <- bb.instrs) {
         val code = convertTacToBvk(instr)
+        // used in the legend to map bitvectors back to BB for easy graph reading
         BasicBlockGenie.bvkToBB.put(code, bb)
         if (!code.isInstanceOf[EmptyBvk] && !vecMap.contains(code)) {
           vecMap += (code -> vecMap.size)
