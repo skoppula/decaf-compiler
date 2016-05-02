@@ -31,34 +31,47 @@ object AvailableExpr {
     start.avail_in = ArrayBuffer.fill(length)(0)
     start.avail_out = availableGen(start, vecMap)
 
-    changed -= start.id 
+    changed -= start.id
 
+    dprintln("\n Starting availability fixed point algorithm...")
     while (!changed.isEmpty) {
+      var new_changed = Set[String]() ++ changed
+
+      dprintln("Changed set: " + changed.mkString(","))
       for ( id <- changed ) {
+        dprintln("\tHandling BB in changeset:" + id)
         val bb = BasicBlockGenie.idToBBReference(id)
-        changed -= id
+        new_changed -= id
 
         bb.avail_in = ArrayBuffer.fill(length)(0)
 
-        dprintln("Current bb:" + bb + "its parent(s):" + bb.getParents().mkString(", "))
+        var parents_in = ""
+        for(parent <- bb.getParents()) {
+          parents_in += " " + parent.id + "_availin:" + parent.avail_out.mkString("")
+        }
+        dprintln("\t\tcurrent bb:" + bb + "\t parent:" + parents_in)
 
         for ( parent <- bb.getParents() ) {
-          bb.avail_in = intersect(bb.avail_in, parent.avail_out)
+          bb.avail_in = intersect(ArrayBuffer.fill(length)(1), parent.avail_out)
         }
         val oldOut = bb.avail_out
         val bbKill = availableKill(bb, vecMap)
         val bbGen = availableGen(bb, vecMap)
-        dprintln("bb in:" + bb.avail_in + " bb out:" + bb.avail_out + " bbKill: " + bbKill + " bbGen: " + bbGen)
+        dprintln("\t\tbb in:" + bb.avail_in.mkString("") + " bb out:" + bb.avail_out.mkString("") + " bbKill: " + bbKill.mkString("") + " bbGen: " + bbGen.mkString(""))
         bb.avail_out = union(bbGen, minus(bb.avail_in, bbKill))
-        dprintln("new bb out:" + bb.avail_out)
+        dprintln("\t\tnew bb out:" + bb.avail_out)
         if (oldOut != bb.avail_out) {
-          dprintln("bb: " + bb + " children: " + bb.getChildren())
+          dprintln("\t\t" + bb + "'s avail_out changed to " + bb.avail_out)
+          dprintln("\t\t Adding children to changeset:" + bb.getChildren().mkString(","))
           for ( child <- bb.getChildren()) {
-            changed += child.id
+            new_changed += child.id
           }
         }
       }
+
+      changed = new_changed
     }
+    println("Finished availability fixed point algorithm...")
 
     return vecMap
   }
@@ -119,7 +132,7 @@ object AvailableExpr {
                     bb: NormalBB, 
                     vecMap: HashMap[BitvectorKey, Int]
                    ) : ArrayBuffer[Int] = {
-    var bitvector = ArrayBuffer.fill(vecMap.size)(0)
+    val bitvector = ArrayBuffer.fill(vecMap.size)(0)
     for (tac <- bb.instrs) { 
       for ( (key, index) <- vecMap) {
         if (tac.isAssign && (key.asInstanceOf[Bvk].setVars contains tac.lhs)) {

@@ -100,11 +100,11 @@ object Compiler {
  
       // Update basic block genie to remove references to blocks that no longer exist due to compression
 
-      dprintln(deletedBBidMap.mkString)
+      // dprintln(deletedBBidMap.mkString)
       for ((deletedId, trueId) <- deletedBBidMap) {
         BasicBlockGenie.idToBBReference -= deletedId
       }
-      dprintln(BasicBlockGenie.idToBBReference.mkString)
+      // dprintln(BasicBlockGenie.idToBBReference.mkString)
  
       // Now we need to remove references to blocks that no longer exist due to CFGGen (e.g BranchBB shortcircuiting)
       // Note: With the below step we can probably not even bother with the first removal step above
@@ -112,8 +112,8 @@ object Compiler {
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         cfgBBSet = cfgBBSet | CFGUtil.cfgBBs(methodStartBB, List())
       }
-      dprintln("The BBs inside the CFG: \n")
-      dprintln(cfgBBSet.mkString(", "))
+      // dprintln("The BBs inside the CFG: \n")
+      // dprintln(cfgBBSet.mkString(", "))
 
       for ((id, bb) <- BasicBlockGenie.idToBBReference) {
         if (!cfgBBSet.contains(id)) {
