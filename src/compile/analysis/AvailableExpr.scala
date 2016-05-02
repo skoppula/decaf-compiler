@@ -40,18 +40,19 @@ object AvailableExpr {
 
         bb.avail_in = ArrayBuffer.fill(length)(0)
 
+        dprintln("Current bb:" + bb + "its parent(s):" + bb.getParents().mkString(", "))
+
         for ( parent <- bb.getParents() ) {
-          println("Current bb:" + bb + "its parent(s):" + parent)
           bb.avail_in = intersect(bb.avail_in, parent.avail_out)
         }
         val oldOut = bb.avail_out
         val bbKill = availableKill(bb, vecMap)
         val bbGen = availableGen(bb, vecMap)
-        println("bb in:" + bb.avail_in + " bb out:" + bb.avail_out + " bbKill: " + bbKill + " bbGen: " + bbGen)
+        dprintln("bb in:" + bb.avail_in + " bb out:" + bb.avail_out + " bbKill: " + bbKill + " bbGen: " + bbGen)
         bb.avail_out = union(bbGen, minus(bb.avail_in, bbKill))
-        println("new bb out:" + bb.avail_out)
+        dprintln("new bb out:" + bb.avail_out)
         if (oldOut != bb.avail_out) {
-          println("bb: " + bb + " children: " + bb.getChildren())
+          dprintln("bb: " + bb + " children: " + bb.getChildren())
           for ( child <- bb.getChildren()) {
             changed += child.id
           }
@@ -132,7 +133,7 @@ object AvailableExpr {
                ) : ArrayBuffer[Int] =
   {
     if (vec1.size != vec2.size) {
-      println("Bad intersect shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
+      dprintln("Bad intersect shit- vectors are different sizes: " + vec1.size + "vs. " + vec2.size)
     }  
     var newVec = new ArrayBuffer[Int]()
 

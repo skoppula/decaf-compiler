@@ -96,19 +96,45 @@ object Compiler {
         deletedBBidMap = CFGUtil.mergeCompressMaps(deletedBBidMap, CFGUtil.compressCfg(methodStartBB, List(), blankmap))
       }
  
-      // Update basic block genie to remove references to blocks that no longer exist
+      // Update basic block genie to remove references to blocks that no longer exist due to compression
+
+      dprintln(deletedBBidMap.mkString)
       for ((deletedId, trueId) <- deletedBBidMap) {
         BasicBlockGenie.idToBBReference -= deletedId
       }
+      dprintln(BasicBlockGenie.idToBBReference.mkString)
  
+      // Now we need to remove references to blocks that no longer exist due to CFGGen (e.g BranchBB shortcircuiting)
+      // Note: With the below step we can probably not even bother with the first removal step above
+      var cfgBBSet : Set[String] = CFGUtil.cfgBBs(programStartBB, List())
+      for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
+        cfgBBSet = cfgBBSet | CFGUtil.cfgBBs(methodStartBB, List())
+      }
+      dprintln("The BBs inside the CFG: \n")
+      dprintln(cfgBBSet.mkString(", "))
+
+      for ((id, bb) <- BasicBlockGenie.idToBBReference) {
+        if (!cfgBBSet.contains(id)) {
+          BasicBlockGenie.idToBBReference -= id
+        }
+      }
+
+      dprintln("BasicBlockGenie.idToBBReference: ")
+      dprintln(BasicBlockGenie.idToBBReference.mkString(", "))
+
       dprintln("CFG Compression complete!")
+
+      // == Fixing parent pointers ==
+      dprintln("Attempting to fix parent pointers in CFG")
+      CFGUtil.setParentBasedOnChildPointers()
+      dprintln("Finished fixing parent pointers in CFG")
 
       // == Doing available expression analysis == 
       dprintln("Attempting to do available expression analysis")
       if (CLI.available) {
         AvailableExpr.computeAvailableExpr(methodsBBMap)
       }
-
+ 
       dprintln("Converting CFG to a TAC list...")
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
@@ -123,8 +149,6 @@ object Compiler {
 
       dprintln("Generating assembly...")
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
-
-      CFGUtil.setParentBasedOnChildPointers()
 
       // === Dot file generation start ===
       var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())

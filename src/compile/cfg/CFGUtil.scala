@@ -67,7 +67,7 @@ object CFGUtil {
     var doNotTraverseBBList : List[String] = doNotTraverseBBs
 
     while(currentBB != null && currentBB.child != null) {
-      //dprintln("current bb id: %s".format(currentBB.id))
+      //dprintln("current bb: %s, child: %s".format(currentBB, currentBB.child))
 
       // Fixing child
       while (map.keySet.exists(_ == currentBB.child.id)) {
@@ -194,6 +194,46 @@ object CFGUtil {
     }
 
     return map
+    
+  }
+
+
+  def cfgBBs(bb: NormalBB, doNotTraverseBBs : List[String]) : Set[String] = {
+    // Returns a set of BB ids that are valid basic blocks in the CFG
+    var currentBB : NormalBB = bb
+    var set : Set[String] = Set()
+
+    while (currentBB != null) {
+      set = set + currentBB.id
+      if (currentBB.isInstanceOf[BranchBB]) {
+        val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+          if(BBB.preincrement == null && BBB.whilestart == null) {
+            // Must be if statement
+            set = set | cfgBBs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id)
+          } else if (BBB.preincrement == null) {
+            // Must be while statement
+            set = set | cfgBBs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+          } else if (BBB.whilestart == null) {
+            set = set | cfgBBs(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
+            set = set | cfgBBs(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
+          } else {
+            throw new NotForIfWhileStmtException("Oh no.")
+          }
+        } else if (BBB.child_else == null) {
+          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
+        }
+
+      }
+
+      if(currentBB.child != null && doNotTraverseBBs.contains(currentBB.child.id)) {
+        currentBB = null
+      } else {
+        currentBB = currentBB.child
+      }
+    }
+
+    return set
     
   }
 
@@ -541,6 +581,7 @@ object CFGUtil {
   }
 
   def setParentBasedOnChildPointers(): Unit = {
+    // Clear all the parent pointers for each block
     for((id, parent) <- BasicBlockGenie.idToBBReference) {
       val children = parent.getChildren()
       for (child <- children) {
@@ -560,30 +601,31 @@ object CFGUtil {
       }
     }
 
-  for((id, parent) <- BasicBlockGenie.idToBBReference) {
-    val children = parent.getChildren()
-    for (child <- children) {
-      if(child != null) {
-        if (child.isInstanceOf[JumpDestBB]) {
-          val childJD = child.asInstanceOf[JumpDestBB]
-          if (childJD.parent == null) {
-            childJD.parent = parent
+    // Set the parent pointers for each block
+    for((id, parent) <- BasicBlockGenie.idToBBReference) {
+      val children = parent.getChildren()
+      for (child <- children) {
+        if(child != null) {
+          if (child.isInstanceOf[JumpDestBB]) {
+            val childJD = child.asInstanceOf[JumpDestBB]
+            if (childJD.parent == null) {
+              childJD.parent = parent
+            } else {
+              childJD.jmpParents.append(parent)
+            }
+          } else if (child.isInstanceOf[MergeBB]) {
+            val childM = child.asInstanceOf[MergeBB]
+            if (childM.parent_else == null) {
+              childM.parent_else = parent
+            } else {
+              childM.parent = parent
+            }
           } else {
-            childJD.jmpParents.append(parent)
+            child.parent = parent
           }
-        } else if (child.isInstanceOf[MergeBB]) {
-          val childM = child.asInstanceOf[MergeBB]
-          if (childM.parent_else == null) {
-            childM.parent_else = parent
-          } else {
-            childM.parent = parent
-          }
-        } else {
-          child.parent = parent
         }
       }
     }
-   }
   }
 
 

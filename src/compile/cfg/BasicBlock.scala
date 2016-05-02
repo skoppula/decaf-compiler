@@ -71,7 +71,7 @@ class BranchBB(
     val w : String = if(whilestart == null) "" else whilestart.id
     val f : String = if(preincrement == null) "" else preincrement.id
     val p : String = if(forstart == null) "" else forstart.id
-    return "BranchBB(" + this.id + "merge:" + m + ", whilestart:" + w + "forstart:" + f + "preincrement" + p + ")"
+    return "BranchBB(" + this.id + ", merge: " + m + ", whilestart: " + w + ", forstart: " + f + ", preincrement: " + p + ")"
   }
 }
 
@@ -80,8 +80,17 @@ class MergeBB(
               ) extends NormalBB(currSymbolTable) {
   var parent_else : NormalBB = null
 
-  override def getParents() : mutable.ArrayBuffer[NormalBB] = mutable.ArrayBuffer[NormalBB](parent, parent_else)
-
+  override def getParents() : mutable.ArrayBuffer[NormalBB] = {
+    if (parent == null && parent_else == null ) {
+      return mutable.ArrayBuffer.empty[NormalBB]
+    } else if (parent == null) {
+      return mutable.ArrayBuffer[NormalBB](parent_else)
+    } else if (parent_else == null) {
+      return mutable.ArrayBuffer[NormalBB](parent)
+    } else {
+      return mutable.ArrayBuffer[NormalBB](parent, parent_else)
+    }
+  }
   override def toString : String = {
     return "MergeBB(" + this.id + ")"
   }
