@@ -1,10 +1,13 @@
 package compile.cfg
 
+import compile.analysis.BitvectorKey.BitvectorKey
+
 import scala.collection.mutable
 
 object BasicBlockGenie {
 
   val idToBBReference : mutable.Map[String, NormalBB] = mutable.Map.empty
+  val bvkToBB : mutable.Map[BitvectorKey, NormalBB] = mutable.Map.empty
 
   val bbNames = mutable.Set.empty[String]
   var bbCount = 0

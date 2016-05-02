@@ -159,7 +159,11 @@ object Compiler {
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
       }
-      dot = CFGUtil.mapToDot(map, true, true)
+      if(CLI.available) {
+        dot = CFGUtil.mapToDot(map, true, true)
+      } else {
+        dot = CFGUtil.mapToDot(map, true, false)
+      }
 
       // Adding the legend
       val endBrace : String = dot.last
@@ -171,7 +175,8 @@ object Compiler {
         posToBvk = posToBvk + {pos -> bvk}
       }
       for (i <- 0 to bvkHashMap.size - 1) {
-        bvkLegend = bvkLegend :+ "%s: %s\\l".format(i, posToBvk(i))
+        val bvk = posToBvk(i)
+        bvkLegend = bvkLegend :+ "%s: %s | %s\\l".format(i, bvk, BasicBlockGenie.bvkToBB(bvk).id)
       }
 
       dot = dot :+ "\tLegend [shape=box,label=\"Bitvectors\\n\\n%s\"];".format(bvkLegend.mkString)

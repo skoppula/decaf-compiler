@@ -70,6 +70,7 @@ object AvailableExpr {
     for ( (id, bb) <- BasicBlockGenie.idToBBReference) {
       for (instr <- bb.instrs) {
         val code = convertTacToBvk(instr)
+        BasicBlockGenie.bvkToBB.put(code, bb)
         if (!code.isInstanceOf[EmptyBvk] && !vecMap.contains(code)) {
           vecMap += (code -> vecMap.size)
         }

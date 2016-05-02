@@ -391,7 +391,7 @@ object CFGUtil {
         val parents = child.getParents()
         for (parent <- parents) {
           if(parent != null) {
-            dot = dot :+ "\t%s -> %s;\n".format(child.id.substring(1), parent.id.substring(1))
+            dot = dot :+ "\t%s -> %s [color = red];\n".format(child.id.substring(1), parent.id.substring(1))
           }
         }
       }
@@ -511,7 +511,7 @@ object CFGUtil {
     var map : Map[String, String] = map1
 
     for ((k,v) <- map2) {
-      var check : String =
+      val check : String =
         map.get(k) match {
           case Some(s) => s
           case None => ""
@@ -530,7 +530,7 @@ object CFGUtil {
 
     // Fixing merge
     while (bb.merge != null && map.keySet.exists(_ == bb.merge.id)) {
-      var id : String = map(bb.merge.id)
+      val id : String = map(bb.merge.id)
       bb.merge = BasicBlockGenie.idToBBReference(map(bb.merge.id))
       if (bb.merge == null) {
         dprintln("Error: Tried to update merge but got null for id %s".format(id))
