@@ -16,6 +16,8 @@ import compile.tac.ThreeAddressCode._
 import TacGen._
 
 import compile.analysis.AvailableExpr
+import scala.collection.mutable.{HashMap}
+import compile.analysis.BitvectorKey._
 
 import compile.util.Util.dprint
 import compile.util.Util.dprintln
@@ -131,8 +133,10 @@ object Compiler {
 
       // == Doing available expression analysis == 
       dprintln("Attempting to do available expression analysis")
+      // We want bvkHashMap to create a legend for the dot graph
+      var bvkHashMap : HashMap[BitvectorKey, Int] = new HashMap[BitvectorKey, Int]
       if (CLI.available) {
-        AvailableExpr.computeAvailableExpr(methodsBBMap)
+        bvkHashMap = AvailableExpr.computeAvailableExpr(methodsBBMap)
       }
  
       dprintln("Converting CFG to a TAC list...")
@@ -156,6 +160,23 @@ object Compiler {
         map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
       }
       dot = CFGUtil.mapToDot(map, true, true)
+
+      // Adding the legend
+      val endBrace : String = dot.last
+      dot = dot.dropRight(1)
+
+      var posToBvk : Map[Int, BitvectorKey] = Map() // Use this to get an ordering of bitvectors
+      var bvkLegend : List[String] = List()
+      for ((bvk, pos) <- bvkHashMap) {
+        posToBvk = posToBvk + {pos -> bvk}
+      }
+      for (i <- 0 to bvkHashMap.size - 1) {
+        bvkLegend = bvkLegend :+ "%s: %s\\l".format(i, posToBvk(i))
+      }
+
+      dot = dot :+ "\tLegend [shape=box,label=\"Bitvectors\\n\\n%s\"];".format(bvkLegend.mkString)
+      dot = dot :+ endBrace
+
       // === Dot file generation end ===
 
       // Should compile dot file into png using

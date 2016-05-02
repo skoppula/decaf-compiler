@@ -25,6 +25,9 @@ object BitvectorKey {
       }
       case _ => return false
     }
+    override def toString : String = {
+          return "%s(%s)".format(op,listVars.mkString(", "))
+    }
   }
   case class EmptyBvk() extends BitvectorKey{} 
 }

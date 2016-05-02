@@ -16,7 +16,7 @@ object AvailableExpr {
 
   def computeAvailableExpr(
                             bbMethodMap : LinkedHashMap[String, (NormalBB, NormalBB)]
-                          ) : Unit = {
+                          ) : HashMap[BitvectorKey, Int] = {
     val vecMap = initBitVectorMap()
     val length = vecMap.size
     val bbIdMap = BasicBlockGenie.idToBBReference
@@ -59,6 +59,8 @@ object AvailableExpr {
         }
       }
     }
+
+    return vecMap
   }
 
   // walks through the basic blocks and *somehow* figures out the different types of expressions.
