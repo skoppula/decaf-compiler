@@ -1,5 +1,6 @@
 package compile.cfg
 
+import compile.analysis.Expression
 import compile.symboltables.SymbolTable
 
 import scala.collection.mutable
@@ -12,6 +13,9 @@ class NormalBB(
   val instrs : mutable.ArrayBuffer[Tac] = mutable.ArrayBuffer.empty[Tac]
   var child : NormalBB = null
   var parent : NormalBB = null
+
+  var cse_hash_in = Map.empty[String, Expression]
+  var cse_hash_out = Map.empty[String, Expression]
 
   var avail_in : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
   var avail_out : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]

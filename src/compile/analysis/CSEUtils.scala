@@ -5,7 +5,78 @@ import compile.symboltables.SymbolTable
 import compile.exceptionhandling.{SymbolVariableIsNullException, TempVariableAlreadyExistsInGlobalMapException, NullElseBlockException, NotForIfWhileStmtException}
 import compile.tac.ThreeAddressCode.{TacBinOp, TacCopy}
 
+import scala.collection.mutable.ArrayBuffer
+
 object CSEUtils {
+
+  def substituteCSE(
+                     startBB : NormalBB,
+                     tempToSymbolMap : Map[String, (String, SymbolTable)],
+                     doNotTraverseBBs : List[String]
+                   ) {
+
+    var currentBB = startBB
+
+    while (currentBB != null) {
+      substituteCSEInBlock(currentBB, tempToSymbolMap)
+
+      if (currentBB.isInstanceOf[BranchBB]) {
+        val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+          if(BBB.preincrement == null && BBB.whilestart == null) {
+            // Must be if statement
+            substituteCSE(BBB.child_else, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id)
+          } else if (BBB.preincrement == null) {
+            // Must be while statement
+            substituteCSE(BBB.child_else, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+          } else if (BBB.whilestart == null) {
+            substituteCSE(BBB.child_else, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
+            substituteCSE(BBB.preincrement, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
+          } else {
+            throw new NotForIfWhileStmtException("Oh no.")
+          }
+        } else if (BBB.child_else == null) {
+          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
+        }
+      }
+
+
+      if(currentBB.child != null && doNotTraverseBBs.contains(currentBB.child.id)) {
+        currentBB = null
+      } else {
+        currentBB = currentBB.child
+      }
+    }
+  }
+
+  def substituteCSEInBlock(
+                            currentBB : NormalBB,
+                            tempSymbolMap : Map[String,(String, SymbolTable)]
+                          ): Unit = {
+
+    for(instr <- currentBB.instrs){
+      instr match {
+        case tac : TacBinOp => {
+          val lhsTemp = tac.addr2
+          val rhsTemp = tac.addr3
+
+          val lhsSymbol = tempSymbolMap.get(lhsTemp).get
+          val rhsSymbol = tempSymbolMap.get(rhsTemp).get
+
+          // case class Expr (op: OpEnumVal, setVars: Set[(String, SymbolTable)], listVars: ArrayBuffer[(String,SymbolTable)]) extends Expression {
+          val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
+
+          // two symbol variables -> symbol expr
+          // look symbol expr cse_hash_in to see if there's temp that already contains the symbolic expression
+          // if so replace the binop wiht a copy
+          if(currentBB.avail_in.contains()){
+
+          }
+        }
+        case _ => {}
+      }
+    }
+  }
 
   def mergeSymbolMaps(
                        map1: Map[String, (String, SymbolTable)],
