@@ -132,6 +132,7 @@ object Compiler {
       dprintln("Finished fixing parent pointers in CFG")
 
       dprintln("Generating the global temp variable to symbolic variable map for CSE")
+      // Mapping from method name -> (map from temp var to symbol var + corresponding symbol table)
       var tempSymbolMaps = Map.empty[String, Map[String, (String, SymbolTable)]]
       for((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
         val tempSymbolMap = CSEUtils.genTempToSymbolMap(methodStartBB, List())
