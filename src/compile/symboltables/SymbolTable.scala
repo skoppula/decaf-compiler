@@ -87,6 +87,29 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     }
   }
 
+  // TODO: Untested
+  def getMinSymbolTable(that : SymbolTable) : SymbolTable = {
+    // Returns the innermost symbol table 
+
+    // Throw an exception here for that == null
+    if (that == null) {
+      throw new Exception("that is null")
+    }
+
+    var table : SymbolTable = that
+    while (table != null && table != this) {
+      table = table.getParentSymbolTable()
+    }
+
+    if (table == null) { // TODO : Be careful here because if "that" is null this screws up the return
+      return this
+    } else if (table == this) {
+      return that
+    } else {
+      throw new Exception("symbol table doesn't have a parent child relationship")
+    }
+  }
+
   override def toString : String = {
     "SymbolTable" + scopeType.toString + "(" + symbolTableMap.mkString(",") + ")"
   }

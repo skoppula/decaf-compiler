@@ -133,6 +133,7 @@ object Compiler {
 
       dprintln("Generating the global temp variable to symbolic variable map for CSE")
       // Mapping from method name -> (map from temp var to symbol var + corresponding symbol table)
+      // TODO: Why can't we just have a global temp var to symbol var + symbol table lookup??
       var tempSymbolMaps = Map.empty[String, Map[String, (String, SymbolTable)]]
       for((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
         val tempSymbolMap = CSEUtils.genTempToSymbolMap(methodStartBB, List())
@@ -147,6 +148,8 @@ object Compiler {
 
       // == Doing available expression analysis == 
       dprintln("Attempting to do available expression analysis")
+      // TODO: Run availability analysis on each method separately
+
       // We want bvkHashMap to create a legend for the dot graph
       var allMethodsBvkPositionMap = HashMap.empty[String, HashMap[BitvectorKey, Int]]
       if (CLI.available) {
