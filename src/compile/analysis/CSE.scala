@@ -1,8 +1,8 @@
 package compile.analysis
 
-import compile.cfg.NormalBB
+import compile.cfg.{NormalBB, MergeBB, JumpDestBB}
 import compile.symboltables.{SymbolTable}
-import compile.tac.ThreeAddressCode.{Tac, TacUnOp, TacBinOp}
+import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ArrayBuffer}
 
 class CSE {
@@ -24,7 +24,6 @@ class CSE {
 
     return mapOut
   }
-
 
   // TODO : Untested
   def kill(map : Map[String, Expression], slhs : String, table : SymbolTable) : Map[String, Expression] = {
@@ -69,101 +68,108 @@ class CSE {
   }
 
   // TODO : It would be useful to have the temp -> symbol map here as a global
-  def newComputeAvailableExpr(
-                               bb : NormalBB
-                             ) : Unit = {
+  def computeAvailableExpr(bb : NormalBB) : Unit = {
+    // 0. join parents to update availin
     // 1. for tac in bb.instrs
-    // 2. if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
+    //     if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
     //     process RHS first (if binop/unop): just add the symbolic expression to availin : temp(LHS) -> symbol(RHS)
     //     process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
+    // 2. Update availout
 
-    val globalMap : Map[String, (String, SymbolTable)] = null
+    // TODO step 0
+    // Merging required for MergeBB and JumpDestBB, otherwise just take availout of parent
+    var availin : Map[String, Expression] = null
+    if (bb.isInstanceOf[MergeBB]) {
+      val MBB : MergeBB = bb.asInstanceOf[MergeBB]
+      if (MBB.parent == null && MBB.parent_else == null ) {
+        availin = Map()
+      } else if (MBB.parent == null) {
+        availin = null // TODO: Get the availout of bb.parent_else
+      } else if (MBB.parent_else == null) {
+        availin = null // TODO: Get the availout of bb.parent
+      } else {
+        availin = join(null,null)// Merge
+      }
+    } else if (bb.isInstanceOf[JumpDestBB]) {
+      val JDBB : JumpDestBB = bb.asInstanceOf[JumpDestBB]
+    } else {
+      if (bb.parent != null) {
+        availin = null // TODO: Get the availout of bb.parent
+      } else {
+        availin = Map()
+      }
+    }
+
+    // Step 1
+    var avail : Map[String, Expression] = null // TODO : We need to fetch this from bb whatever that field ends up being called
+    val globalMap : Map[String, (String, SymbolTable)] = null // TODO : We need to fetch this global map from somewhere
 
     for (tac <- bb.instrs) {
       if (tac.isAssign) {
         tac match {
           case t:TacBinOp => {
-            var expr = convertTacToSymbolicExpr(t, globalMap, bb.symbolTable)
-            // TODO
+            var expr = convertTacToSymbolicExpr(t, bb.symbolTable)
+            // GEN step
+            avail = available(avail, t.addr1, expr) 
+            // KILL step
+            var (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
+            avail = kill(avail, symbol, bb.symbolTable)
           }
           case t:TacUnOp => {
-            var expr = convertTacToSymbolicExpr(t, globalMap, bb.symbolTable)
-            // TODO
+            var expr = convertTacToSymbolicExpr(t, bb.symbolTable)
+            // GEN step
+            avail = available(avail, t.addr1, expr) 
+            // KILL step
+            var (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
+            avail = kill(avail, symbol, bb.symbolTable)
+          }
+          case t:TacCopy => {
+            var (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
+            // KILL step
+            avail = kill(avail, symbol, bb.symbolTable)
+          }
+          case t:TacCopyInt => {
+            var (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
+            // KILL step
+            avail = kill(avail, symbol, bb.symbolTable)
+          }
+          case t:TacCopyBoolean => {
+            var (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
+            // KILL step
+            avail = kill(avail, symbol, bb.symbolTable)
+          }
+          case t:TacMethodCallExpr => {
+            var (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
+            // KILL step
+            avail = kill(avail, symbol, bb.symbolTable)
           }
           case _ => {
-
           }
         }
-
       }
     }
 
+    // TODO: Step 2
+    // availout = avail
   }
 
   def convertTacToSymbolicExpr(
                                tac: Tac,
-                               map: Map[String, (String, SymbolTable)],
                                table: SymbolTable // This should be the symbol table of the block this Tac lives in
                              ) : Expression = {
     // map is the global temp -> (symbol, symboltable)
     // TODO: If the Tac is not convertible then null is returned so make sure you check for that
     
+    val globalMap : Map[String, (String, SymbolTable)] = null // TODO : We need to fetch this global map from somewhere
+
     tac match {
       case b : TacBinOp => {
-        var v1 : String = b.addr2 
-        var t1 : SymbolTable = null
-        var v2 : String = b.addr3
-        var t2 : SymbolTable = null
-
-        if (CSEUtils.isTempVar(b.addr2)) {
-          map.get(b.addr2) match {
-            
-            case Some((v,t)) => {
-              v1 = v
-              t1 = t
-            }
-            case None => {
-              return null
-            } // This shouldn't be a problem if the map passed in is actually correct
-          }
-        } else {
-          t1 = table.getContainingSymbolTable(v1)
-        }
-        if (CSEUtils.isTempVar(b.addr3)) {
-          map.get(b.addr3) match {
-            
-            case Some((v,t)) => {
-              v2 = v
-              t2 = t
-            }
-            case None => {
-              return null
-            }
-          }
-        } else {
-          t2 = table.getContainingSymbolTable(v2)
-        }
-
+        var (v1, t1) : (String, SymbolTable) = getSymbolAndTable(b.addr2, table)
+        var (v2, t2) : (String, SymbolTable) = getSymbolAndTable(b.addr3, table)
         return Expression(b.op, Set((v1,t1), (v2,t2)), ArrayBuffer[(String,SymbolTable)]((v1,t1), (v2,t2)))
       }
       case u : TacUnOp => {
-        var v1 : String = u.addr2
-        var t1 : SymbolTable = null
-
-        if (CSEUtils.isTempVar(u.addr2)) {
-          map.get(u.addr2) match {
-            case Some((v,t)) => {
-              v1 = v
-              t1 = t
-            }
-            case None => {
-              return null
-            }
-          }
-        } else {
-          t1 = table.getContainingSymbolTable(v1)
-        }
-
+        var (v1, t1) : (String, SymbolTable) = getSymbolAndTable(u.addr2, table)
         return Expression(u.op, Set((v1,t1)), ArrayBuffer[(String,SymbolTable)]((v1,t1)))
       }
       case _ => {
@@ -172,5 +178,26 @@ class CSE {
     }
 
   }
+
+    def getSymbolAndTable(variable : String, table : SymbolTable) : (String, SymbolTable) = {
+      var map: Map[String, (String, SymbolTable)]= null // TODO : We need to fetch this global map from somewhere
+      // table needs to be the symbol table of the corresponding bb block
+      var v : String = variable
+      var t : SymbolTable = null
+      if (CSEUtils.isTempVar(variable)) {
+        map.get(variable) match {          
+          case Some((sym,symTbl)) => {
+            v = sym
+            t = symTbl
+          }
+          case None => {
+            return null
+          } // This shouldn't be a problem if the map passed in is actually correct
+        }
+      } else {
+        t = table.getContainingSymbolTable(v)
+      }
+      return (v,t)
+    }
 
 }
