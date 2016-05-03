@@ -98,7 +98,7 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
 
     var table : SymbolTable = that
     while (table != null && table != this) {
-      table = table.getParentSymbolTable()
+      table = table.getParentSymbolTable
     }
 
     if (table == null) { // TODO : Be careful here because if "that" is null this screws up the return

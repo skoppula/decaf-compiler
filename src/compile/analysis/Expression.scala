@@ -1,15 +1,19 @@
 package compile.analysis
 
+import compile.symboltables.SymbolTable
 import compile.tac.OpTypes._
-import compile.tac.ThreeAddressCode._
-import scala.collection.mutable.{ArrayBuffer}
 
-object BitvectorKey {
-  abstract class BitvectorKey
-  case class Bvk (op: OpEnumVal, setVars: Set[String], listVars: ArrayBuffer[String]) extends BitvectorKey{
+import scala.collection.mutable.ArrayBuffer
+
+/**
+  * Created by skoppula on 5/3/16.
+  */
+class Expression {
+  abstract class Expression
+  case class Expr (op: OpEnumVal, setVars: Set[(String, SymbolTable)], listVars: ArrayBuffer[(String,SymbolTable)], table: SymbolTable) extends Expression {
     override def equals(that: Any) : Boolean =
       that match {
-        case that: Bvk => {
+        case that: Expr => {
           if (op != that.op || (setVars != that.setVars) ) {
             return false
           }
@@ -29,5 +33,5 @@ object BitvectorKey {
       return "%s(%s)".format(op,listVars.mkString(", "))
     }
   }
-  case class EmptyBvk() extends BitvectorKey{}
+  case class EmptyExpr() extends Expression{}
 }

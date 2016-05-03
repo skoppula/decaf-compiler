@@ -4,8 +4,8 @@ import compile.cfg.{CFGUtil, NormalBB, BasicBlockGenie}
 import compile.tac.ThreeAddressCode._
 import compile.analysis.BitvectorKey._
 import compile.util.Util.dprintln
+import compile.symboltables.{SymbolTable}
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap, HashMap, Map}
-import compile.analysis.CSEUtils
 
 // Map[String, "Expression"] // temp var name to expression data type
 // Use Bitvectorkey for Expression type except with symbolic variables now
@@ -16,65 +16,6 @@ object AvailableExpr {
   def replaceAvailableExpr(vecMap : HashMap[BitvectorKey, Int]) : Unit = {
     var latestExprValue : HashMap[String, Any] = new HashMap[String, Any] 
     //TODO: this doesn't actually do anything yet
-  }
-
-/*
-  def convertTacToSymbolicBvk(
-    tac: Tac,
-    map: Map[String, (String, SymbolTable)],
-    table: SymbolTable // This should be the symbol table of the block this Tac lives in
-
- */
-
-  def available(map : Map[String, BitvectorKey], bvk : BitvectorKey) : Map[String, BitvectorKey] = {
-    // bvk is our symbolic expression
-    // map is the expression map, assuming immutable for now
-    
-    for ((k,v) <- map) {
-
-    }
-
-  }
-
-  
-  def kill(map : Map[String, BitvectorKey], lhs : String, table : SymbolTable) : Map[String, BitvectorKey] = {
-    // map is the expression map, assuming immutable for now
-    // lhs is the symbolic variable
-    // table is the symbol table of the bb
-
-    // We need to get lhs' symbol table to perform the kill
-    for ((k,bvk) <- map) {
-
-    }
-
-  }
-
-  // TODO : It would be useful to have the temp -> symbol map here as a global
-  def newComputeAvailableExpr(
-    bb : NormalBB
-  ) : Unit = {
-    // 1. for tac in bb.instrs 
-    // 2. if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
-    //     process RHS first (if binop/unop): just add the symbolic expression to availin : temp(LHS) -> symbol(RHS)
-    //     process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
-
-    for (tac <- bb.instrs) {
-      if (tac.isAssign) {
-        tac match {
-          case t:TacBinOp => {
-            var bvk = convertTacToSymbolicBvk(t, map, bb.symboltable)
-          }
-          case t:TacUnOp => {
-            var bvk = convertTacToSymbolicBvk(t, map, bb.symboltable)
-          }
-          case _ => {
-
-          }
-        }
-
-      }
-    }
-
   }
 
   def computeAvailableExpr(
@@ -168,6 +109,22 @@ object AvailableExpr {
 
   }
 
+  def convertTacToBvk(
+                       tac: Tac
+                     ) : BitvectorKey = {
+    tac match {
+      case b : TacBinOp => {
+        return Bvk(b.op, Set(b.addr2, b.addr3), ArrayBuffer[String](b.addr2, b.addr3))
+      }
+      case u : TacUnOp => {
+        return Bvk(u.op, Set(u.addr2), ArrayBuffer[String](u.addr2))
+      }
+      case _ => {
+        return EmptyBvk()
+      }
+    }
+  }
+
   // walks through the basic blocks and *somehow* figures out the different types of expressions.
   // Then, these are stored and mapped to their position in the bitvector
   def initBitVectorMap(methodIdBBMap : Map[String, NormalBB]) : HashMap[BitvectorKey, Int] = {
@@ -218,70 +175,7 @@ object AvailableExpr {
   }
  */
 
-  def convertTacToSymbolicBvk(
-    tac: Tac,
-    map: Map[String, (String, SymbolTable)],
-    table: SymbolTable // This should be the symbol table of the block this Tac lives in
-  ) : BitvectorKey = {
-    tac match {
-      case b : TacBinOp => {
-        var v1 : String = b.addr2
-        var t1 : SymbolTable = null
-        var v2 : String = b.addr3
-        var t2 : SymbolTable = null
 
-        if (CSEUtils.isTempVar(b.addr2)) {
-          map.get(b.addr2) match {
-            case Some(v,t) => {
-              v1 = v
-              t1 = t
-            }
-            case None => {} // This shouldn't be a problem if the map passed in is actually correct
-          }
-        } else {
-          t1 = table.getContainingSymbolTable(v1)
-        }
-        if (CSEUtils.isTempVar(b.addr3)) {
-          map.get(b.addr3) match {
-            case Some(v,t) => {
-              v2 = v
-              t2 = t
-            }
-            case None => {}
-          }
-        } else {
-          t2 = table.getContainingSymbolTable(v2)
-        }
-
-        val t : SymbolTable = t1.getMinSymbolTable(t2)
-
-        return Bvk(b.op, Set(v1, v2), ArrayBuffer[String](v1, v2), t)
-      }
-      case u : TacUnOp => {
-        var v1 : String = u.addr2
-        var t1 : SymbolTable = null
-
-        if (CSEUtils.isTempVar(u.addr2)) {
-          map.get(u.addr2) match {
-            case Some(v,t) => {
-              v1 = v
-              t1 = t
-            }
-            case None => {}
-          }
-        } else {
-          t1 = table.getContainingSymbolTable(v1)
-        }
-
-        return Bvk(u.op, Set(v1), ArrayBuffer[String](v1), t1)
-      }
-      case _ => {
-        return EmptyBvk()
-      }
-    }
-
-  }
-  
   // takes in a block and the expression -> bitvector index map.
   // Returns a bitvector with GEN[i] = 1 if expression i is used.
   def availableGen(
