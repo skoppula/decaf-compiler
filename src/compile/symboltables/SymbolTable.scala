@@ -2,7 +2,7 @@ package compile.symboltables
 
 import compile.descriptors._
 import compile.exceptionhandling.IdentifierAlreadyExistsException
-import scala.collection.mutable.{HashMap, ListBuffer}
+import scala.collection.mutable.{HashMap, ListBuffer, ArrayBuffer}
 
 class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
 
