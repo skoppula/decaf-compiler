@@ -30,6 +30,14 @@ class GlobalFieldTable extends SymbolTable(null, null) {
     return symbolTableMap contains id
   }
 
+  override def getContainingSymbolTable(id : String): SymbolTable = {
+    if(symbolTableMap.contains(id)) {
+      return this
+    } else {
+      return null
+    }
+  }
+
   override def lookupIDOnlyInLocalScope(id : String) : BaseDescriptor = {
     /**
       * Recursively finds the identifier in this symbol table,

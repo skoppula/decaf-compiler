@@ -66,6 +66,14 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     }
   }
 
+  def getContainingSymbolTable(id : String): SymbolTable = {
+    if(symbolTableMap.contains(id)) {
+      return this
+    } else {
+      return parentSymbolTable.getContainingSymbolTable(id)
+    }
+  }
+
   def lookupIDOnlyInLocalScope(id : String) : BaseDescriptor = {
     /**
       * Recursively finds the identifier in this symbol table,

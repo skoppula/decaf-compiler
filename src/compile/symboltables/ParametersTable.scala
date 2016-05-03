@@ -54,6 +54,16 @@ class ParametersTable(
     }
   }
 
+  override def getContainingSymbolTable(id : String): SymbolTable = {
+    if(symbolTableMap.contains(id)) {
+      return this
+    } else if (parametersMap.contains(id)) {
+      return this
+    } else {
+      return parentSymbolTable.getContainingSymbolTable(id)
+    }
+  }
+
   def getParamMap : mutable.LinkedHashMap[String, PrimitiveBaseDescriptor] = {
     parametersMap
   }

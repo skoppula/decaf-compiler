@@ -118,6 +118,9 @@ case class NullElseBlockException(message: String) extends Exception(message)
 case class NotForIfWhileStmtException(message: String) extends Exception(message)
 case class NotAndOrOrOperatorException(message: String) extends Exception(message)
 
+case class TempVariableAlreadyExistsInGlobalMapException(message: String) extends Exception(message)
+case class SymbolVariableIsNullException(message: String) extends Exception(message)
+
 case class NoMatchingStatementException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
 case class MethodCallIsShadowedByLocalVariable(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)

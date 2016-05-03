@@ -67,10 +67,10 @@ object AvailableExpr {
 
     var new_changed = Set[String]() ++ changed
     val length = bvkPositionMap.size
-    dprintln("Changed set: " + changed.mkString(","))
+    // dprintln("Changed set: " + changed.mkString(","))
 
     for ( id <- changed ) {
-      dprintln("\tHandling BB in changeset:" + id)
+      // dprintln("\tHandling BB in changeset:" + id)
       val bb = methodIdBBMap(id)
       new_changed -= id
 
@@ -80,7 +80,7 @@ object AvailableExpr {
       for(parent <- bb.getParents()) {
         parents_in += " " + parent.id + "_availin:" + parent.avail_out.mkString("")
       }
-      dprintln("\t\tcurrent bb:" + bb + "\t parent:" + parents_in)
+      // dprintln("\t\tcurrent bb:" + bb + "\t parent:" + parents_in)
 
       for ( parent <- bb.getParents() ) {
         bb.avail_in = intersect(ArrayBuffer.fill(length)(1), parent.avail_out)
@@ -88,12 +88,12 @@ object AvailableExpr {
       val oldOut = bb.avail_out
       val bbKill = availableKill(bb, bvkPositionMap)
       val bbGen = availableGen(bb, bvkPositionMap)
-      dprintln("\t\tbb in:" + bb.avail_in.mkString("") + " bb out:" + bb.avail_out.mkString("") + " bbKill: " + bbKill.mkString("") + " bbGen: " + bbGen.mkString(""))
+      // dprintln("\t\tbb in:" + bb.avail_in.mkString("") + " bb out:" + bb.avail_out.mkString("") + " bbKill: " + bbKill.mkString("") + " bbGen: " + bbGen.mkString(""))
       bb.avail_out = union(bbGen, minus(bb.avail_in, bbKill))
-      dprintln("\t\tnew bb out:" + bb.avail_out)
+      // dprintln("\t\tnew bb out:" + bb.avail_out)
       if (oldOut != bb.avail_out) {
-        dprintln("\t\t" + bb + "'s avail_out changed to " + bb.avail_out)
-        dprintln("\t\t Adding children to changeset:" + bb.getChildren().mkString(","))
+        // dprintln("\t\t" + bb + "'s avail_out changed to " + bb.avail_out)
+        // dprintln("\t\t Adding children to changeset:" + bb.getChildren().mkString(","))
         for ( child <- bb.getChildren()) {
           new_changed += child.id
         }

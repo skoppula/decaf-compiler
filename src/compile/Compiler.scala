@@ -19,8 +19,8 @@ import compile.analysis.AvailableExpr
 import scala.collection.mutable.{HashMap}
 import compile.analysis.BitvectorKey._
 
-import compile.util.Util.dprint
 import compile.util.Util.dprintln
+import compile.analysis.CSEUtils
 
 import scala.Console
 import scala.collection.mutable
@@ -130,6 +130,19 @@ object Compiler {
       dprintln("Attempting to fix parent pointers in CFG")
       CFGUtil.setParentBasedOnChildPointers()
       dprintln("Finished fixing parent pointers in CFG")
+
+      dprintln("Generating the global temp variable to symbolic variable map for CSE")
+      var tempSymbolMaps = Map.empty[String, Map[String, (String, SymbolTable)]]
+      for((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
+        val tempSymbolMap = CSEUtils.genTempToSymbolMap(methodStartBB, List())
+        tempSymbolMaps = tempSymbolMaps +  {methodName -> tempSymbolMap}
+        var tempSymbolPairs = ""
+        for((temp, (symbol, st)) <- tempSymbolMap) {
+          tempSymbolPairs += "(" + temp + "," + symbol + "," + st.hashCode + ") "
+        }
+        dprintln("\t" + methodName + " has these keys in the temp-symbol mapping " + tempSymbolPairs)
+      }
+      dprintln("Finished generating the global temp variable to symbolic variable map")
 
       // == Doing available expression analysis == 
       dprintln("Attempting to do available expression analysis")
