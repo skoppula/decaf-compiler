@@ -76,32 +76,28 @@ class CSE {
     //     process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
     // 2. Update availout
 
-    // TODO step 0
-    // Merging required for MergeBB and JumpDestBB, otherwise just take availout of parent
-    var availin : Map[String, Expression] = null
+    // Step 0
+    var availin : Map[String, Expression] = Map()
     if (bb.isInstanceOf[MergeBB]) {
       val MBB : MergeBB = bb.asInstanceOf[MergeBB]
-      if (MBB.parent == null && MBB.parent_else == null ) {
-        availin = Map()
-      } else if (MBB.parent == null) {
-        availin = null // TODO: Get the availout of bb.parent_else
-      } else if (MBB.parent_else == null) {
-        availin = null // TODO: Get the availout of bb.parent
-      } else {
-        availin = join(null,null)// Merge
+      for (pbb <- MBB.getParents()) {
+        availin = join(availin, pbb.cse_hash_out)
       }
     } else if (bb.isInstanceOf[JumpDestBB]) {
       val JDBB : JumpDestBB = bb.asInstanceOf[JumpDestBB]
+      for (pbb <- JDBB.getParents()) {
+        availin = join(availin, pbb.cse_hash_out)
+      }
     } else {
-      if (bb.parent != null) {
-        availin = null // TODO: Get the availout of bb.parent
-      } else {
-        availin = Map()
+      for (pbb <- bb.getParents()) {
+        availin = join(availin, pbb.cse_hash_out)
       }
     }
 
+    bb.cse_hash_in = availin
+
     // Step 1
-    var avail : Map[String, Expression] = null // TODO : We need to fetch this from bb whatever that field ends up being called
+    var avail : Map[String, Expression] = bb.cse_hash_in
     val globalMap : Map[String, (String, SymbolTable)] = null // TODO : We need to fetch this global map from somewhere
 
     for (tac <- bb.instrs) {
@@ -149,8 +145,8 @@ class CSE {
       }
     }
 
-    // TODO: Step 2
-    // availout = avail
+    // Step 2
+    bb.cse_hash_out = avail
   }
 
   def convertTacToSymbolicExpr(
