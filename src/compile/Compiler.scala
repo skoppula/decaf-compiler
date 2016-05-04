@@ -151,10 +151,17 @@ object Compiler {
       val indexToOptimizationIndexThatWillNeverChangeCorrespondingToCSECourtesyOfRobMillerThankYouGenie = 0
       if(CLI.opts(indexToOptimizationIndexThatWillNeverChangeCorrespondingToCSECourtesyOfRobMillerThankYouGenie)) {
         dprintln("Doing CSE optimization...")
+        dprintln("Performing Intra-block CSE...")
+        for ((id, bb) <- BasicBlockGenie.idToBBReference) {
+          CSEUtils.substituteCSEIntraBlock(bb, tempGenie, CSEUtils.tempSymbolMap)
+        }
+        dprintln("Finished Intra-block CSE!")
+        dprintln("Performing Inter-block CSE...")
         for((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
           CSE.runCSEFixedPointAlgorithm(methodStartBB)
           CSEUtils.CSESubstitionGenie(methodStartBB, CSEUtils.tempSymbolMap, List(), tempGenie)
         }
+        dprintln("Finished Inter-block CSE!")
         dprintln("Finished doing CSE optimization...")
       }
 
@@ -192,6 +199,8 @@ object Compiler {
       } else {
         dot = CFGUtil.mapToDot(map, true, false)
       }
+
+      dprintln(dot.mkString)
 
       // Adding the legend
       val endBrace : String = dot.last

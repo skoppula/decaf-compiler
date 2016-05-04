@@ -26,10 +26,10 @@ case class Expression (op: OpEnumVal, setVars: Set[(String, SymbolTable)], listV
     }
 
   override def toString : String = {
-    var listStr = ""
+    var listStr : List[String] = List()
     for(lvar <- listVars) {
-      listStr += lvar._1 + " "
+      listStr :+= lvar._1
     }
-    return "%s(%s)".format(op, listStr)
+    return "%s(%s)".format(op, listStr.mkString(", "))
   }
 }

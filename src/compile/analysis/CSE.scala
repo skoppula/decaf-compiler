@@ -125,7 +125,65 @@ object CSE {
     return mapOut
   }
 
-  // TODO : It would be useful to have the temp -> symbol map here as a global
+def computeCSEInAfterTac(map:Map[String, Expression], tac:Tac, table:SymbolTable) : Map[String, Expression] = {
+  // if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
+  // process RHS first (if binop/unop): just add the symbolic expression to availin : temp(LHS) -> symbol(RHS)
+  // process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
+  // Austin: Now I don't think that symbol(LHS) is the right thing to use for killing. Changed for now
+  // TODO: Figure out the correct KILL procedure
+
+  var avail : Map[String, Expression] = map
+
+  if (tac.isAssign) {
+    val expr = convertTacToSymbolicExpr(tac, table)
+    
+    tac match {
+      case t:TacBinOp => {
+        if (expr != null) {
+          // GEN step
+          avail = genPerTac(avail, t.addr1, expr)
+        }
+        // KILL step
+        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+        avail = killPerTac(avail, t.addr1, table)
+      }
+      case t:TacUnOp => {
+        if (expr != null) {
+          // GEN step
+          avail = genPerTac(avail, t.addr1, expr)
+        }
+        // KILL step
+        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+        avail = killPerTac(avail, t.addr1, table)
+      }
+      case t:TacCopy => {
+        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+        // KILL step
+        avail = killPerTac(avail, t.addr1, table)
+      }
+      case t:TacCopyInt => {
+        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+        // KILL step
+        avail = killPerTac(avail, t.addr1, table)
+      }
+      case t:TacCopyBoolean => {
+        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+        // KILL step
+        avail = killPerTac(avail, t.addr1, table)
+      }
+      case t:TacMethodCallExpr => {
+        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+        // KILL step
+        avail = killPerTac(avail, t.addr1, table)
+      }
+      case _ => {
+      }
+    }
+  }
+
+  return avail
+}
+
   def computeCSEInPerBlock(bb : NormalBB) : Unit = {
     // 0. join parents to update availin
     // 1. for tac in bb.instrs
@@ -158,52 +216,7 @@ object CSE {
     var avail : Map[String, Expression] = bb.cseIn
 
     for (tac <- bb.instrs) {
-      if (tac.isAssign) {
-        val expr = convertTacToSymbolicExpr(tac, bb.symbolTable)
-        dprintln(tac.toString)
-        tac match {
-          case t:TacBinOp => {
-            if (expr != null) {
-              // GEN step
-              avail = genPerTac(avail, t.addr1, expr)
-            }
-            // KILL step
-            val (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
-            avail = killPerTac(avail, symbol, bb.symbolTable)
-          }
-          case t:TacUnOp => {
-            if (expr != null) {
-              // GEN step
-              avail = genPerTac(avail, t.addr1, expr)
-            }
-            // KILL step
-            val (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
-            avail = killPerTac(avail, symbol, bb.symbolTable)
-          }
-          case t:TacCopy => {
-            val (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
-            // KILL step
-            avail = killPerTac(avail, symbol, bb.symbolTable)
-          }
-          case t:TacCopyInt => {
-            val (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
-            // KILL step
-            avail = killPerTac(avail, symbol, bb.symbolTable)
-          }
-          case t:TacCopyBoolean => {
-            val (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
-            // KILL step
-            avail = killPerTac(avail, symbol, bb.symbolTable)
-          }
-          case t:TacMethodCallExpr => {
-            val (symbol,_) = getSymbolAndTable(t.addr1, bb.symbolTable)
-            // KILL step
-            avail = killPerTac(avail, symbol, bb.symbolTable)
-          }
-          case _ => {
-          }
-        }
-      }
+      avail = computeCSEInAfterTac(avail, tac, bb.symbolTable)
     }
 
     // Step 2

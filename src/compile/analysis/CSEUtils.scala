@@ -5,8 +5,10 @@ import compile.symboltables.SymbolTable
 import compile.exceptionhandling.{SymbolVariableIsNullException, TempVariableAlreadyExistsInGlobalMapException, NullElseBlockException, NotForIfWhileStmtException}
 import compile.tac.{ThreeAddressCode, TempVariableGenie}
 import compile.tac.ThreeAddressCode.{TacUnOp, Tac, TacBinOp, TacCopy}
+import compile.util.Util.dprintln
 
 import scala.collection.mutable.ArrayBuffer
+
 
 object CSEUtils {
 
@@ -53,11 +55,91 @@ object CSEUtils {
     }
   }
 
+  def substituteCSEIntraBlock(
+                               currentBB : NormalBB,
+                               tempGenie : TempVariableGenie,
+                               tempSymbolMap : Map[String, (String, SymbolTable)]
+                             ) : Unit = {
+    // For all tacs in the bb:
+    // Step 0: Attempt substitution on the tac
+    // Step 1: Update the cseIn after the tac
+    val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+
+    // Intra block CSE means the starting CSE In is empty
+    var cseIn : Map[String, Expression] = Map() 
+    for(instr <- currentBB.instrs){
+      // Step 0
+      instr match {
+        case tac : TacBinOp => {
+          val lhsTemp = tac.addr2
+          val rhsTemp = tac.addr3
+
+          if(tempSymbolMap.get(lhsTemp) != None && tempSymbolMap.get(rhsTemp) != None) {
+            val lhsSymbol = tempSymbolMap.get(lhsTemp).get
+            val rhsSymbol = tempSymbolMap.get(rhsTemp).get
+
+            val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
+
+            val exprToTempBBMap : Map[Expression, String] = cseIn.map(_.swap)
+
+            val getExprResult = exprToTempBBMap.get(expr)
+
+            if(getExprResult != None) {
+              val newTemp = getExprResult.get
+              // An symbolic expression already exists, so we replace it with the temp found
+              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
+              newInstrs += tacCopy
+            } else{
+              newInstrs += tac
+            }
+          } else {
+            newInstrs += tac
+          }
+        }
+        case tac : TacUnOp => {
+          val temp = tac.addr2
+
+          if(tempSymbolMap.get(temp) != None) {
+            val tempSymbol = tempSymbolMap.get(temp).get
+
+            val expr = new Expression(tac.op, Set(tempSymbol), ArrayBuffer(tempSymbol))
+
+            val exprToTempBBMap : Map[Expression, String] = cseIn.map(_.swap)
+
+            val getExprResult = exprToTempBBMap.get(expr)
+
+            if(getExprResult != None) {
+              val newTemp = getExprResult.get
+              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
+              newInstrs += tacCopy
+            } else{
+              newInstrs += tac
+            }
+          } else {
+            newInstrs += tac
+          }
+        }
+        case _ => {
+          newInstrs += instr
+        }
+      }
+
+      // Step 1
+      cseIn = CSE.computeCSEInAfterTac(cseIn, instr, currentBB.symbolTable)
+      dprintln(instr.toString)
+      dprintln(cseIn.mkString)
+    }
+
+    currentBB.instrs.clear()
+    currentBB.instrs ++= newInstrs
+
+  }
+
   def substituteCSEInBlock(
                             currentBB : NormalBB,
-                            tempGenie: TempVariableGenie,
-                            tempSymbolMap : Map[String,(String, SymbolTable)]
-                          ): Unit = {
+                            tempGenie : TempVariableGenie,
+                            tempSymbolMap : Map[String, (String, SymbolTable)]
+                          ) : Unit = {
 
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
 
