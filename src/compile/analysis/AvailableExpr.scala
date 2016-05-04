@@ -13,11 +13,6 @@ import scala.collection.mutable.{ArrayBuffer, LinkedHashMap, HashMap, Map}
 
 object AvailableExpr {
 
-  def replaceAvailableExpr(vecMap : HashMap[BitvectorKey, Int]) : Unit = {
-    var latestExprValue : HashMap[String, Any] = new HashMap[String, Any] 
-    //TODO: this doesn't actually do anything yet
-  }
-
   def computeAvailableExpr(
                             programStartBB : NormalBB,
                             bbMethodMap : LinkedHashMap[String, (NormalBB, NormalBB)]
@@ -38,11 +33,11 @@ object AvailableExpr {
       var changed = Set[String]()
       for ((id, bb) <- methodIdBBMap) {
         changed += id
-        bb.avail_out = ArrayBuffer.fill(length)(0)
+        bb.availBitVectorOut = ArrayBuffer.fill(length)(0)
       }
 
-      methodStart.avail_in = ArrayBuffer.fill(length)(0)
-      methodStart.avail_out = availableGen(methodStart, bvkPositionMap)
+      methodStart.availBitVectorIn = ArrayBuffer.fill(length)(0)
+      methodStart.availBitVectorOut = availableGen(methodStart, bvkPositionMap)
 
       changed -= methodStart.id
 
@@ -79,24 +74,24 @@ object AvailableExpr {
       val bb = methodIdBBMap(id)
       new_changed -= id
 
-      bb.avail_in = ArrayBuffer.fill(length)(0)
+      bb.availBitVectorIn = ArrayBuffer.fill(length)(0)
 
       var parents_in = ""
       for(parent <- bb.getParents()) {
-        parents_in += " " + parent.id + "_availin:" + parent.avail_out.mkString("")
+        parents_in += " " + parent.id + "_availin:" + parent.availBitVectorOut.mkString("")
       }
       // dprintln("\t\tcurrent bb:" + bb + "\t parent:" + parents_in)
 
       for ( parent <- bb.getParents() ) {
-        bb.avail_in = intersect(ArrayBuffer.fill(length)(1), parent.avail_out)
+        bb.availBitVectorIn = intersect(ArrayBuffer.fill(length)(1), parent.availBitVectorOut)
       }
-      val oldOut = bb.avail_out
+      val oldOut = bb.availBitVectorOut
       val bbKill = availableKill(bb, bvkPositionMap)
       val bbGen = availableGen(bb, bvkPositionMap)
       // dprintln("\t\tbb in:" + bb.avail_in.mkString("") + " bb out:" + bb.avail_out.mkString("") + " bbKill: " + bbKill.mkString("") + " bbGen: " + bbGen.mkString(""))
-      bb.avail_out = union(bbGen, minus(bb.avail_in, bbKill))
+      bb.availBitVectorOut = union(bbGen, minus(bb.availBitVectorIn, bbKill))
       // dprintln("\t\tnew bb out:" + bb.avail_out)
-      if (oldOut != bb.avail_out) {
+      if (oldOut != bb.availBitVectorOut) {
         // dprintln("\t\t" + bb + "'s avail_out changed to " + bb.avail_out)
         // dprintln("\t\t Adding children to changeset:" + bb.getChildren().mkString(","))
         for ( child <- bb.getChildren()) {

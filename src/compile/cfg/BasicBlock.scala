@@ -14,11 +14,11 @@ class NormalBB(
   var child : NormalBB = null
   var parent : NormalBB = null
 
-  var cse_hash_in = Map.empty[String, Expression]
-  var cse_hash_out = Map.empty[String, Expression]
+  var cseIn = Map.empty[String, Expression]
+  var cseOut = Map.empty[String, Expression]
 
-  var avail_in : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
-  var avail_out : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
+  var availBitVectorIn : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
+  var availBitVectorOut : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
 
   var methodTop = false
   var programStart = false

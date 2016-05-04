@@ -10,6 +10,8 @@ import scala.collection.mutable.ArrayBuffer
 
 object CSEUtils {
 
+  var tempSymbolMap = Map.empty[String, (String, SymbolTable)]
+
   def CSESubstitionGenie(
                      startBB : NormalBB,
                      tempToSymbolMap : Map[String, (String, SymbolTable)],
@@ -70,7 +72,7 @@ object CSEUtils {
 
           val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
 
-          val exprToTempBBMap : Map[Expression, String] = currentBB.cse_hash_in.map(_.swap)
+          val exprToTempBBMap : Map[Expression, String] = currentBB.cseIn.map(_.swap)
 
           val newTemp = exprToTempBBMap.get(expr).get
 

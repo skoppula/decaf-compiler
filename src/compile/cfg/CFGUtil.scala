@@ -331,8 +331,8 @@ object CFGUtil {
         val forstart = if(parentBranchBB.forstart == null) "" else parentBranchBB.forstart.id
         val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
-        val availInStr = if(parentBranchBB.avail_in.isEmpty) "" else parentBranchBB.avail_in.mkString("")
-        val availOutStr = if(parentBranchBB.avail_out.isEmpty) "" else parentBranchBB.avail_out.mkString("")
+        val availInStr = if(parentBranchBB.availBitVectorIn.isEmpty) "" else parentBranchBB.availBitVectorIn.mkString("")
+        val availOutStr = if(parentBranchBB.availBitVectorOut.isEmpty) "" else parentBranchBB.availBitVectorOut.mkString("")
         if(printAvailability) {
           dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
@@ -365,8 +365,8 @@ object CFGUtil {
 
 
       } else {
-        val availInStr = if(parentBB.avail_in.isEmpty) "" else parentBB.avail_in.mkString("")
-        val availOutStr = if(parentBB.avail_out.isEmpty) "" else parentBB.avail_out.mkString("")
+        val availInStr = if(parentBB.availBitVectorIn.isEmpty) "" else parentBB.availBitVectorIn.mkString("")
+        val availOutStr = if(parentBB.availBitVectorOut.isEmpty) "" else parentBB.availBitVectorOut.mkString("")
         if(printAvailability) {
           dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),

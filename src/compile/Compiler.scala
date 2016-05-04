@@ -131,9 +131,8 @@ object Compiler {
       CFGUtil.setParentBasedOnChildPointers()
       dprintln("Finished fixing parent pointers in CFG")
 
-      dprintln("Generating the global temp variable to symbolic variable map for CSE")
       // Mapping from method name -> (map from temp var to symbol var + corresponding symbol table)
-      // TODO: Why can't we just have a global temp var to symbol var + symbol table lookup??
+      dprintln("Generating the global temp variable to symbolic variable map for CSE")
       var tempSymbolMaps = Map.empty[String, Map[String, (String, SymbolTable)]]
       for((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
         val tempSymbolMap = CSEUtils.genTempToSymbolMap(methodStartBB, List())
@@ -144,17 +143,21 @@ object Compiler {
         }
         dprintln("\t" + methodName + " has these keys in the temp-symbol mapping " + tempSymbolPairs)
       }
+
+      for((methodName, tempSymbolMap) <- tempSymbolMaps) {
+        CSEUtils.tempSymbolMap ++= tempSymbolMap
+      }
+
       dprintln("Finished generating the global temp variable to symbolic variable map")
 
-      // == Doing available expression analysis == 
-      dprintln("Attempting to do available expression analysis")
-      // TODO: Run availability analysis on each method separately
-
+      // == Doing available (bitvector) expression analysis ==
+      // THis is replaced by our hashmap method
+      // dprintln("Attempting to do available expression analysis")
       // We want bvkHashMap to create a legend for the dot graph
-      var allMethodsBvkPositionMap = HashMap.empty[String, HashMap[BitvectorKey, Int]]
-      if (CLI.available) {
-        allMethodsBvkPositionMap = AvailableExpr.computeAvailableExpr(programStartBB, methodsBBMap)
-      }
+      // var allMethodsBvkPositionMap = HashMap.empty[String, HashMap[BitvectorKey, Int]]
+      // if (CLI.available) {
+      //  allMethodsBvkPositionMap = AvailableExpr.computeAvailableExpr(programStartBB, methodsBBMap)
+      // }
  
       dprintln("Converting CFG to a TAC list...")
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())
@@ -171,11 +174,14 @@ object Compiler {
       dprintln("Generating assembly...")
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
 
+
+
       // === Dot file generation start ===
       var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
       }
+
       if(CLI.available) {
         dot = CFGUtil.mapToDot(map, true, true)
       } else {
@@ -187,6 +193,7 @@ object Compiler {
       dot = dot.dropRight(1)
 
       var bvkLegend : List[String] = List()
+      /*
       for((methodName, bvkHashMap) <- allMethodsBvkPositionMap) {
         var posToBvk : Map[Int, BitvectorKey] = Map() // Use this to get an ordering of bitvectors
         for ((bvk, pos) <- bvkHashMap) {
@@ -200,6 +207,7 @@ object Compiler {
         }
 
       }
+      */
       dot = dot :+ "\tLegend [shape=box,label=\"Bitvectors\\n\\n%s\"];".format(bvkLegend.mkString)
       dot = dot :+ endBrace
 
