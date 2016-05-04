@@ -222,10 +222,11 @@ object Compiler {
         if (CLI.outfile == null || CLI.outfile.isEmpty) {
           outFile.println(dot.mkString)
         }
-      } else {
-        val pw = new PrintWriter(new File(CLI.outfile))
-        pw.write(dot.mkString)
-        pw.close
+        else {
+          val pw = new PrintWriter(new File(CLI.outfile))
+          pw.write(dot.mkString)
+          pw.close
+        }
       }
       // === Dot file generation end ===
 
