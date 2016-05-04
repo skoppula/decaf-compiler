@@ -185,22 +185,13 @@ object Compiler {
         dprintln(tac.toString)
       }
 
-      dprintln("Generating assembly...")
-      asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
-
       // === Dot file generation start ===
       var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         map = CFGUtil.mergeMaps(map,CFGUtil.cfgToMap(methodStartBB, List()))
       }
 
-      if(CLI.available) {
-        dot = CFGUtil.mapToDot(map, true, true)
-      } else {
-        dot = CFGUtil.mapToDot(map, true, false)
-      }
-
-      dprintln(dot.mkString)
+      dot = CFGUtil.mapToDot(map, true, true)
 
       // Adding the legend
       val endBrace : String = dot.last
@@ -225,28 +216,33 @@ object Compiler {
       dot = dot :+ "\tLegend [shape=box,label=\"Bitvectors\\n\\n%s\"];".format(bvkLegend.mkString)
       dot = dot :+ endBrace
 
+      dprintln(dot.mkString)
+
+      if (CLI.dot) {
+        if (CLI.outfile == null || CLI.outfile.isEmpty) {
+          outFile.println(dot.mkString)
+        }
+      } else {
+        val pw = new PrintWriter(new File(CLI.outfile))
+        pw.write(dot.mkString)
+        pw.close
+      }
       // === Dot file generation end ===
 
       // Should compile dot file into png using
       // dot -Tpng ~/graph.dot -o ~/graph.png
+      dprintln("Generating assembly...")
+      asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
     }
-    if (CLI.outfile == null || CLI.outfile.isEmpty) {
-      if (CLI.dot) {
-        outFile.println(dot.mkString)
-      } else {
+    if (!CLI.dot) {
+      if (CLI.outfile == null || CLI.outfile.isEmpty) {
         outFile.println(asmStr)
-      }
-    } else {
-      val pw = new PrintWriter(new File(CLI.outfile))
-      if (CLI.dot) {
-        pw.write(dot.mkString)
       } else {
+        val pw = new PrintWriter(new File(CLI.outfile))
         pw.write(asmStr)
+        pw.close
       }
-      pw.close
     }
-
-
   }
 
   def scan(fileName: String) {
