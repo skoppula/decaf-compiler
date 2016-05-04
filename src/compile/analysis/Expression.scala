@@ -24,8 +24,12 @@ case class Expression (op: OpEnumVal, setVars: Set[(String, SymbolTable)], listV
       }
       case _ => return false
     }
-  override def toString : String = {
-    return "%s(%s)".format(op,listVars.mkString(", "))
-  }
 
+  override def toString : String = {
+    var listStr = ""
+    for(lvar <- listVars) {
+      listStr += lvar._1 + " "
+    }
+    return "%s(%s)".format(op, listStr)
+  }
 }

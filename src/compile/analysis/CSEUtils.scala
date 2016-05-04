@@ -17,7 +17,6 @@ object CSEUtils {
                      tempToSymbolMap : Map[String, (String, SymbolTable)],
                      doNotTraverseBBs : List[String],
                      tempGenie: TempVariableGenie
-
                    ) {
 
     var currentBB = startBB
@@ -68,38 +67,48 @@ object CSEUtils {
           val lhsTemp = tac.addr2
           val rhsTemp = tac.addr3
 
-          val lhsSymbol = tempSymbolMap.get(lhsTemp).get
-          val rhsSymbol = tempSymbolMap.get(rhsTemp).get
+          if(tempSymbolMap.get(lhsTemp) != None && tempSymbolMap.get(rhsTemp) != None) {
+            val lhsSymbol = tempSymbolMap.get(lhsTemp).get
+            val rhsSymbol = tempSymbolMap.get(rhsTemp).get
 
-          val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
+            val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
 
-          val exprToTempBBMap : Map[Expression, String] = currentBB.cseIn.map(_.swap)
+            val exprToTempBBMap : Map[Expression, String] = currentBB.cseIn.map(_.swap)
 
-          val newTemp = exprToTempBBMap.get(expr).get
+            val getExprResult = exprToTempBBMap.get(expr)
 
-          if(newTemp != null) {
-            // An symbolic expression already exists, so we replace it with the temp found
-            val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
-            newInstrs += tacCopy
-          } else{
+            if(getExprResult != None) {
+              val newTemp = getExprResult.get
+              // An symbolic expression already exists, so we replace it with the temp found
+              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
+              newInstrs += tacCopy
+            } else{
+              newInstrs += tac
+            }
+          } else {
             newInstrs += tac
           }
         }
         case tac : TacUnOp => {
           val temp = tac.addr2
 
-          val tempSymbol = tempSymbolMap.get(temp).get
+          if(tempSymbolMap.get(temp) != None) {
+            val tempSymbol = tempSymbolMap.get(temp).get
 
-          val expr = new Expression(tac.op, Set(tempSymbol), ArrayBuffer(tempSymbol))
+            val expr = new Expression(tac.op, Set(tempSymbol), ArrayBuffer(tempSymbol))
 
-          val exprToTempBBMap : Map[Expression, String] = currentBB.cse_hash_in.map(_.swap)
+            val exprToTempBBMap : Map[Expression, String] = currentBB.cseIn.map(_.swap)
 
-          val newTemp = exprToTempBBMap.get(expr).get
+            val getExprResult = exprToTempBBMap.get(expr)
 
-          if(newTemp != null) {
-            val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
-            newInstrs += tacCopy
-          } else{
+            if(getExprResult != None) {
+              val newTemp = getExprResult.get
+              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
+              newInstrs += tacCopy
+            } else{
+              newInstrs += tac
+            }
+          } else {
             newInstrs += tac
           }
         }
@@ -110,7 +119,7 @@ object CSEUtils {
     }
 
     currentBB.instrs.clear()
-    currentBB.instrs ++ newInstrs
+    currentBB.instrs ++= newInstrs
   }
 
   def mergeSymbolMaps(

@@ -6,7 +6,7 @@ import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ArrayBuffer}
 import compile.util.Util.dprintln
 
-class CSE {
+object CSE {
 
   def runCSEFixedPointAlgorithm(
                                   methodStart : NormalBB
@@ -160,6 +160,7 @@ class CSE {
     for (tac <- bb.instrs) {
       if (tac.isAssign) {
         val expr = convertTacToSymbolicExpr(tac, bb.symbolTable)
+        dprintln(tac.toString)
         tac match {
           case t:TacBinOp => {
             if (expr != null) {
@@ -244,7 +245,7 @@ class CSE {
             t = symTbl
           }
           case None => {
-            return null // TODO: This null is vetted and actually intended. Whether it's good design or not is ?able
+            return (null, null) // TODO: This null is vetted and actually intended. Whether it's good design or not is ?able
           } // This shouldn't be a problem if the map passed in is actually correct
         }
       } else {

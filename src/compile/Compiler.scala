@@ -15,9 +15,8 @@ import compile.tac._
 import compile.tac.ThreeAddressCode._
 import TacGen._
 
-import compile.analysis.AvailableExpr
+import compile.analysis.CSE
 import scala.collection.mutable.{HashMap}
-import compile.analysis.BitvectorKey._
 
 import compile.util.Util.dprintln
 import compile.analysis.CSEUtils
@@ -35,7 +34,7 @@ object Compiler {
     new java.io.FileOutputStream(CLI.outfile)))
 
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array[String]())
+    CLI.parse(args, Array("cse"))
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
       System.exit(0)
@@ -147,8 +146,17 @@ object Compiler {
       for((methodName, tempSymbolMap) <- tempSymbolMaps) {
         CSEUtils.tempSymbolMap ++= tempSymbolMap
       }
-
       dprintln("Finished generating the global temp variable to symbolic variable map")
+
+      val indexToOptimizationIndexThatWillNeverChangeCorrespondingToCSECourtesyOfRobMillerThankYouGenie = 0
+      if(CLI.opts(indexToOptimizationIndexThatWillNeverChangeCorrespondingToCSECourtesyOfRobMillerThankYouGenie)) {
+        dprintln("Doing CSE optimization...")
+        for((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
+          CSE.runCSEFixedPointAlgorithm(methodStartBB)
+          CSEUtils.CSESubstitionGenie(methodStartBB, CSEUtils.tempSymbolMap, List(), tempGenie)
+        }
+        dprintln("Finished doing CSE optimization...")
+      }
 
       // == Doing available (bitvector) expression analysis ==
       // THis is replaced by our hashmap method
@@ -164,7 +172,6 @@ object Compiler {
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         tacs = tacs ::: CFGUtil.cfgToTacs(methodStartBB, List())
       }
-
       dprintln("Finished creation of TAC list. TACs:")
 
       for((tac,st) <- tacs) {
@@ -173,8 +180,6 @@ object Compiler {
 
       dprintln("Generating assembly...")
       asmStr += CFGUtil.tacsToAsm(tacs) mkString ""
-
-
 
       // === Dot file generation start ===
       var map : Map[String,Set[String]] = CFGUtil.cfgToMap(programStartBB, List())

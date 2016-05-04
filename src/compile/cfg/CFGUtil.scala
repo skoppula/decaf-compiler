@@ -323,6 +323,8 @@ object CFGUtil {
     for ((parent,children) <- map) {
       val parentBB = BasicBlockGenie.idToBBReference(parent)
       val instrs = parentBB.instrs
+      val cseInStr = parentBB.cseIn.mkString("\\l,")
+      val cseOutStr = parentBB.cseOut.mkString("\\l,")
       if(parentBB.isInstanceOf[BranchBB]) {
         val parentBranchBB = parentBB.asInstanceOf[BranchBB]
         val merge = if(parentBranchBB.merge == null) "" else parentBranchBB.merge.id
@@ -331,14 +333,12 @@ object CFGUtil {
         val forstart = if(parentBranchBB.forstart == null) "" else parentBranchBB.forstart.id
         val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
-        val availInStr = if(parentBranchBB.availBitVectorIn.isEmpty) "" else parentBranchBB.availBitVectorIn.mkString("")
-        val availOutStr = if(parentBranchBB.availBitVectorOut.isEmpty) "" else parentBranchBB.availBitVectorOut.mkString("")
         if(printAvailability) {
           dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
-            "availin: " + availInStr,
-            "availout: " + availOutStr,
+            "cseIn: " + cseInStr,
+            "cseOut: " + cseOutStr,
             "type: " + getBBType(parentBB),
             "merge: " + merge,
             "preinc: " + preinc,
@@ -365,15 +365,13 @@ object CFGUtil {
 
 
       } else {
-        val availInStr = if(parentBB.availBitVectorIn.isEmpty) "" else parentBB.availBitVectorIn.mkString("")
-        val availOutStr = if(parentBB.availBitVectorOut.isEmpty) "" else parentBB.availBitVectorOut.mkString("")
         if(printAvailability) {
           dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
+            "cseIn: " + cseInStr,
+            "cseOut: " + cseOutStr,
             "type: " + getBBType(parentBB),
-            "availin: " + availInStr,
-            "availout: " + availOutStr,
             instrs.mkString("\\n")
           )
         } else {
