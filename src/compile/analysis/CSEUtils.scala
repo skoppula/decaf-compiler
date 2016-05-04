@@ -4,7 +4,7 @@ import compile.cfg.{BranchBB, NormalBB}
 import compile.symboltables.SymbolTable
 import compile.exceptionhandling.{SymbolVariableIsNullException, TempVariableAlreadyExistsInGlobalMapException, NullElseBlockException, NotForIfWhileStmtException}
 import compile.tac.{ThreeAddressCode, TempVariableGenie}
-import compile.tac.ThreeAddressCode.{Tac, TacBinOp, TacCopy}
+import compile.tac.ThreeAddressCode.{TacUnOp, Tac, TacBinOp, TacCopy}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -76,6 +76,24 @@ object CSEUtils {
 
           if(newTemp != null) {
             // An symbolic expression already exists, so we replace it with the temp found
+            val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
+            newInstrs += tacCopy
+          } else{
+            newInstrs += tac
+          }
+        }
+        case tac : TacUnOp => {
+          val temp = tac.addr2
+
+          val tempSymbol = tempSymbolMap.get(temp).get
+
+          val expr = new Expression(tac.op, Set(tempSymbol), ArrayBuffer(tempSymbol))
+
+          val exprToTempBBMap : Map[Expression, String] = currentBB.cse_hash_in.map(_.swap)
+
+          val newTemp = exprToTempBBMap.get(expr).get
+
+          if(newTemp != null) {
             val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
             newInstrs += tacCopy
           } else{
