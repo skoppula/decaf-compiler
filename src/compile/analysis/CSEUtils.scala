@@ -59,6 +59,7 @@ object CSEUtils {
                           ): Unit = {
 
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+
     for(instr <- currentBB.instrs){
       instr match {
         case tac : TacBinOp => {
@@ -105,6 +106,9 @@ object CSEUtils {
         }
       }
     }
+
+    currentBB.instrs.clear()
+    currentBB.instrs ++ newInstrs
   }
 
   def mergeSymbolMaps(
