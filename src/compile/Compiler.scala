@@ -157,6 +157,7 @@ object Compiler {
         killedGlobalMapStr += methodName + ":{" + varSTSet.map(_._1).mkString(",") + "} "
       }
       killedGlobalMapStr += "}"
+      CSEUtils.killedGlobalVarMap = killedGlobalVarMap
       dprintln("The map of what global vars each method kills: " + killedGlobalMapStr)
       dprintln("Creating the lists of global vars that each method kills")
 

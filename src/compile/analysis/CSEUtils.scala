@@ -13,6 +13,7 @@ import scala.collection.mutable.ArrayBuffer
 object CSEUtils {
 
   var tempSymbolMap = Map.empty[String, (String, SymbolTable)]
+  var killedGlobalVarMap = Map.empty[String, Set[(String, SymbolTable)]]
 
   def CSESubstitionGenie(
                      startBB : NormalBB,

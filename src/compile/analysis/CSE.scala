@@ -94,7 +94,7 @@ object CSE {
     // We need to get lhs' symbol table to perform the kill
     // Look up the table.getContainingSymbolTable(slhs)
     var mapOut : Map[String, Expression] = map
-    var slhsTable : SymbolTable = table.getContainingSymbolTable(slhs)
+    val slhsTable : SymbolTable = table.getContainingSymbolTable(slhs)
     // dprintln("the t->e map is currently " + mapOut.mkString(", "))
     for ((tlhs,e) <- map) {
       // dprintln("processing " + tlhs + " -> " + e.toString)
@@ -148,64 +148,96 @@ object CSE {
     return mapOut
   }
 
-def computeCSEAfterTac(map:Map[String, Expression], tac:Tac, table:SymbolTable) : Map[String, Expression] = {
-  // if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
-  // process RHS first (if binop/unop): just add the symbolic expression to availin : temp(LHS) -> symbol(RHS)
-  // process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
-  // Austin: Now I don't think that symbol(LHS) is the right thing to use for killing. Changed for now
-  // TODO: Figure out the correct KILL procedure
+  def computeCSEAfterTac(map:Map[String, Expression], tac:Tac, table:SymbolTable) : Map[String, Expression] = {
+    // if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
+    // process RHS first (if binop/unop): just add the symbolic expression to availin : temp(LHS) -> symbol(RHS)
+    // process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
+    // Austin: Now I don't think that symbol(LHS) is the right thing to use for killing. Changed for now
+    // TODO: Figure out the correct KILL procedure
 
-  var avail : Map[String, Expression] = map
+    var avail : Map[String, Expression] = map
 
-  if (tac.isAssign) {
-    val expr = convertTacToSymbolicExpr(tac, table)
-    
-    tac match {
-      case t:TacBinOp => {
-        if (expr != null) {
-          // GEN step
-          avail = genPerTac(avail, t.addr1, expr)
+    if (tac.isAssign) {
+      val expr = convertTacToSymbolicExpr(tac, table)
+
+      tac match {
+        case t:TacBinOp => {
+          if (expr != null) {
+            // GEN step
+            avail = genPerTac(avail, t.addr1, expr)
+          }
+          // KILL step
+          // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+          avail = killPerTac(avail, t.addr1, table)
         }
-        // KILL step
-        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
-        avail = killPerTac(avail, t.addr1, table)
-      }
-      case t:TacUnOp => {
-        if (expr != null) {
-          // GEN step
-          avail = genPerTac(avail, t.addr1, expr)
+        case t:TacUnOp => {
+          if (expr != null) {
+            // GEN step
+            avail = genPerTac(avail, t.addr1, expr)
+          }
+          // KILL step
+          // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+          avail = killPerTac(avail, t.addr1, table)
         }
-        // KILL step
-        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
-        avail = killPerTac(avail, t.addr1, table)
+        case t:TacCopy => {
+          // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+          // KILL step
+          avail = killPerTac(avail, t.addr1, table)
+        }
+        case t:TacCopyInt => {
+          // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+          // KILL step
+          avail = killPerTac(avail, t.addr1, table)
+        }
+        case t:TacCopyBoolean => {
+          // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+          // KILL step
+          avail = killPerTac(avail, t.addr1, table)
+        }
+        case t:TacMethodCallExpr => {
+          // val (symbol,_) = getSymbolAndTable(t.addr1, table)
+          // KILL step
+          avail = killPerTac(avail, t.addr1, table)
+
+          if(CSEUtils.killedGlobalVarMap.contains(t.method)) {
+            val setOfGlobalVarsToKill = CSEUtils.killedGlobalVarMap(t.method)
+            for((varName, st) <- setOfGlobalVarsToKill) {
+              avail = killGlobalVarInTac(avail, varName, st)
+            }
+          }
+        }
+        case _ => {
+        }
       }
-      case t:TacCopy => {
-        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
-        // KILL step
-        avail = killPerTac(avail, t.addr1, table)
-      }
-      case t:TacCopyInt => {
-        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
-        // KILL step
-        avail = killPerTac(avail, t.addr1, table)
-      }
-      case t:TacCopyBoolean => {
-        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
-        // KILL step
-        avail = killPerTac(avail, t.addr1, table)
-      }
-      case t:TacMethodCallExpr => {
-        // val (symbol,_) = getSymbolAndTable(t.addr1, table)
-        // KILL step
-        avail = killPerTac(avail, t.addr1, table)
-      }
-      case _ => {
+    } else if(tac.isInstanceOf[TacMethodCallStmt]) {
+      val t = tac.asInstanceOf[TacMethodCallStmt]
+      if(CSEUtils.killedGlobalVarMap.contains(t.method)) {
+        val setOfGlobalVarsToKill = CSEUtils.killedGlobalVarMap(t.method)
+        for((varName, st) <- setOfGlobalVarsToKill) {
+          avail = killGlobalVarInTac(avail, varName, st)
+        }
       }
     }
+
+    return avail
   }
 
-  return avail
-}
+  def killGlobalVarInTac(map : Map[String, Expression], slhs : String, globalTable : SymbolTable) : Map[String, Expression] = {
+    // map is the in expression map, assuming immutable for now
+    // slhs is the symbolic variable
+    // table is the global field table
+
+    // We need to get lhs' symbol table to perform the kill
+    // Look up the table.getContainingSymbolTable(slhs)
+    var mapOut : Map[String, Expression] = map
+    for ((tlhs,e) <- map) {
+      if (e.setVars contains ((slhs, globalTable))) {
+        mapOut -= tlhs
+      }
+    }
+
+    return mapOut
+  }
 
   def computeCSEInPerBlock(bb : NormalBB) : Unit = {
     // This requires that the block that is passed in actually has a parent (i.e. don't pass the root node)
