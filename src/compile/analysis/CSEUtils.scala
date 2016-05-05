@@ -125,7 +125,7 @@ object CSEUtils {
       }
 
       // Step 1
-      cseIn = CSE.computeCSEInAfterTac(cseIn, instr, currentBB.symbolTable)
+      cseIn = CSE.computeCSEAfterTac(cseIn, instr, currentBB.symbolTable)
       dprintln(instr.toString)
       dprintln(cseIn.mkString)
     }
@@ -142,6 +142,7 @@ object CSEUtils {
                           ) : Unit = {
 
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
+    var cse : Map[String, Expression] = currentBB.cseIn
 
     for(instr <- currentBB.instrs){
       instr match {
@@ -155,7 +156,7 @@ object CSEUtils {
 
             val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
 
-            val exprToTempBBMap : Map[Expression, String] = currentBB.cseIn.map(_.swap)
+            val exprToTempBBMap : Map[Expression, String] = cse.map(_.swap)
 
             val getExprResult = exprToTempBBMap.get(expr)
 
@@ -179,7 +180,7 @@ object CSEUtils {
 
             val expr = new Expression(tac.op, Set(tempSymbol), ArrayBuffer(tempSymbol))
 
-            val exprToTempBBMap : Map[Expression, String] = currentBB.cseIn.map(_.swap)
+            val exprToTempBBMap : Map[Expression, String] = cse.map(_.swap)
 
             val getExprResult = exprToTempBBMap.get(expr)
 
@@ -198,6 +199,9 @@ object CSEUtils {
           newInstrs += instr
         }
       }
+
+      // Update the cse map
+      cse = CSE.computeCSEAfterTac(cse, instr, currentBB.symbolTable)
     }
 
     currentBB.instrs.clear()

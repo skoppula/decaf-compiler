@@ -18,7 +18,8 @@ object CSE {
       changed += id
     }
 
-    computeCSEInPerBlock(methodStart)
+    // We do not generate cseIn on the root node
+    computeCSEOutPerBlock(methodStart)
     changed -= methodStart.id
 
     dprintln("\n Starting availability fixed point algorithm...")
@@ -47,6 +48,7 @@ object CSE {
       val bb = methodIdBBMap(id)
       val oldCSEOut = bb.cseOut
       computeCSEInPerBlock(bb)
+      computeCSEOutPerBlock(bb)
       val newCSEOut = bb.cseOut
 
       // Check if IN for children of block need to be updated; if so change
@@ -93,8 +95,11 @@ object CSE {
     // Look up the table.getContainingSymbolTable(slhs)
     var mapOut : Map[String, Expression] = map
     var slhsTable : SymbolTable = table.getContainingSymbolTable(slhs)
+    dprintln("the t->e map is currently " + mapOut.mkString(", "))
     for ((tlhs,e) <- map) {
-      if (e.setVars contains (slhs, slhsTable)) {
+      dprintln("processing " + tlhs + " -> " + e.toString)
+      if (e.setVars contains ((slhs, slhsTable))) {
+        dprintln("subtracting  "+ tlhs)
         mapOut -= tlhs
       }
     }
@@ -102,11 +107,29 @@ object CSE {
     return mapOut
   }
 
+  def mapToSet(map : Map[String, Expression]) : Set[(String, Expression)] = {
+    var set : Set[(String, Expression)] = Set()
+    for ((k,v) <- map) {
+      set += ((k,v))
+    }
+    return set
+  }
+
   // TODO: Untested
   def join(map1: Map[String, Expression], map2: Map[String, Expression]) : Map[String, Expression] = {
     // Both map1 and map2 only have one temp var that maps to a particular expression
     // We should have a one-to-one mapping in both
-    val inverseMap1 : Map[Expression, String] = map1.map(_.swap) // This requires one-to-one mapping
+
+    val set1 : Set[(String, Expression)] = mapToSet(map1)
+    val set2 : Set[(String, Expression)] = mapToSet(map2)
+    val set : Set[(String, Expression)] = set1.intersect(set2)
+    var mapOut : Map[String, Expression] = Map()
+
+    for ((k,v) <- set) {
+      mapOut = mapOut + {k -> v}
+    }
+
+/*    val inverseMap1 : Map[Expression, String] = map1.map(_.swap) // This requires one-to-one mapping
 
     var mapOut : Map[String, Expression] = map1
 
@@ -116,16 +139,16 @@ object CSE {
         var t : String = inverseMap1(e)
         if (t != tlhs) {
           mapOut -= t
-        }
+        } 
       } else {
-        mapOut += {tlhs -> e}
+        // mapOut += {tlhs -> e} // WRONG
       }
     }
-
+ */
     return mapOut
   }
 
-def computeCSEInAfterTac(map:Map[String, Expression], tac:Tac, table:SymbolTable) : Map[String, Expression] = {
+def computeCSEAfterTac(map:Map[String, Expression], tac:Tac, table:SymbolTable) : Map[String, Expression] = {
   // if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
   // process RHS first (if binop/unop): just add the symbolic expression to availin : temp(LHS) -> symbol(RHS)
   // process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
@@ -185,43 +208,71 @@ def computeCSEInAfterTac(map:Map[String, Expression], tac:Tac, table:SymbolTable
 }
 
   def computeCSEInPerBlock(bb : NormalBB) : Unit = {
+    // This requires that the block that is passed in actually has a parent (i.e. don't pass the root node)
+    //
     // 0. join parents to update availin
+
+    // Step 0
+    var availin : Map[String, Expression] = Map()
+    if (bb.isInstanceOf[MergeBB]) {
+      // MergeBB should never be the root node so it should be guaranteed to have *a* parent
+      val MBB : MergeBB = bb.asInstanceOf[MergeBB]
+      var parents = MBB.getParents()
+      if (parents.size == 0) {
+        throw new Exception("I am an orphan")
+      }
+      dprintln("I am mergeBB " + MBB.id + " and my parents are " + MBB.getParents())
+      availin = parents(0).cseOut
+      dprintln("My initial availin is " + availin)
+      parents = parents.drop(1)
+      for (pbb <- parents) {
+        dprintln("Processing parent  " + pbb.id)
+        dprintln("its cseOut is " + pbb.cseOut.mkString)
+        availin = join(availin, pbb.cseOut)
+        dprintln("My next availin is " + availin)
+      }
+    } else if (bb.isInstanceOf[JumpDestBB]) {
+      // JumpDestBB should never be the root node so it should be guaranteed to have *a* parent
+      val JDBB : JumpDestBB = bb.asInstanceOf[JumpDestBB]
+      var parents = JDBB.getParents()
+      if (parents.size == 0) {
+        throw new Exception("I am an orphan")
+      }
+      availin = parents(0).cseOut
+      parents = parents.drop(1)
+      for (pbb <- parents) {
+        availin = join(availin, pbb.cseOut)
+      }
+    } else {
+      if (bb.getParents().size > 1) {
+        throw new Exception("I should not have both a mommy and a daddy, down with heteronormative something")
+      }
+      var parents = bb.getParents()
+      availin = parents(0).cseOut
+    }
+
+    bb.cseIn = availin
+  }
+
+  def computeCSEOutPerBlock(bb : NormalBB) : Unit = {
     // 1. for tac in bb.instrs
     //     if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
     //     process RHS first (if binop/unop): just add the symbolic expression to availin : temp(LHS) -> symbol(RHS)
     //     process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
     // 2. Update availout
 
-    // Step 0
-    var availin : Map[String, Expression] = Map()
-    if (bb.isInstanceOf[MergeBB]) {
-      val MBB : MergeBB = bb.asInstanceOf[MergeBB]
-      for (pbb <- MBB.getParents()) {
-        availin = join(availin, pbb.cseOut)
-      }
-    } else if (bb.isInstanceOf[JumpDestBB]) {
-      val JDBB : JumpDestBB = bb.asInstanceOf[JumpDestBB]
-      for (pbb <- JDBB.getParents()) {
-        availin = join(availin, pbb.cseOut)
-      }
-    } else {
-      for (pbb <- bb.getParents()) {
-        availin = join(availin, pbb.cseOut)
-      }
-    }
-
-    bb.cseIn = availin
-
     // Step 1
     var avail : Map[String, Expression] = bb.cseIn
 
     for (tac <- bb.instrs) {
-      avail = computeCSEInAfterTac(avail, tac, bb.symbolTable)
+      avail = computeCSEAfterTac(avail, tac, bb.symbolTable)
     }
 
     // Step 2
     bb.cseOut = avail
   }
+
+
 
   def convertTacToSymbolicExpr(
                                tac: Tac,
