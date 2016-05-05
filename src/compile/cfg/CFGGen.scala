@@ -588,9 +588,9 @@ object CFGGen {
         }
         if(bbMethodMap.get(name).isEmpty) {
           // Must be a callout
-          methodCallBB = new MethodCallBB(symbolTable, null, null)
+          methodCallBB = new MethodCallBB(symbolTable, name, null, null)
         } else {
-          methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+          methodCallBB = new MethodCallBB(symbolTable, name, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
         }
         val tac = new TacMethodCallStmt(tempGenie.generateTacNumber(), name, tempArgs.toList)
         methodCallBB.parent = currParent
@@ -1159,9 +1159,9 @@ object CFGGen {
     }
     if(bbMethodMap.get(name).isEmpty) {
       // Must be a callout
-      methodCallBB = new MethodCallBB(symbolTable, null, null)
+      methodCallBB = new MethodCallBB(symbolTable, name, null, null)
     } else {
-      methodCallBB = new MethodCallBB(symbolTable, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
+      methodCallBB = new MethodCallBB(symbolTable, name, bbMethodMap.get(name).get._1, bbMethodMap.get(name).get._2)
     }
     methodCallBB.parent = currParent
     currParent.child = methodCallBB

@@ -30,8 +30,7 @@ import edu.mit.compilers.grammar.{ DecafParser, DecafScanner, DecafScannerTokenT
 object Compiler {
 
   val tokenMap = Map(DecafScannerTokenTypes.CHAR_LITERAL -> "CHARLITERAL", DecafScannerTokenTypes.INT_LITERAL -> "INTLITERAL", DecafScannerTokenTypes.TRUE -> "BOOLEANLITERAL", DecafScannerTokenTypes.FALSE -> "BOOLEANLITERAL", DecafScannerTokenTypes.STRING_LITERAL -> "STRINGLITERAL", DecafScannerTokenTypes.ID -> "IDENTIFIER")
-  var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(
-    new java.io.FileOutputStream(CLI.outfile)))
+  var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile)))
 
   def main(args: Array[String]): Unit = {
     CLI.parse(args, Array("cse"))
@@ -148,6 +147,19 @@ object Compiler {
       }
       dprintln("Finished generating the global temp variable to symbolic variable map")
 
+      dprintln("Creating the lists of global vars that each method kills")
+      var killedGlobalVarMap = Map.empty[String, Set[(String, SymbolTable)]]
+      for((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
+        killedGlobalVarMap = killedGlobalVarMap + {methodName -> CSEUtils.getKilledGlobalsInTree(methodStartBB, List())}
+      }
+      var killedGlobalMapStr = "{"
+      for((methodName, varSTSet) <- killedGlobalVarMap) {
+        killedGlobalMapStr += methodName + ":{" + varSTSet.map(_._1).mkString(",") + "} "
+      }
+      killedGlobalMapStr += "}"
+      dprintln("The map of what global vars each method kills: " + killedGlobalMapStr)
+      dprintln("Creating the lists of global vars that each method kills")
+
       val indexToOptimizationIndexThatWillNeverChangeCorrespondingToCSECourtesyOfRobMillerThankYouGenie = 0
       if(CLI.opts(indexToOptimizationIndexThatWillNeverChangeCorrespondingToCSECourtesyOfRobMillerThankYouGenie)) {
         dprintln("Doing CSE optimization...")
@@ -216,7 +228,7 @@ object Compiler {
       dot = dot :+ "\tLegend [shape=box,label=\"Bitvectors\\n\\n%s\"];".format(bvkLegend.mkString)
       dot = dot :+ endBrace
 
-      dprintln(dot.mkString)
+      // dprintln(dot.mkString)
 
       if (CLI.dot) {
         if (CLI.outfile == null || CLI.outfile.isEmpty) {

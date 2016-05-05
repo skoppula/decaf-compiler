@@ -95,11 +95,11 @@ object CSE {
     // Look up the table.getContainingSymbolTable(slhs)
     var mapOut : Map[String, Expression] = map
     var slhsTable : SymbolTable = table.getContainingSymbolTable(slhs)
-    dprintln("the t->e map is currently " + mapOut.mkString(", "))
+    // dprintln("the t->e map is currently " + mapOut.mkString(", "))
     for ((tlhs,e) <- map) {
-      dprintln("processing " + tlhs + " -> " + e.toString)
+      // dprintln("processing " + tlhs + " -> " + e.toString)
       if (e.setVars contains ((slhs, slhsTable))) {
-        dprintln("subtracting  "+ tlhs)
+        // dprintln("subtracting  "+ tlhs)
         mapOut -= tlhs
       }
     }

@@ -38,6 +38,10 @@ class GlobalFieldTable extends SymbolTable(null, null) {
     }
   }
 
+  override def getGlobalFieldTable : SymbolTable = {
+    return this
+  }
+
   override def lookupIDOnlyInLocalScope(id : String) : BaseDescriptor = {
     /**
       * Recursively finds the identifier in this symbol table,

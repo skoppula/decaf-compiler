@@ -110,6 +110,10 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     }
   }
 
+  def getGlobalFieldTable : SymbolTable = {
+    return this.getParentSymbolTable.getGlobalFieldTable
+  }
+
   override def toString : String = {
     "SymbolTable" + scopeType.toString + "(" + symbolTableMap.mkString(",") + ")"
   }

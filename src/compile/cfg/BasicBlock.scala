@@ -37,9 +37,11 @@ class NormalBB(
 // Stores the start and end basic blocks of the method that it's calling
 class MethodCallBB(
                 currSymbolTable : SymbolTable,
+                name : String,
                 methodStart : NormalBB,
                 methodEnd : NormalBB
               ) extends NormalBB(currSymbolTable) {
+  var methodName : String = name
   var methodStartBB : NormalBB = methodStart
   var methodEndBB : NormalBB = methodEnd
 

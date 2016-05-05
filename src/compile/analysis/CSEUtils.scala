@@ -55,6 +55,72 @@ object CSEUtils {
     }
   }
 
+  def getKilledGlobalsInBB(bb : NormalBB): Set[(String, SymbolTable)] = {
+    var killedGlobalSymbols = Set.empty[(String, SymbolTable)]
+
+    for(instr <- bb.instrs) {
+      instr match {
+        case tac : TacCopy => {
+          // make sure addr2 is real var and addr1 is temp var
+          if(!isTempVar(tac.addr1)) {
+            val containingST = bb.symbolTable.getContainingSymbolTable(tac.addr1)
+            val globalFieldTable = bb.symbolTable.getGlobalFieldTable
+            if(containingST == null) {
+              throw new SymbolVariableIsNullException("something went horribly wrong")
+            } else if(globalFieldTable == null) {
+              throw new SymbolVariableIsNullException("global table is null...something went horribly wrong")
+            } else if (globalFieldTable == containingST) {
+              killedGlobalSymbols = killedGlobalSymbols ++ Set((tac.addr1, containingST))
+            }
+          }
+        }
+        case _ => {}
+      }
+    }
+
+    return killedGlobalSymbols
+  }
+
+  def getKilledGlobalsInTree(
+                                startBB : NormalBB,
+                                doNotTraverseBBs : List[String]
+                              ): Set[(String, SymbolTable)] = {
+    var currentBB = startBB
+    var killedGlobalSymbols = Set.empty[(String, SymbolTable)]
+
+    while (currentBB != null) {
+      killedGlobalSymbols = killedGlobalSymbols ++ getKilledGlobalsInBB(currentBB)
+
+      if (currentBB.isInstanceOf[BranchBB]) {
+        val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
+        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
+          if(BBB.preincrement == null && BBB.whilestart == null) {
+            // Must be if statement
+            killedGlobalSymbols = killedGlobalSymbols ++ getKilledGlobalsInTree(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id)
+          } else if (BBB.preincrement == null) {
+            // Must be while statement
+            killedGlobalSymbols = killedGlobalSymbols ++ getKilledGlobalsInTree(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id)
+          } else if (BBB.whilestart == null) {
+            killedGlobalSymbols = killedGlobalSymbols ++ getKilledGlobalsInTree(BBB.child_else, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id)
+            killedGlobalSymbols = killedGlobalSymbols ++ getKilledGlobalsInTree(BBB.preincrement, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id)
+          } else {
+            throw new NotForIfWhileStmtException("Oh no.")
+          }
+        } else if (BBB.child_else == null) {
+          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
+        }
+      }
+
+      if(currentBB.child != null && doNotTraverseBBs.contains(currentBB.child.id)) {
+        currentBB = null
+      } else {
+        currentBB = currentBB.child
+      }
+    }
+
+    return killedGlobalSymbols
+  }
+
   def substituteCSEIntraBlock(
                                currentBB : NormalBB,
                                tempGenie : TempVariableGenie,
@@ -126,8 +192,8 @@ object CSEUtils {
 
       // Step 1
       cseIn = CSE.computeCSEAfterTac(cseIn, instr, currentBB.symbolTable)
-      dprintln(instr.toString)
-      dprintln(cseIn.mkString)
+      // dprintln(instr.toString)
+      // dprintln(cseIn.mkString)
     }
 
     currentBB.instrs.clear()
