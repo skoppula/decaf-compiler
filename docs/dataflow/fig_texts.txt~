@@ -1,0 +1,24 @@
+c = x + y + z
+
+TacCopy(“.T1”, “x”)
+TacCopy(“.T2”, “y”)
+TacBinOp(“.T3”, “t2”, “t1”)
+TacCopy(“.T4”, “z”)
+TacBinOp(“.T5”, “t3”, “t4”)
+
+Map(
+      “.T1”->(“x”, [Symbol Table containing x]),
+      “.T2”->(“x”, [Symbol Table containing y]),
+	  “.T4”->(“x”, [Symbol Table containing z]),
+   )
+
+
+ case class Expression (
+ 	 op: OpEnumVal, 
+	 setVars: Set[(String, SymbolTable)], 
+	 listVars: ArrayBuffer[(String,SymbolTable)]
+ )
+
+
+
+
