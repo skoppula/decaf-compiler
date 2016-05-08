@@ -187,7 +187,6 @@ object Compiler {
         dprintln("Finished doing CSE optimization...")
       }
 
-      dprintln("I THINK DCE IS " + CLI.opts(1))
       if(CLI.opts(1)) {
         dprintln("Doing liveness analysis...")
         for ((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
@@ -195,13 +194,13 @@ object Compiler {
         }
         dprintln("Finished liveness analysis...")
 
-        /*
+        
         dprintln("Performing deadcode elimination...")
           for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
             DCEUtil.deleteDCEInBlock(bb)
           }
         dprintln("Finished deadcode elimination...")
-        */
+        
       }
       // == Doing available (bitvector) expression analysis ==
       // THis is replaced by our hashmap method

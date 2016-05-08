@@ -181,14 +181,14 @@ object DCE {
     // 2. Update liveout
 
     // Step 1
-    var live : Set[(String, SymbolTable)] = bb.dceIn
+    var live : Set[(String, SymbolTable)] = bb.dceOut
 
     for (tac <- bb.instrs.reverse) {
       live = computeDCEAfterTac(live, tac, bb.symbolTable)
     }
 
     // Step 2
-    bb.dceOut = live
+    bb.dceIn = live
   }
 
   def convertTacToDefVarSet(

@@ -21,7 +21,8 @@ object DCEUtil {
       dprintln(x._1)
     }
 
-    for(instr <- currentBB.instrs){
+    for(instr <- currentBB.instrs.reverse){
+      dprintln("PROCESSING CURRENT TAC: " + instr)
       var update : Boolean = true
       instr match {
         case tac : TacBinOp => {
@@ -70,6 +71,7 @@ object DCEUtil {
       }
     
       // Update the dce map only if we did not delete the tac (i.e. if the lhs var was not dead)
+      dprintln("I think I should update? " + update)
       if (update) {
         newInstrs += instr
         dce = DCE.computeDCEAfterTac(dce, instr, currentBB.symbolTable)
@@ -77,6 +79,6 @@ object DCEUtil {
     }
 
     currentBB.instrs.clear()
-    currentBB.instrs ++= newInstrs
+    currentBB.instrs ++= newInstrs.reverse
   }
 }
