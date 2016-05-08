@@ -1,6 +1,7 @@
 package compile.analysis
 
 import compile.cfg._
+import compile.exceptionhandling.VariableIsNullException
 import compile.symboltables.{SymbolTable}
 import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ArrayBuffer}
@@ -22,14 +23,11 @@ object DCE {
     // We do not generate dceIn on the root node
     computeDCEInPerBlock(methodEnd)
     changed -= methodEnd.id
-    dprintln("The methodStart is: " + methodStart.id + " and the methodEnd is: " + methodEnd.id) 
-    dprintln("\n Starting liveness fixed point algorithm...")
-    dprintln("The changed set is: " + changed)
+    dprintln("\t\tThe changed set is: " + changed)
     while (!changed.isEmpty) {
+      dprintln("Iteration of the fixed point algorithm starting...")
       changed = iterationOfDCEAlg(changed, methodIdBBMap)
     }
-
-    dprintln("Finished liveness fixed point algorithm...")
   }
 
   def getMethodIdBBMap(methodStart : NormalBB) : Map[String, NormalBB] = {
@@ -64,21 +62,21 @@ object DCE {
   }
 
   // A use is pretty much where a variable is read
+  // Equivalent to 'gen'
   def usePerTac(
                  set : Set[(String, SymbolTable)],
                  tac : Tac,
                  table : SymbolTable
                ) : Set[(String, SymbolTable)] = {
-    return convertTacToUsedVarSet(tac, table).union(set)
+    val usedSet = convertTacToUsedVarSet(tac, table)
+    return usedSet.union(set)
   }
 
-  // TODO : Untested
   // Given the current set of live variables, S, and the symbolic variable from the LHS of a TAC, x, and the TAC's basic block's symbol table,
   // if x in S, we return S-x, else we return S 
-  def defPerTac(set : Set[(String, SymbolTable)], slhs : String, table : SymbolTable) : Set[(String, SymbolTable)] = {
-    var setOut : Set[(String, SymbolTable)] = set
-    val slhsTable : SymbolTable = table.getContainingSymbolTable(slhs)
-    return setOut -- Set[(String, SymbolTable)]((slhs, slhsTable))
+  // Equivalent to 'kill'
+  def defPerTac(set : Set[(String, SymbolTable)], tac : Tac, table : SymbolTable) : Set[(String, SymbolTable)] = {
+    return set -- convertTacToDefVarSet(tac, table)
   }
 
   def join(set1: Set[(String, SymbolTable)], set2: Set[(String, SymbolTable)]) : Set[(String, SymbolTable)] = {
@@ -91,52 +89,49 @@ object DCE {
   // process RHS: add any variabes used 
   // process LHS: delete any matching variable from the set. 
     //TODO: LHS then RHS
+    dprintln("\t\ti am in computeCSEAfterTac with tac " + tac.toString)
+    dprintln("\t\t" + table.toString)
     var live : Set[(String, SymbolTable)] = set
 
     //TODO: this needs to probably look at variables passed to method calls and stuff 
     tac match {
       case t:TacBinOp => {
-        live = defPerTac(live, t.addr1, table)  
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacUnOp => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacCopy => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacCopyInt => {
-        live = defPerTac(live, t.addr1, table)
-        live = usePerTac(live, t, table)
+        live = defPerTac(live, t, table)
       }
       case t:TacCopyBoolean => {
-        live = defPerTac(live, t.addr1, table)
-        live = usePerTac(live, t, table)
+        live = defPerTac(live, t, table)
       }
       case t:TacIf => {
-        live = defPerTac(live, t.addr1, table)
         live = usePerTac(live, t, table)
       }
       case t:TacIfFalse => {
-        live = defPerTac(live, t.addr1, table)
         live = usePerTac(live, t, table)
       }
       case t:TacReturnValue => {
-        live = defPerTac(live, t.addr1, table)
         live = usePerTac(live, t, table)
       }
       case t:TacArrayLeft => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacArrayRight => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacMethodCallExpr => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t: TacMethodCallStmt => {
@@ -203,45 +198,63 @@ object DCE {
     tac match {
       case uo : TacUnOp => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(uo.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null | t1 == null) {
+          throw new VariableIsNullException("tacunop uo.addr1 is null")
+        }
         return Set((v1, t1))
       }
 
       case bo : TacBinOp => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(bo.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null | t1 == null) {
+          throw new VariableIsNullException("tacbinop uo.addr1 is null")
+        }
         return Set((v1, t1))
       }
 
       case mce : TacMethodCallExpr => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(mce.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null | t1 == null) {
+          throw new VariableIsNullException("tacMethodCallExpr addr1 is null")
+        }
         return Set((v1, t1))
       }
 
       case tc : TacCopy => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tc.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null | t1 == null) {
+          throw new VariableIsNullException("tacCopy addr1 is null")
+        }
         return Set((v1, t1))
       }
 
       case tcb : TacCopyBoolean => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tcb.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null | t1 == null) {
+          throw new VariableIsNullException("tacCopyBoolean addr1 is null")
+        }
         return Set((v1, t1))
       }
 
       case tci : TacCopyInt => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tci.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null | t1 == null) {
+          throw new VariableIsNullException("taccopyint addr1 is null")
+        }
         return Set((v1, t1))
       }
 
       // TacArrayLeft is NOT a case because we can't declare an array dead after assigning to an index
       case tar : TacArrayRight => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tar.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null | t1 == null) {
+          throw new VariableIsNullException("tacarrayright addr1 is null")
+        }
         return Set((v1, t1))
+      }
+
+      case _ => {
+        return Set()
       }
     }
   }
@@ -257,68 +270,84 @@ object DCE {
       case b : TacBinOp => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(b.addr2, table)
         val (v2, t2) : (String, SymbolTable) = getSymbolAndTable(b.addr3, table)
-        if (v1 == null || v2 == null) {
-          return null // TODO: This null is not vetted
+        if (v1 == null || v2 == null || t1 == null || t2 == null) {
+          throw new VariableIsNullException("tacbinop addr2 addr3 is null")
         }
         return Set((v1, t1), (v2, t2))
       }
       case u : TacUnOp => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(u.addr2, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null || t1 == null) {
+          throw new VariableIsNullException("tacunop addr2 is null")
+        }
         return Set((v1, t1))
       }
       case i : TacIf => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(i.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null || t1 == null) {
+          throw new VariableIsNullException("tacif addr1 is null")
+        }
         return Set((v1, t1))
       }
       case iff : TacIfFalse => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(iff.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null || t1 == null) {
+          throw new VariableIsNullException("taciffalse addr1 is null")
+        }
         return Set((v1, t1))
       }
       case mce : TacMethodCallExpr => {
         var set : Set[(String, SymbolTable)] = Set()
         for (arg <- mce.args) {
-          set += getSymbolAndTable(arg, table)
+          val (a, t) = getSymbolAndTable(arg, table)
+          if(t != null) {
+            set += getSymbolAndTable(arg, table)
+          }
         }
         return set
-        //TODO: figure out if this is wrong? 
       }
       case mcs : TacMethodCallStmt => {
         var set : Set[(String, SymbolTable)] = Set()
         for (arg <- mcs.args) {
-          set += getSymbolAndTable(arg, table)
+          val (a, t) = getSymbolAndTable(arg, table)
+          if(t != null) {
+            set += getSymbolAndTable(arg, table)
+          }
         }
         return set
-        //TODO: figure out if this is wrong?
       }
       case rv : TacReturnValue => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(rv.addr1, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null || t1 == null) {
+          throw new VariableIsNullException("tacreturnval addr1 is null")
+        }
         return Set((v1, t1))
       }
       case tc : TacCopy => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tc.addr2, table)
-        if (v1 == null) return null // TODO: This null is not vetted
+        if (v1 == null || t1 == null) {
+          throw new VariableIsNullException("taccopy addr2 is null")
+        }
         return Set((v1, t1))
       }
       case al : TacArrayLeft => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(al.addr2, table)
         val (v2, t2) : (String, SymbolTable) = getSymbolAndTable(al.index, table)
-        if (v1 == null || v2 == null) return null // TODO: This null is not vetted
+        if (v1 == null || v2 == null || t1 == null || t2 == null) {
+          throw new VariableIsNullException("tacarrayleft addr2 addr3 is null")
+        }
         return Set((v1, t1), (v2, t2))
       }
       case ar : TacArrayRight => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(ar.index, table)
         val (v2, t2) : (String, SymbolTable) = getSymbolAndTable(ar.addr2, table)
-        if (v1 == null || v2 == null) {
-          return null // TODO: This null is not vetted
+        if (v1 == null || v2 == null || t1 == null || t2 == null) {
+          throw new VariableIsNullException("tacarrayright addr2 addr3 is null")
         }
         return Set((v1, t1), (v2, t2))
       }
       case _ =>
-        return null // TODO: This null is not vetted
+        return Set()
     }
   }
 

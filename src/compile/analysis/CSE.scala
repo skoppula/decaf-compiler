@@ -253,15 +253,10 @@ object CSE {
       if (parents.size == 0) {
         throw new Exception("I am an orphan")
       }
-      dprintln("I am mergeBB " + MBB.id + " and my parents are " + MBB.getParents())
       availin = parents(0).cseOut
-      dprintln("My initial availin is " + availin)
       parents = parents.drop(1)
       for (pbb <- parents) {
-        dprintln("Processing parent  " + pbb.id)
-        dprintln("its cseOut is " + pbb.cseOut.mkString)
         availin = join(availin, pbb.cseOut)
-        dprintln("My next availin is " + availin)
       }
     } else if (bb.isInstanceOf[JumpDestBB]) {
       // JumpDestBB should never be the root node so it should be guaranteed to have *a* parent
