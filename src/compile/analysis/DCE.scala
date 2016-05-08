@@ -68,7 +68,7 @@ object DCE {
                  tac : Tac,
                  table : SymbolTable
                ) : Set[(String, SymbolTable)] = {
-    return convertTacToSymbolicVarSet(tac, table).union(set) 
+    return convertTacToUsedVarSet(tac, table).union(set)
   }
 
   // TODO : Untested
@@ -194,11 +194,63 @@ object DCE {
     bb.dceOut = live
   }
 
-  def convertTacToSymbolicVarSet( // returns a set of (String, SymbolTable) pairs corresponding to the symbolic variables used in the TAC
-                                  tac: Tac,
-                                  table: SymbolTable // This should be the symbol table of the block this Tac lives in
+  def convertTacToDefVarSet(
+                                 tac: Tac,
+                                 table: SymbolTable
                                ) : Set[(String, SymbolTable)] = {
-    //TODO: figure out what the other cases are and write them
+    tac match {
+      case uo : TacUnOp => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(uo.addr1, table)
+        if (v1 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1))
+      }
+
+      case bo : TacBinOp => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(bo.addr1, table)
+        if (v1 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1))
+      }
+
+      case mce : TacMethodCallExpr => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(mce.addr1, table)
+        if (v1 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1))
+      }
+
+      case tc : TacCopy => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tc.addr1, table)
+        if (v1 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1))
+      }
+
+      case tcb : TacCopyBoolean => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tcb.addr1, table)
+        if (v1 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1))
+      }
+
+      case tci : TacCopyInt => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tci.addr1, table)
+        if (v1 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1))
+      }
+
+      // TacArrayLeft is NOT a case because we can't declare an array dead after assigning to an index
+      case tar : TacArrayRight => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tar.addr1, table)
+        if (v1 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1))
+      }
+    }
+  }
+
+  def convertTacToUsedVarSet(
+                                  tac: Tac,
+                                  table: SymbolTable
+                               ) : Set[(String, SymbolTable)] = {
+    // returns a set of (String, SymbolTable) pairs corresponding to the symbolic variables used in the TAC
+    // table parameter should be the symbol table of the block this Tac lives in
+
     tac match {
       case b : TacBinOp => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(b.addr2, table)
@@ -236,13 +288,19 @@ object DCE {
         if (v1 == null) return null // TODO: This null is not vetted
         return Set((v1, t1))
       }
-      case al : TacArrayLeft => {
-        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(al.addr1, table)
+      case tc : TacCopy => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(tc.addr2, table)
         if (v1 == null) return null // TODO: This null is not vetted
         return Set((v1, t1))
       }
+      case al : TacArrayLeft => {
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(al.addr2, table)
+        val (v2, t2) : (String, SymbolTable) = getSymbolAndTable(al.index, table)
+        if (v1 == null || v2 == null) return null // TODO: This null is not vetted
+        return Set((v1, t1), (v2, t2))
+      }
       case ar : TacArrayRight => {
-        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(ar.addr1, table)
+        val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(ar.index, table)
         val (v2, t2) : (String, SymbolTable) = getSymbolAndTable(ar.addr2, table)
         if (v1 == null || v2 == null) {
           return null // TODO: This null is not vetted
@@ -255,23 +313,7 @@ object DCE {
   }
 
   def getSymbolAndTable(variable : String, table : SymbolTable) : (String, SymbolTable) = {
-    // table needs to be the symbol table of the corresponding bb block
-    var v : String = variable
-    var t : SymbolTable = null
-    if (DCEUtil.isTempVar(variable)) {
-      DCEUtil.tempSymbolMap.get(variable) match {
-        case Some((sym,symTbl)) => {
-          v = sym
-          t = symTbl
-        }
-        case None => {
-          return (null, null) // TODO: This null is vetted and actually intended. Whether it's good design or not is ?able
-        } // This shouldn't be a problem if the map passed in is actually correct
-      }
-    } else {
-      t = table.getContainingSymbolTable(v)
-    }
-    return (v,t)
+    return (variable, table.getContainingSymbolTable(variable))
   }
 }
 
