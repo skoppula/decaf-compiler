@@ -20,6 +20,7 @@ import scala.collection.mutable.{HashMap}
 
 import compile.util.Util.dprintln
 import compile.analysis.CSEUtils
+import compile.analysis.DCEUtil
 
 import scala.Console
 import scala.collection.mutable
@@ -194,6 +195,12 @@ object Compiler {
           dprintln("\tEnding liveness fixed point algorithm for method %s...".format(methodName))
         }
         dprintln("Finished liveness analysis...")
+
+        dprintln("Performing deadcode elimination...")
+          for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
+            DCEUtil.deleteDCEInBlock(bb)
+          }
+        dprintln("Finished deadcode elimination...")
       }
       // == Doing available (bitvector) expression analysis ==
       // THis is replaced by our hashmap method
