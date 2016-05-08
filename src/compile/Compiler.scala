@@ -196,11 +196,13 @@ object Compiler {
         }
         dprintln("Finished liveness analysis...")
 
+        /*
         dprintln("Performing deadcode elimination...")
           for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
             DCEUtil.deleteDCEInBlock(bb)
           }
         dprintln("Finished deadcode elimination...")
+        */
       }
       // == Doing available (bitvector) expression analysis ==
       // THis is replaced by our hashmap method

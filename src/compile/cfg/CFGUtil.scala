@@ -311,10 +311,26 @@ object CFGUtil {
     for ((parent,children) <- map) {
       val parentBB = BasicBlockGenie.idToBBReference(parent)
       val instrs = parentBB.instrs
+
+      // Don't actually need to initialize cse/DCE strs here, but since these are initialized to empty doesn't hurt
       val cseInStr = parentBB.cseIn.mkString("\\l,")
       val cseOutStr = parentBB.cseOut.mkString("\\l,")
-      val dceInStr = parentBB.dceIn.mkString("\\l,")
-      val dceOutStr = parentBB.dceOut.mkString("\\l,")
+
+      var dceInStr = "{"
+      for((variable, symbolTable) <- parentBB.dceIn) {
+        dceInStr += "(" + variable + "," + symbolTable.hashCode().toString + ")"
+      }
+      dceInStr += "}"
+
+      var dceOutStr = "{"
+      for((variable, symbolTable) <- parentBB.dceOut) {
+        if(variable == null) {
+        } else if (symbolTable == null) {
+        }
+        dceOutStr += "(" + variable + "," + symbolTable.hashCode().toString + ")"
+      }
+      dceOutStr += "}"
+
       if(parentBB.isInstanceOf[BranchBB]) {
         val parentBranchBB = parentBB.asInstanceOf[BranchBB]
         val merge = if(parentBranchBB.merge == null) "" else parentBranchBB.merge.id
