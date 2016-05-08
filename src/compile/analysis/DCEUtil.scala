@@ -59,6 +59,9 @@ object DCEUtil {
           var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
           update = dce.contains((v,table))
         }
+        case _ => {
+
+        }
       }
     
       // Update the dce map only if we did not delete the tac (i.e. if the lhs var was not dead)
