@@ -47,7 +47,6 @@ object CSEUtils {
         }
       }
 
-
       if(currentBB.child != null && doNotTraverseBBs.contains(currentBB.child.id)) {
         currentBB = null
       } else {

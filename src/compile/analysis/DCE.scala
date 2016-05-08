@@ -22,8 +22,9 @@ object DCE {
     // We do not generate dceIn on the root node
     computeDCEInPerBlock(methodEnd)
     changed -= methodEnd.id
-
+    dprintln("The methodStart is: " + methodStart.id + " and the methodEnd is: " + methodEnd.id) 
     dprintln("\n Starting liveness fixed point algorithm...")
+    dprintln("The changed set is: " + changed)
     while (!changed.isEmpty) {
       changed = iterationOfDCEAlg(changed, methodIdBBMap)
     }
@@ -169,8 +170,10 @@ object DCE {
     } else {
       if (bb.getChildren().size > 1) {
         throw new Exception("I am subject to the One Child Policy- this is illegal")
+      } else if (bb.getChildren().size == 0) {
+        throw new Exception("I am block: " + bb.id + " who has no children")
       }
-      var children = bb.getParents()
+      var children = bb.getChildren()
       liveOut = children(0).dceIn
     }
     bb.dceOut = liveOut
@@ -178,9 +181,8 @@ object DCE {
 
   def computeDCEInPerBlock(bb : NormalBB) : Unit = {
     // 1. for tac in bb.instrs
-    //     if it's an assign statement (TacCopy, TacCopyInt, TacCopyBoolean, TacMethodCallExpr, TacBinOp, TacUnOp)
-    //     process RHS first (if binop/unop): just add the symbolic expression to livein : temp(LHS) -> symbol(RHS)
-    //     process LHS next: delete the symbolic expressions whose RHS contains symbol(LHS)
+    //     if it's an assign statement, process LHS first- remove the variable from the live set
+    //     process RHS next- add any variables used to the live set
     // 2. Update liveout
 
     // Step 1
@@ -195,9 +197,9 @@ object DCE {
   }
 
   def convertTacToDefVarSet(
-                                 tac: Tac,
-                                 table: SymbolTable
-                               ) : Set[(String, SymbolTable)] = {
+                            tac: Tac,
+                            table: SymbolTable
+                          ) : Set[(String, SymbolTable)] = {
     tac match {
       case uo : TacUnOp => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(uo.addr1, table)
@@ -276,12 +278,20 @@ object DCE {
         return Set((v1, t1))
       }
       case mce : TacMethodCallExpr => {
-        return null
-        //TODO: figure out what to do with mce.args? 
+        var set : Set[(String, SymbolTable)] = Set()
+        for (arg <- mce.args) {
+          set += getSymbolAndTable(arg, table)
+        }
+        return set
+        //TODO: figure out if this is wrong? 
       }
       case mcs : TacMethodCallStmt => {
-        return null
-        //TODO: figure out what to do with mcs.args?
+        var set : Set[(String, SymbolTable)] = Set()
+        for (arg <- mcs.args) {
+          set += getSymbolAndTable(arg, table)
+        }
+        return set
+        //TODO: figure out if this is wrong?
       }
       case rv : TacReturnValue => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(rv.addr1, table)

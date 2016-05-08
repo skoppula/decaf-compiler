@@ -15,7 +15,7 @@ import compile.tac._
 import compile.tac.ThreeAddressCode._
 import TacGen._
 
-import compile.analysis.CSE
+import compile.analysis.{CSE, DCE}
 import scala.collection.mutable.{HashMap}
 
 import compile.util.Util.dprintln
@@ -33,7 +33,7 @@ object Compiler {
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile)))
 
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array("cse"))
+    CLI.parse(args, Array("cse", "dce"))
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
       System.exit(0)
@@ -110,6 +110,14 @@ object Compiler {
       for((methodStartBB, methodEndBB) <- methodsBBMap.valuesIterator) {
         cfgBBSet = cfgBBSet | CFGUtil.cfgBBs(methodStartBB, List())
       }
+
+      for ((k,(methodStartBB, methodEndBB)) <- methodsBBMap) {
+        var id : String = methodEndBB.id
+        while (deletedBBidMap.contains(id)) {
+          id = deletedBBidMap(id)
+        }
+        methodsBBMap(k) = (methodStartBB, BasicBlockGenie.idToBBReference(id))
+      }
       // dprintln("The BBs inside the CFG: \n")
       // dprintln(cfgBBSet.mkString(", "))
 
@@ -178,6 +186,13 @@ object Compiler {
         dprintln("Finished doing CSE optimization...")
       }
 
+      if(CLI.opts(1)) {
+        dprintln("Doing liveness analysis...")
+        for ((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
+          DCE.runDCEFixedPointAlgorithm(methodStartBB, methodEndBB)
+        }
+        dprintln("Finished liveness analysis...")
+      }
       // == Doing available (bitvector) expression analysis ==
       // THis is replaced by our hashmap method
       // dprintln("Attempting to do available expression analysis")
