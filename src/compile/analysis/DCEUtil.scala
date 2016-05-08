@@ -16,6 +16,11 @@ object DCEUtil {
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     var dce : Set[(String, SymbolTable)] = currentBB.dceOut
 
+    dprintln("I am block: " + currentBB.id + "with vars:")
+    for (x <- dce) {
+      dprintln(x._1)
+    }
+
     for(instr <- currentBB.instrs){
       var update : Boolean = true
       instr match {

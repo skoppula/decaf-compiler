@@ -187,12 +187,11 @@ object Compiler {
         dprintln("Finished doing CSE optimization...")
       }
 
+      dprintln("I THINK DCE IS " + CLI.opts(1))
       if(CLI.opts(1)) {
-        dprintln("\nDoing liveness analysis...")
+        dprintln("Doing liveness analysis...")
         for ((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
-          dprintln("\tStarting liveness fixed point algorithm for method %s...".format(methodName))
           DCE.runDCEFixedPointAlgorithm(methodStartBB, methodEndBB)
-          dprintln("\tEnding liveness fixed point algorithm for method %s...".format(methodName))
         }
         dprintln("Finished liveness analysis...")
 
