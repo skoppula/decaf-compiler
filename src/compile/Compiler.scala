@@ -192,6 +192,13 @@ object Compiler {
           DCE.runDCEFixedPointAlgorithm(methodStartBB, methodEndBB)
         }
         dprintln("Finished liveness analysis...")
+
+        dprintln("Performing deadcode elimination...")
+          for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
+            // TODO
+           
+          }
+        dprintln("Finished deadcode elimination...")
       }
       // == Doing available (bitvector) expression analysis ==
       // THis is replaced by our hashmap method

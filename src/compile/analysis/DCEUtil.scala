@@ -10,93 +10,8 @@ import compile.util.Util.dprintln
 import scala.collection.mutable.ArrayBuffer
 
 object DCEUtil {
-
-  var tempSymbolMap = Map.empty[String, (String, SymbolTable)]
-
-  def DCESubstitionGenie(
-                     startBB : NormalBB,
-                     tempToSymbolMap : Map[String, (String, SymbolTable)],
-                     doNotTraverseBBs : List[String],
-                     tempGenie: TempVariableGenie
-                   ) {
-
-    var currentBB = startBB
-
-    while (currentBB != null) {
-      deleteDCEInBlock(currentBB)
-
-      if (currentBB.isInstanceOf[BranchBB]) {
-        val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
-        if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
-          if(BBB.preincrement == null && BBB.whilestart == null) {
-            // Must be if statement
-            DCESubstitionGenie(BBB.child_else, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id,tempGenie)
-          } else if (BBB.preincrement == null) {
-            // Must be while statement
-            DCESubstitionGenie(BBB.child_else, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id :+ BBB.whilestart.id,tempGenie)
-          } else if (BBB.whilestart == null) {
-            DCESubstitionGenie(BBB.child_else, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id :+ BBB.preincrement.id,tempGenie)
-            DCESubstitionGenie(BBB.preincrement, tempToSymbolMap, doNotTraverseBBs :+ BBB.merge.id :+ BBB.forstart.id,tempGenie)
-          } else {
-            throw new NotForIfWhileStmtException("Oh no.")
-          }
-        } else if (BBB.child_else == null) {
-          throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
-        }
-      }
-
-      if(currentBB.child != null && doNotTraverseBBs.contains(currentBB.child.id)) {
-        currentBB = null
-      } else {
-        currentBB = currentBB.child
-      }
-    }
-  }
-
-  def substituteDCEIntraBlock(
-                               currentBB : NormalBB,
-                               tempGenie : TempVariableGenie,
-                               tempSymbolMap : Map[String, (String, SymbolTable)]
-                             ) : Unit = {
-    // For all tacs in the bb:
-    // Step 0: Attempt substitution on the tac
-    // Step 1: Update the dceIn after the tac
-    val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-
-    // Intra block DCE means the starting DCE In is empty
-    var dceIn : Set[(String, SymbolTable)] = Set() 
-    for(instr <- currentBB.instrs.reverse) {
-      // Step 0
-      instr match {
-        case tac : TacBinOp => {
-          val lhsTemp = tac.addr2
-          val rhsTemp = tac.addr3
-
-          if(tempSymbolMap.get(lhsTemp) != None && tempSymbolMap.get(rhsTemp) != None) {
-            val lhsSymbol = tempSymbolMap.get(lhsTemp).get
-            val rhsSymbol = tempSymbolMap.get(rhsTemp).get
-            //TODO: stuff here
-          } else {
-            newInstrs += tac
-          }
-        }
-        case _ => {
-          newInstrs += instr
-        }
-      }
-
-      // Step 1
-      dceIn = DCE.computeDCEAfterTac(dceIn, instr, currentBB.symbolTable)
-      dprintln(instr.toString)
-      dprintln(dceIn.mkString)
-    }
-    currentBB.instrs.clear()
-    currentBB.instrs ++= newInstrs
-  }
-
-  def deleteDCEInBlock(
-                            currentBB : NormalBB
-                          ) : Unit = {
+  def deleteDCEInBlock( currentBB : NormalBB
+                        ) : Unit = {
 
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     var dce : Set[(String, SymbolTable)] = currentBB.dceOut
@@ -105,34 +20,51 @@ object DCEUtil {
       var update : Boolean = true
       instr match {
         case tac : TacBinOp => {
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
         case tac : TacUnOp => {
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
         case tac : TacCopy => { 
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
         case tac : TacCopyInt => {
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
         case tac : TacCopyBoolean => {
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
         case tac : TacMethodCallExpr => {
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
         case tac : TacArrayLeft => {
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
         case tac : TacArrayRight => {
-
+          var v : String = tac.lhs
+          var table : SymbolTable = currentBB.symbolTable.getContainingSymbolTable(v)
+          update = dce.contains((v,table))
         }
       }
     
       // Update the dce map only if we did not delete the tac (i.e. if the lhs var was not dead)
       if (update) {
-        dce = DCE.computeDCEAfterTac(dce, instr, currentBB.symbolTable) // TODO: Fix computeDCEAfterTac
+        newInstrs += instr
+        dce = DCE.computeDCEAfterTac(dce, instr, currentBB.symbolTable)
       }
     }
 

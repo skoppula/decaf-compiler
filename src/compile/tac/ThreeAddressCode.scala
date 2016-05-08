@@ -34,7 +34,11 @@ object ThreeAddressCode {
     override val lhs = addr1
   } // x = y
 
-  case class TacCopyInt(id: Int, addr1: String, int: Long) extends Tac{} // x = 5
+  case class TacCopyInt(id: Int, addr1: String, int: Long) extends Tac{
+    override val isAssign = true
+    override val lhs = addr1
+  } // x = 5
+
   case class TacCopyBoolean(id: Int, addr1: String, bool: Boolean) extends Tac{
     override val isAssign = true
     override val lhs = addr1
