@@ -20,6 +20,7 @@ import scala.collection.mutable.{HashMap}
 
 import compile.util.Util.dprintln
 import compile.analysis.CSEUtils
+import compile.analysis.DCEUtil
 
 import scala.Console
 import scala.collection.mutable
