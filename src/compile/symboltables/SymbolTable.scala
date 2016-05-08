@@ -2,7 +2,7 @@ package compile.symboltables
 
 import compile.descriptors._
 import compile.exceptionhandling.IdentifierAlreadyExistsException
-import scala.collection.mutable.{HashMap, ListBuffer, ArrayBuffer}
+import scala.collection.mutable.{HashMap, ListBuffer, Set}
 
 class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
 
@@ -112,6 +112,18 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
 
   def getGlobalFieldTable : SymbolTable = {
     return this.getParentSymbolTable.getGlobalFieldTable
+  }
+
+  def getGlobalsSet : Set[(String, SymbolTable)] = {
+    val globalFieldTable : SymbolTable = this.getGlobalFieldTable
+
+    val globalsSet : Set[(String, SymbolTable)] = collection.mutable.Set.empty
+
+    for((key,value) <- globalFieldTable.symbolTableMap){
+      globalsSet.add((key,globalFieldTable))
+    }
+
+    return globalsSet
   }
 
   override def toString : String = {
