@@ -17,8 +17,8 @@ class NormalBB(
   var cseIn = Map.empty[String, Expression]
   var cseOut = Map.empty[String, Expression]
 
-  var availBitVectorIn : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
-  var availBitVectorOut : mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
+  var dceIn = Set.empty[(String, SymbolTable)]
+  var dceOut = Set.empty[(String, SymbolTable)]
 
   var methodTop = false
   var programStart = false

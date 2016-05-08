@@ -64,8 +64,8 @@ object DCEUtil {
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
 
     // Intra block DCE means the starting DCE In is empty
-    var dceIn : Map[String, Expression] = Map()
-    for(instr <- currentBB.instrs){
+    var dceIn : Set[(String, SymbolTable)] = Set() 
+    for(instr <- currentBB.instrs.reverse) {
       // Step 0
       instr match {
         case tac : TacBinOp => {
@@ -75,44 +75,7 @@ object DCEUtil {
           if(tempSymbolMap.get(lhsTemp) != None && tempSymbolMap.get(rhsTemp) != None) {
             val lhsSymbol = tempSymbolMap.get(lhsTemp).get
             val rhsSymbol = tempSymbolMap.get(rhsTemp).get
-
-            val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
-
-            val exprToTempBBMap : Map[Expression, String] = dceIn.map(_.swap)
-
-            val getExprResult = exprToTempBBMap.get(expr)
-
-            if(getExprResult != None) {
-              val newTemp = getExprResult.get
-              // An symbolic expression already exists, so we replace it with the temp found
-              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
-              newInstrs += tacCopy
-            } else{
-              newInstrs += tac
-            }
-          } else {
-            newInstrs += tac
-          }
-        }
-        case tac : TacUnOp => {
-          val temp = tac.addr2
-
-          if(tempSymbolMap.get(temp) != None) {
-            val tempSymbol = tempSymbolMap.get(temp).get
-
-            val expr = new Expression(tac.op, Set(tempSymbol), ArrayBuffer(tempSymbol))
-
-            val exprToTempBBMap : Map[Expression, String] = dceIn.map(_.swap)
-
-            val getExprResult = exprToTempBBMap.get(expr)
-
-            if(getExprResult != None) {
-              val newTemp = getExprResult.get
-              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
-              newInstrs += tacCopy
-            } else {
-              newInstrs += tac
-            }
+            //TODO: stuff here
           } else {
             newInstrs += tac
           }
@@ -127,10 +90,8 @@ object DCEUtil {
       dprintln(instr.toString)
       dprintln(dceIn.mkString)
     }
-
     currentBB.instrs.clear()
     currentBB.instrs ++= newInstrs
-
   }
 
   def substituteDCEInBlock(
@@ -154,18 +115,6 @@ object DCEUtil {
 
             val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
 
-            val exprToTempBBMap : Map[Expression, String] = dce.map(_.swap)
-
-            val getExprResult = exprToTempBBMap.get(expr)
-
-            if(getExprResult != None) {
-              val newTemp = getExprResult.get
-              // An symbolic expression already exists, so we replace it with the temp found
-              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
-              newInstrs += tacCopy
-            } else{
-              newInstrs += tac
-            }
           } else {
             newInstrs += tac
           }
@@ -175,20 +124,7 @@ object DCEUtil {
 
           if(tempSymbolMap.get(temp) != None) {
             val tempSymbol = tempSymbolMap.get(temp).get
-
-            val expr = new Expression(tac.op, Set(tempSymbol), ArrayBuffer(tempSymbol))
-
-            val exprToTempBBMap : Map[Expression, String] = dce.map(_.swap)
-
-            val getExprResult = exprToTempBBMap.get(expr)
-
-            if(getExprResult != None) {
-              val newTemp = getExprResult.get
-              val tacCopy : ThreeAddressCode.Tac = new TacCopy(tempGenie.generateTacNumber(), tac.addr1, newTemp)
-              newInstrs += tacCopy
-            } else {
-              newInstrs += tac
-            }
+            //TODO
           } else {
             newInstrs += tac
           }
@@ -206,20 +142,20 @@ object DCEUtil {
     currentBB.instrs ++= newInstrs
   }
 
-  def mergeSymbolSets(
-                       set1: Set[(String, SymbolTable)],
-                       set2 : Set[(String, SymbolTable)]
-                     ) : Set[(String, SymbolTable)] = {
-    var set : Set[(String, SymbolTable)] = set1
+  def mergeSymbolMaps(
+                       map1: Map[String, (String, SymbolTable)],
+                       map2 : Map[String, (String, SymbolTable)]
+                     ) : Map[String, (String, SymbolTable)] = {
+    var map : Map[String, (String, SymbolTable)] = map1
 
-    for ((k,v) <- set2) {
-      if(set.contains(k)) {
+    for ((k,v) <- map2) {
+      if(map.contains(k)) {
         throw new TempVariableAlreadyExistsInGlobalMapException("Uh oh spaghetti")
       } else {
-        set = set + (k, v)
+        map = map + {k -> v}
       }
     }
-    return set
+    return map
   }
 
   def isTempVar(id : String) : Boolean = {
@@ -250,6 +186,7 @@ object DCEUtil {
 
     return tempToSymbolMap
   }
+
   def genTempToSymbolMap(
               bb: NormalBB,
               doNotTraverseBBs : List[String]
@@ -281,6 +218,7 @@ object DCEUtil {
           throw new NullElseBlockException("Uh oh! For some reason the compiler detected a child else basic block that was null!")
         }
       }
+
       if(currentBB.child != null && doNotTraverseBBs.contains(currentBB.child.id)) {
         currentBB = null
       } else {
@@ -289,5 +227,5 @@ object DCEUtil {
     }
     return tempToSymbolMap
   }
-}
 
+}

@@ -26,7 +26,6 @@ object CFGUtil {
         }
       }
 
-
       if (currentBB.isInstanceOf[BranchBB]) {
         val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
         if(BBB.child_else != null && !doNotTraverseBBs.contains(BBB.child_else.id)) {
@@ -56,7 +55,6 @@ object CFGUtil {
     }
 
     return slTacs
-
   }
 
   // TODO : Untested
@@ -154,21 +152,17 @@ object CFGUtil {
           }
 
         } else { // Otherwise, merge in any ordinary child basic blocks 
-
           if (isOrdinaryBB(currentBB.child) && !doNotTraverseBBs.contains(currentBB.child.id)) {
-
             // Get all the child's tacs and then merge it into ours, only if the symbol tables are the same
             if (currentBB.child.instrs.size > 0 && currentBB.symbolTable == currentBB.child.symbolTable) {
               // Merge tacs
               for (tac <- currentBB.child.instrs) {
                 currentBB.instrs += tac
               }
-
             }
 
             // If the symbol tables are the same, or the child has no tacs, then remove the child and connect to its child
             if (currentBB.child.instrs.size == 0 || currentBB.symbolTable == currentBB.child.symbolTable) {
-
               // Update the map to reflect block merge
               map = map + {currentBB.child.id -> currentBB.id}
 
@@ -187,14 +181,10 @@ object CFGUtil {
             // Continue compression with the child
             currentBB = currentBB.child
           }
-
         }
       }
-
     }
-
     return map
-    
   }
 
 
@@ -232,9 +222,7 @@ object CFGUtil {
         currentBB = currentBB.child
       }
     }
-
     return set
-    
   }
 
 
@@ -325,6 +313,8 @@ object CFGUtil {
       val instrs = parentBB.instrs
       val cseInStr = parentBB.cseIn.mkString("\\l,")
       val cseOutStr = parentBB.cseOut.mkString("\\l,")
+      val dceInStr = parentBB.dceIn.mkString("\\l,")
+      val dceOutStr = parentBB.dceOut.mkString("\\l,")
       if(parentBB.isInstanceOf[BranchBB]) {
         val parentBranchBB = parentBB.asInstanceOf[BranchBB]
         val merge = if(parentBranchBB.merge == null) "" else parentBranchBB.merge.id
@@ -339,6 +329,8 @@ object CFGUtil {
             parent.substring(1),
             "cseIn: " + cseInStr,
             "cseOut: " + cseOutStr,
+            "dceIn: " + dceInStr,
+            "dceOut: " + dceOutStr,
             "type: " + getBBType(parentBB),
             "merge: " + merge,
             "preinc: " + preinc,
@@ -362,8 +354,6 @@ object CFGUtil {
             instrs.mkString("\\n")
           )
         }
-
-
       } else {
         if(printAvailability) {
           dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
@@ -371,6 +361,8 @@ object CFGUtil {
             parent.substring(1),
             "cseIn: " + cseInStr,
             "cseOut: " + cseOutStr,
+            "dceIn: " + dceInStr,
+            "dceOut: " + dceOutStr,
             "type: " + getBBType(parentBB),
             instrs.mkString("\\n")
           )
