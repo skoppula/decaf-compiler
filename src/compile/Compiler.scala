@@ -195,8 +195,7 @@ object Compiler {
 
         dprintln("Performing deadcode elimination...")
           for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
-            // TODO
-           
+            DCEUtil.deleteDCEInBlock(bb)
           }
         dprintln("Finished deadcode elimination...")
       }
