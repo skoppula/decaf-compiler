@@ -22,14 +22,11 @@ object DCE {
     // We do not generate dceIn on the root node
     computeDCEInPerBlock(methodEnd)
     changed -= methodEnd.id
-    dprintln("The methodStart is: " + methodStart.id + " and the methodEnd is: " + methodEnd.id) 
-    dprintln("\n Starting liveness fixed point algorithm...")
-    dprintln("The changed set is: " + changed)
+    dprintln("\t\tThe changed set is: " + changed)
     while (!changed.isEmpty) {
+      dprintln("Iteration of the fixed point algorithm starting...")
       changed = iterationOfDCEAlg(changed, methodIdBBMap)
     }
-
-    dprintln("Finished liveness fixed point algorithm...")
   }
 
   def getMethodIdBBMap(methodStart : NormalBB) : Map[String, NormalBB] = {
@@ -64,6 +61,7 @@ object DCE {
   }
 
   // A use is pretty much where a variable is read
+  // Equivalent to 'gen'
   def usePerTac(
                  set : Set[(String, SymbolTable)],
                  tac : Tac,
@@ -72,13 +70,11 @@ object DCE {
     return convertTacToUsedVarSet(tac, table).union(set)
   }
 
-  // TODO : Untested
   // Given the current set of live variables, S, and the symbolic variable from the LHS of a TAC, x, and the TAC's basic block's symbol table,
   // if x in S, we return S-x, else we return S 
-  def defPerTac(set : Set[(String, SymbolTable)], slhs : String, table : SymbolTable) : Set[(String, SymbolTable)] = {
-    var setOut : Set[(String, SymbolTable)] = set
-    val slhsTable : SymbolTable = table.getContainingSymbolTable(slhs)
-    return setOut -- Set[(String, SymbolTable)]((slhs, slhsTable))
+  // Equivalent to 'kill'
+  def defPerTac(set : Set[(String, SymbolTable)], tac : Tac, table : SymbolTable) : Set[(String, SymbolTable)] = {
+    return set -- convertTacToDefVarSet(tac, table)
   }
 
   def join(set1: Set[(String, SymbolTable)], set2: Set[(String, SymbolTable)]) : Set[(String, SymbolTable)] = {
@@ -91,52 +87,49 @@ object DCE {
   // process RHS: add any variabes used 
   // process LHS: delete any matching variable from the set. 
     //TODO: LHS then RHS
+    dprintln("\t\ti am in computeCSEAfterTac with tac " + tac.toString)
+    dprintln("\t\t" + table.toString)
     var live : Set[(String, SymbolTable)] = set
 
     //TODO: this needs to probably look at variables passed to method calls and stuff 
     tac match {
       case t:TacBinOp => {
-        live = defPerTac(live, t.addr1, table)  
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacUnOp => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacCopy => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacCopyInt => {
-        live = defPerTac(live, t.addr1, table)
-        live = usePerTac(live, t, table)
+        live = defPerTac(live, t, table)
       }
       case t:TacCopyBoolean => {
-        live = defPerTac(live, t.addr1, table)
-        live = usePerTac(live, t, table)
+        live = defPerTac(live, t, table)
       }
       case t:TacIf => {
-        live = defPerTac(live, t.addr1, table)
         live = usePerTac(live, t, table)
       }
       case t:TacIfFalse => {
-        live = defPerTac(live, t.addr1, table)
         live = usePerTac(live, t, table)
       }
       case t:TacReturnValue => {
-        live = defPerTac(live, t.addr1, table)
         live = usePerTac(live, t, table)
       }
       case t:TacArrayLeft => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacArrayRight => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t:TacMethodCallExpr => {
-        live = defPerTac(live, t.addr1, table)
+        live = defPerTac(live, t, table)
         live = usePerTac(live, t, table)
       }
       case t: TacMethodCallStmt => {

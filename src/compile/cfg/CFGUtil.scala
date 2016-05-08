@@ -304,7 +304,7 @@ object CFGUtil {
     return asm
   }
 
-  def mapToDot(map : Map[String, Set[String]], printParents : Boolean = true, printAvailability : Boolean = false) : List[String] = {
+  def mapToDot(map : Map[String, Set[String]], printParents : Boolean = true, printDataflow : Boolean = false) : List[String] = {
     var dot : List[String] = List()
     dot = dot :+ "digraph G {\n"
 
@@ -323,15 +323,15 @@ object CFGUtil {
         val forstart = if(parentBranchBB.forstart == null) "" else parentBranchBB.forstart.id
         val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
-        if(printAvailability) {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+        if(printDataflow) {
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
+            "type: " + getBBType(parentBB),
             "cseIn: " + cseInStr,
             "cseOut: " + cseOutStr,
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
-            "type: " + getBBType(parentBB),
             "merge: " + merge,
             "preinc: " + preinc,
             "whilest: " + ws,
@@ -355,19 +355,24 @@ object CFGUtil {
           )
         }
       } else {
-        if(printAvailability) {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
+        if(printDataflow) {
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
+            "type: " + getBBType(parentBB),
             "cseIn: " + cseInStr,
             "cseOut: " + cseOutStr,
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
-            "type: " + getBBType(parentBB),
             instrs.mkString("\\n")
           )
         } else {
-
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\"];\n".format(
+            parent.substring(1),
+            parent.substring(1),
+            "type: " + getBBType(parentBB),
+            instrs.mkString("\\n")
+          )
         }
       }
       for (child <- children) {

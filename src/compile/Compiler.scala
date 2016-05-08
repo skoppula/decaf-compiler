@@ -187,9 +187,11 @@ object Compiler {
       }
 
       if(CLI.opts(1)) {
-        dprintln("Doing liveness analysis...")
+        dprintln("\nDoing liveness analysis...")
         for ((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
+          dprintln("\tStarting liveness fixed point algorithm for method %s...".format(methodName))
           DCE.runDCEFixedPointAlgorithm(methodStartBB, methodEndBB)
+          dprintln("\tEnding liveness fixed point algorithm for method %s...".format(methodName))
         }
         dprintln("Finished liveness analysis...")
       }
