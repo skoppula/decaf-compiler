@@ -4,7 +4,7 @@ import compile.cfg.{BranchBB, NormalBB}
 import compile.symboltables.SymbolTable
 import compile.exceptionhandling.{SymbolVariableIsNullException, TempVariableAlreadyExistsInGlobalMapException, NullElseBlockException, NotForIfWhileStmtException}
 import compile.tac.{ThreeAddressCode, TempVariableGenie}
-import compile.tac.ThreeAddressCode.{TacUnOp, Tac, TacBinOp, TacCopy}
+import compile.tac.ThreeAddressCode._
 import compile.util.Util.dprintln
 
 import scala.collection.mutable.ArrayBuffer
@@ -23,7 +23,7 @@ object DCEUtil {
     var currentBB = startBB
 
     while (currentBB != null) {
-      substituteDCEInBlock(currentBB, tempGenie,tempToSymbolMap)
+      deleteDCEInBlock(currentBB)
 
       if (currentBB.isInstanceOf[BranchBB]) {
         val BBB : BranchBB = currentBB.asInstanceOf[BranchBB]
@@ -94,48 +94,46 @@ object DCEUtil {
     currentBB.instrs ++= newInstrs
   }
 
-  def substituteDCEInBlock(
-                            currentBB : NormalBB,
-                            tempGenie : TempVariableGenie,
-                            tempSymbolMap : Map[String, (String, SymbolTable)]
+  def deleteDCEInBlock(
+                            currentBB : NormalBB
                           ) : Unit = {
 
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
-    var dce : Set[(String, SymbolTable)] = currentBB.dceIn
+    var dce : Set[(String, SymbolTable)] = currentBB.dceOut
 
     for(instr <- currentBB.instrs){
+      var update : Boolean = true
       instr match {
         case tac : TacBinOp => {
-          val lhsTemp = tac.addr2
-          val rhsTemp = tac.addr3
 
-          if(tempSymbolMap.get(lhsTemp) != None && tempSymbolMap.get(rhsTemp) != None) {
-            val lhsSymbol = tempSymbolMap.get(lhsTemp).get
-            val rhsSymbol = tempSymbolMap.get(rhsTemp).get
-
-            val expr = new Expression(tac.op, Set(lhsSymbol, rhsSymbol), ArrayBuffer(lhsSymbol, rhsSymbol))
-
-          } else {
-            newInstrs += tac
-          }
         }
         case tac : TacUnOp => {
-          val temp = tac.addr2
 
-          if(tempSymbolMap.get(temp) != None) {
-            val tempSymbol = tempSymbolMap.get(temp).get
-            //TODO
-          } else {
-            newInstrs += tac
-          }
         }
-        case _ => {
-          newInstrs += instr
+        case tac : TacCopy => { 
+
+        }
+        case tac : TacCopyInt => {
+
+        }
+        case tac : TacCopyBoolean => {
+
+        }
+        case tac : TacMethodCallExpr => {
+
+        }
+        case tac : TacArrayLeft => {
+
+        }
+        case tac : TacArrayRight => {
+
         }
       }
-
-      // Update the dce map
-      dce = DCE.computeDCEAfterTac(dce, instr, currentBB.symbolTable)
+    
+      // Update the dce map only if we did not delete the tac (i.e. if the lhs var was not dead)
+      if (update) {
+        dce = DCE.computeDCEAfterTac(dce, instr, currentBB.symbolTable) // TODO: Fix computeDCEAfterTac
+      }
     }
 
     currentBB.instrs.clear()
