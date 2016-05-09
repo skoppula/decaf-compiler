@@ -8,3 +8,4 @@ intellij-keyboard-freeze-fix.sh
 *.swp
 .idea/
 *.iml
+tests/optimizer/__*

@@ -250,12 +250,9 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovlq", "%r10", "%r11")
-
+        asmCommands += "\t%s\t%s\n".format("setl", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case LTE => {
@@ -269,12 +266,9 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovleq", "%r10", "%r11")
-
+        asmCommands += "\t%s\t%s\n".format("setle", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case GT => {
@@ -288,12 +282,9 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovgq", "%r10", "%r11")
-
+        asmCommands += "\t%s\t%s\n".format("setg", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case GTE => {
@@ -307,12 +298,9 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovgeq", "%r10", "%r11")
-
+        asmCommands += "\t%s\t%s\n".format("setge", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       // Match eq ops
@@ -327,12 +315,9 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmoveq", "%r10", "%r11")
-
+        asmCommands += "\t%s\t%s\n".format("sete", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case NEQ => {
@@ -346,12 +331,9 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("cmovneq", "%r10", "%r11")
-
+        asmCommands += "\t%s\t%s\n".format("setne", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
     }
@@ -520,11 +502,8 @@ object AsmGen{
     val (addr1, int) = (t.addr1, t.int)
     val dest = addrToAsm(addr1, table)
     val src = "$%d".format(int)
-    val reg = "%r10"
 
-    instrs :+= "\t%s\t%s, %s\n".format("movq", src, reg)
-    instrs :+= "\t%s\t%s, %s\n".format("movq", reg, dest)
-
+    instrs :+= "\t%s\t%s, %s\n".format("movq", src, dest)    
     return instrs
   }
 
@@ -713,17 +692,39 @@ object AsmGen{
     return instrs
   }
 
+  def addrToType(name : String) : String = {
+    if (name.length >= 2 && name.substring(0,2) == ".L") {
+      // String literal handler
+      return "STRING LITERAL"
+    } else if (name.length >= 2 && name.substring(0,2) == ".R") {
+      // Register reference handler
+      return "REGISTER"
+    } else if (name.length >= 2 && name.substring(0,2) == ".C") {
+      // Constant handler
+      return "CONSTANT"
+    } else {
+      return "ADDRESS"
+    }
+  }
+
   def addrToAsm(name: String, table: SymbolTable) : String = {
     /* A global variable reference will be of the form: name(%rip)
      * A local variable reference will be of the form: offset(%rbp)
      * A string literal label with prefix .L will be of the form: $.L___
+     * A register reference will be of the form .R<register name>
+     * A constant will be of the form .C<constant value>
      */
 
     if (name.length >= 2 && name.substring(0,2) == ".L") {
       // String literal handler
       return "$%s".format(name)
+    } else if (name.length >= 2 && name.substring(0,2) == ".R") {
+      // Register reference handler
+      return "%%%s".format(name.substring(2))
+    } else if (name.length >= 2 && name.substring(0,2) == ".C") {
+      // Constant handler
+      return "$%s".format(name.substring(2))
     } else {
-
       if(table.lookupID(name) == null) {
         dprintln("\nHELLO")
         dprintln(table.toString)
