@@ -15,12 +15,10 @@ import compile.tac._
 import compile.tac.ThreeAddressCode._
 import TacGen._
 
-import compile.analysis.{CSE, DCE}
+import compile.analysis._
 import scala.collection.mutable.{HashMap}
 
 import compile.util.Util.dprintln
-import compile.analysis.CSEUtils
-import compile.analysis.DCEUtil
 
 import scala.Console
 import scala.collection.mutable
@@ -34,7 +32,7 @@ object Compiler {
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile)))
 
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array("cse", "dce"))
+    CLI.parse(args, Array("cse", "dce", "copy"))
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
       System.exit(0)
@@ -52,6 +50,7 @@ object Compiler {
       }
     } else if(CLI.target == CLI.Action.ASSEMBLY) {
       val (program, symboltables) = inter(CLI.infile)
+      DCEUtil.staticMethodsTable = symboltables
       assembly(program, symboltables)
     }
   }
@@ -59,7 +58,6 @@ object Compiler {
 
   def assembly(program : IrProgram, methodsTable : MethodsTable): Unit = {
     val tempGenie : TempVariableGenie = new TempVariableGenie
-
     var asmStr : String = ""
 
     var dot : List[String] = List()
@@ -71,9 +69,9 @@ object Compiler {
       }
 
       if(CLI.debug) {
-        for(tac <- tacAsmMap.keys) {
-          dprintln(tac + "\n")
-        }
+        // for(tac <- tacAsmMap.keys) {
+          // dprintln(tac + "\n")
+        // }
       }
     } else {
       dprintln("Using the new CFG method!")
@@ -81,9 +79,9 @@ object Compiler {
       val (programStartBB, methodsBBMap) = CFGGen.genCFG(program, tempGenie, methodsTable)
       dprintln("Done generating CFG")
 
-      if(CLI.debug) {
-        SymbolTableUtil.printSymbolTableStructure(methodsTable)
-      }
+      // if(CLI.debug) {
+        // SymbolTableUtil.printSymbolTableStructure(methodsTable)
+      // }
 
       // == Compressing CFG ==
       dprintln("Attempting CFG Compression...")
@@ -128,9 +126,6 @@ object Compiler {
         }
       }
 
-      dprintln("BasicBlockGenie.idToBBReference: ")
-      dprintln(BasicBlockGenie.idToBBReference.mkString(", "))
-
       dprintln("CFG Compression complete!")
 
       // == Fixing parent pointers ==
@@ -148,7 +143,7 @@ object Compiler {
         for((temp, (symbol, st)) <- tempSymbolMap) {
           tempSymbolPairs += "(" + temp + "," + symbol + "," + st.hashCode + ") "
         }
-        dprintln("\t" + methodName + " has these keys in the temp-symbol mapping " + tempSymbolPairs)
+        // dprintln("\t" + methodName + " has these keys in the temp-symbol mapping " + tempSymbolPairs)
       }
 
       for((methodName, tempSymbolMap) <- tempSymbolMaps) {
@@ -167,7 +162,7 @@ object Compiler {
       }
       killedGlobalMapStr += "}"
       CSEUtils.killedGlobalVarMap = killedGlobalVarMap
-      dprintln("The map of what global vars each method kills: " + killedGlobalMapStr)
+      // dprintln("The map of what global vars each method kills: " + killedGlobalMapStr)
       dprintln("Creating the lists of global vars that each method kills")
 
       val indexToOptimizationIndexThatWillNeverChangeCorrespondingToCSECourtesyOfRobMillerThankYouGenie = 0
@@ -200,7 +195,15 @@ object Compiler {
             DCEUtil.deleteDCEInBlock(bb)
           }
         dprintln("Finished deadcode elimination...")
-        
+
+      }
+
+      if(CLI.opts(2)) {
+        dprintln("Removing extraneous Copy TACS...")
+        for ((methodName, (methodStartBB, methodEndBB)) <- methodsBBMap) {
+          ElimCopiesBeforeOp.elim(methodStartBB, tempGenie)
+        }
+        dprintln("Finished extraneous Copy TACS...")
       }
       // == Doing available (bitvector) expression analysis ==
       // THis is replaced by our hashmap method
@@ -219,7 +222,7 @@ object Compiler {
       dprintln("Finished creation of TAC list. TACs:")
 
       for((tac,st) <- tacs) {
-        dprintln(tac.toString)
+        // dprintln(tac.toString)
       }
 
       // === Dot file generation start ===

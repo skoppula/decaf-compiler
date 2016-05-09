@@ -5,7 +5,6 @@ import compile.exceptionhandling.VariableIsNullException
 import compile.symboltables.{SymbolTable}
 import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ArrayBuffer}
-import compile.util.Util.dprintln
 
 object DCE {
 
@@ -22,12 +21,9 @@ object DCE {
 
     // We do not generate dceIn on the root node
     methodEnd.dceOut = methodEnd.symbolTable.getGlobalsSet
-    dprintln("I am block " + methodEnd.id + " and my dceOut is " + methodEnd.printDceOut)
     computeDCEInPerBlock(methodEnd)
     changed -= methodEnd.id
-    dprintln("\t\tThe changed set is: " + changed)
     while (!changed.isEmpty) {
-      dprintln("Iteration of the fixed point algorithm starting...")
       changed = iterationOfDCEAlg(changed, methodIdBBMap)
     }
   }
@@ -74,10 +70,18 @@ object DCE {
 
     tac match {
       case t:TacMethodCallExpr => {
-        return usedSet.union(set).union(table.getGlobalsSet)
+        if(DCEUtil.staticMethodsTable.isCallout(t.method)) {
+          return usedSet.union(set)
+        } else {
+          return usedSet.union(set).union(table.getGlobalsSet)
+        }
       }
       case t: TacMethodCallStmt => {
-        return usedSet.union(set).union(table.getGlobalsSet)
+        if(DCEUtil.staticMethodsTable.isCallout(t.method)) {
+          return usedSet.union(set)
+        } else {
+          return usedSet.union(set).union(table.getGlobalsSet)
+        }
       }
       case _ => {
         return usedSet.union(set)
@@ -102,8 +106,6 @@ object DCE {
   // process RHS: add any variabes used 
   // process LHS: delete any matching variable from the set. 
     //TODO: LHS then RHS
-    dprintln("\t\ti am in computeCSEAfterTac with tac " + tac.toString)
-    dprintln("\t\t" + table.toString)
     var live : Set[(String, SymbolTable)] = set
 
     //TODO: this needs to probably look at variables passed to method calls and stuff 

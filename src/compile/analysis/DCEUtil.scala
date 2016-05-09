@@ -1,7 +1,7 @@
 package compile.analysis
 
 import compile.cfg.{BranchBB, NormalBB}
-import compile.symboltables.SymbolTable
+import compile.symboltables.{MethodsTable, SymbolTable}
 import compile.exceptionhandling.{SymbolVariableIsNullException, TempVariableAlreadyExistsInGlobalMapException, NullElseBlockException, NotForIfWhileStmtException}
 import compile.tac.{ThreeAddressCode, TempVariableGenie}
 import compile.tac.ThreeAddressCode._
@@ -10,19 +10,16 @@ import compile.util.Util.dprintln
 import scala.collection.mutable.ArrayBuffer
 
 object DCEUtil {
+
+  var staticMethodsTable : MethodsTable = null
+
   def deleteDCEInBlock( currentBB : NormalBB
                         ) : Unit = {
 
     val newInstrs : ArrayBuffer[Tac] = ArrayBuffer.empty[Tac]
     var dce : Set[(String, SymbolTable)] = currentBB.dceOut
 
-    dprintln("I am block: " + currentBB.id + "with vars:")
-    for (x <- dce) {
-      dprintln(x._1)
-    }
-
     for(instr <- currentBB.instrs.reverse){
-      dprintln("PROCESSING CURRENT TAC: " + instr)
       var update : Boolean = true
       instr match {
         case tac : TacBinOp => {
@@ -71,7 +68,6 @@ object DCEUtil {
       }
     
       // Update the dce map only if we did not delete the tac (i.e. if the lhs var was not dead)
-      dprintln("I think I should update? " + update)
       if (update) {
         newInstrs += instr
         dce = DCE.computeDCEAfterTac(dce, instr, currentBB.symbolTable)
