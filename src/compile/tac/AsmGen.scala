@@ -250,12 +250,15 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
+        asmCommands += "\t%s\t%s\n".format("setl", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
+
+/*
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovlq", "%r10", "%r11")
-
+*/
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case LTE => {
@@ -269,12 +272,15 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
+        asmCommands += "\t%s\t%s\n".format("setle", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
+
+/*
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovleq", "%r10", "%r11")
-
+ */
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case GT => {
@@ -288,12 +294,15 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
+        asmCommands += "\t%s\t%s\n".format("setg", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
+
+/*
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovgq", "%r10", "%r11")
-
+*/
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case GTE => {
@@ -307,12 +316,15 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
+        asmCommands += "\t%s\t%s\n".format("setge", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
+
+/*
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovgeq", "%r10", "%r11")
-
+*/
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       // Match eq ops
@@ -327,12 +339,15 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("sete", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
+
+/*
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmoveq", "%r10", "%r11")
-
+ */
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
       case NEQ => {
@@ -346,12 +361,15 @@ object AsmGen{
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
 
         asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
+        asmCommands += "\t%s\t%s\n".format("setne", "%al")
+        asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
+
+/*
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$1", "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "$0", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("cmovneq", "%r10", "%r11")
-
+ */
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
-
         asmCommands.toList
       }
     }
