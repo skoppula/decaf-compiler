@@ -32,6 +32,18 @@ class NormalBB(
   override def toString : String = {
     return "NormalBB(" + this.id + ")"
   }
+
+  def printDceOut : String = {
+    var dceOutStr = "{"
+    for((variable, symbolTable) <- this.dceOut) {
+      if(variable == null) {
+      } else if (symbolTable == null) {
+      }
+      dceOutStr += "(" + variable + "," + symbolTable.hashCode().toString + ")"
+    }
+    dceOutStr += "}"
+    return dceOutStr
+  }
 }
 
 // Stores the start and end basic blocks of the method that it's calling

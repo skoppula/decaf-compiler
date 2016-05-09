@@ -21,6 +21,8 @@ object DCE {
     }
 
     // We do not generate dceIn on the root node
+    methodEnd.dceOut = methodEnd.symbolTable.getGlobalsSet
+    dprintln("I am block " + methodEnd.id + " and my dceOut is " + methodEnd.printDceOut)
     computeDCEInPerBlock(methodEnd)
     changed -= methodEnd.id
     dprintln("\t\tThe changed set is: " + changed)
@@ -69,7 +71,18 @@ object DCE {
                  table : SymbolTable
                ) : Set[(String, SymbolTable)] = {
     val usedSet = convertTacToUsedVarSet(tac, table)
-    return usedSet.union(set)
+
+    tac match {
+      case t:TacMethodCallExpr => {
+        return usedSet.union(set).union(table.getGlobalsSet)
+      }
+      case t: TacMethodCallStmt => {
+        return usedSet.union(set).union(table.getGlobalsSet)
+      }
+      case _ => {
+        return usedSet.union(set)
+      }
+    }
   }
 
   // Given the current set of live variables, S, and the symbolic variable from the LHS of a TAC, x, and the TAC's basic block's symbol table,

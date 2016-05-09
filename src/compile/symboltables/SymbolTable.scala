@@ -114,7 +114,7 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
     return this.getParentSymbolTable.getGlobalFieldTable
   }
 
-  def getGlobalsSet : Set[(String, SymbolTable)] = {
+  def getGlobalsSet : collection.immutable.Set[(String, SymbolTable)] = {
     val globalFieldTable : SymbolTable = this.getGlobalFieldTable
 
     val globalsSet : Set[(String, SymbolTable)] = collection.mutable.Set.empty
@@ -123,7 +123,7 @@ class SymbolTable(parentSymbolTable : SymbolTable, sType : ScopeTypes.EnumVal) {
       globalsSet.add((key,globalFieldTable))
     }
 
-    return globalsSet
+    return globalsSet.toSet
   }
 
   override def toString : String = {
