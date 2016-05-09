@@ -609,8 +609,10 @@ object CFGGen {
                         symbolTable : SymbolTable
                       ) : (NormalBB, NormalBB) = {
 
+    val unopt = false
     val checkBB = new NormalBB(symbolTable)
 
+    if (unopt) {
     // Get the size of the array
     val sizeOfArray: String = tempGenie.generateName()
     symbolTable.insert(sizeOfArray, new IntTypeDescriptor())
@@ -659,6 +661,62 @@ object CFGGen {
     checkBB.instrs += accessIndexLabelTAC
 
     return (checkBB, checkBB)
+    } else {
+    // TODO : Integrate this into the optimizer flags
+
+    // Check whether the array index is too big
+    val sizeOfArray : Long = symbolTable.lookupID(arrayName) match {
+      case d:ArrayBaseDescriptor => {
+        d.length.longValue()
+      }
+      case _ => {
+        // Should not reach here
+        0 // TODO: Possible source of error
+      }
+    }
+    val sizeOfArrayString : String = ".C%d".format(sizeOfArray) 
+    val sizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(sizeCheckBool, new BoolTypeDescriptor())
+    val sizeCondCmpTAC = new TacBinOp(tempGenie.generateTacNumber(), sizeCheckBool, indexTemp, LT, sizeOfArrayString)
+    checkBB.instrs += sizeCondCmpTAC
+
+    // Initialize constant zero for lower bound check
+    val constantZeroTemp = tempGenie.generateName()
+    symbolTable.insert(constantZeroTemp, new IntTypeDescriptor)
+    // TODO Optimize
+    //val copyConstantZero = new TacCopyInt(tempGenie.generateTacNumber(), constantZeroTemp, 0)
+    //checkBB.instrs += copyConstantZero
+
+    // Check whether the array index is too small
+    val lowerSizeCheckBool: String = tempGenie.generateName()
+    symbolTable.insert(lowerSizeCheckBool, new BoolTypeDescriptor())
+    val lowerSizeCondTAC = new TacBinOp(tempGenie.generateTacNumber(), lowerSizeCheckBool, indexTemp, LT, ".C0")
+    checkBB.instrs += lowerSizeCondTAC
+
+    val accessIndexLabel: String = tempGenie.generateLabel()
+    val errorOutLabel: String = tempGenie.generateLabel()
+
+    // If index is not > 0, jump to the system exit (-1)
+    val lowerboundsTAC = new TacIf(tempGenie.generateTacNumber(), lowerSizeCheckBool, errorOutLabel)
+    checkBB.instrs += lowerboundsTAC
+
+    // If index is within bounds, jump over the system exit (-1)
+    val sizeIfTAC = new TacIf(tempGenie.generateTacNumber(), sizeCheckBool, accessIndexLabel)
+    checkBB.instrs += sizeIfTAC
+
+    // Label right before error out
+    val errorOutLabelTAC = new TacLabel(tempGenie.generateTacNumber(), errorOutLabel)
+    checkBB.instrs += errorOutLabelTAC
+
+    val sysExitOne = new TacSystemExit(tempGenie.generateTacNumber(), -1)
+    checkBB.instrs += sysExitOne
+
+    // Label for everything is all good
+    val accessIndexLabelTAC = new TacLabel(tempGenie.generateTacNumber(), accessIndexLabel)
+    checkBB.instrs += accessIndexLabelTAC
+
+    return (checkBB, checkBB)
+    }
   }
 
 

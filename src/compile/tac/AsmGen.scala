@@ -720,7 +720,7 @@ object AsmGen{
       return "$%s".format(name)
     } else if (name.length >= 2 && name.substring(0,2) == ".R") {
       // Register reference handler
-      return "%%".format(name.substring(2))
+      return "%%%s".format(name.substring(2))
     } else if (name.length >= 2 && name.substring(0,2) == ".C") {
       // Constant handler
       return "$%s".format(name.substring(2))

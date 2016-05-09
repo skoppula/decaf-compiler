@@ -4,6 +4,7 @@ import compile.cfg._
 import compile.exceptionhandling.VariableIsNullException
 import compile.symboltables.{SymbolTable}
 import compile.tac.ThreeAddressCode._
+import compile.tac.AsmGen._
 import scala.collection.mutable.{ArrayBuffer}
 import compile.util.Util.dprintln
 
@@ -283,6 +284,15 @@ object DCE {
       case b : TacBinOp => {
         val (v1, t1) : (String, SymbolTable) = getSymbolAndTable(b.addr2, table)
         val (v2, t2) : (String, SymbolTable) = getSymbolAndTable(b.addr3, table)
+
+        if (addrToType(v1) == "CONSTANT" && addrToType(v2) == "CONSTANT") {
+          return Set()
+        } else if (addrToType(v1) == "CONSTANT" && t2 != null) {
+          return Set((v2,t2))
+        } else if (addrToType(v2) == "CONSTANT" && t1 != null) {
+          return Set((v1,t1))
+        }
+
         if (v1 == null || v2 == null || t1 == null || t2 == null) {
           throw new VariableIsNullException("tacbinop addr2 addr3 is null")
         }
