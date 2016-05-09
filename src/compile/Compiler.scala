@@ -32,7 +32,7 @@ object Compiler {
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile)))
 
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array("cse", "dce", "copy"))
+    CLI.parse(args, Array("cse", "dce", "copy", "cfg"))
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
       System.exit(0)
@@ -76,7 +76,8 @@ object Compiler {
     } else {
       dprintln("Using the new CFG method!")
       dprintln("Generating CFG...")
-      val (programStartBB, methodsBBMap) = CFGGen.genCFG(program, tempGenie, methodsTable)
+      val optimize = CLI.opts(3)
+      val (programStartBB, methodsBBMap) = CFGGen.genCFG(optimize, program, tempGenie, methodsTable)
       dprintln("Done generating CFG")
 
       // if(CLI.debug) {
