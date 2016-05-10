@@ -21,8 +21,12 @@ class NormalBB(
   var dceIn = Set.empty[(String, SymbolTable)]
   var dceOut = Set.empty[(String, SymbolTable)]
 
+  //cfg
   var webIn = Map.empty[(String, SymbolTable), List[Web]]
   var webOut = Map.empty[(String, SymbolTable), List[Web]]
+
+  //reg alloc
+  var webs = Map.empty[(String, SymbolTable), List[Web]]
 
   var methodTop = false
   var programStart = false

@@ -206,14 +206,19 @@ object Compiler {
         }
         dprintln("Finished extraneous Copy TACS...")
       }
-      // == Doing available (bitvector) expression analysis ==
-      // THis is replaced by our hashmap method
-      // dprintln("Attempting to do available expression analysis")
-      // We want bvkHashMap to create a legend for the dot graph
-      // var allMethodsBvkPositionMap = HashMap.empty[String, HashMap[BitvectorKey, Int]]
-      // if (CLI.available) {
-      //  allMethodsBvkPositionMap = AvailableExpr.computeAvailableExpr(programStartBB, methodsBBMap)
-      // }
+
+      /*
+      if(CLI.opts(3)) {
+        dprintln("Constructing webs...")
+
+        for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
+          Web.getWebInBB(bb)
+        }
+
+        dprintln("Finished Constructing webs...")
+      }
+      */
+
  
       dprintln("Converting CFG to a TAC list...")
       var tacs : List[(Tac, SymbolTable)] = CFGUtil.cfgToTacs(programStartBB, List())

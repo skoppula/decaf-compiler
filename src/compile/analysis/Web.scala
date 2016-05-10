@@ -6,19 +6,9 @@ import compile.tac.ThreeAddressCode._
 import scala.collection.mutable.{ArrayBuffer}
 import compile.util.Util.dprintln
 
-import compile.analysis.DCE._
-
 case class Web (id: Int, start: Int, end: Int, use: Int){
-  override def equals(that: Any) : Boolean =
-    that match {
-      case that: Web => {
-        return (this.lhs == that.lhs) && (this.symbolTable == that.symbolTable)
-      }
-      case _ => return false
-    }
-
   override def toString : String = {
-    return "%s -> start: %d, len: %d, use: %d".format(lhs, start, len, use)
+    return "%s -> start: %d, end: %d, use: %d".format(id, start, end, use)
   }
 }
 
@@ -83,7 +73,7 @@ object Web {
 
 
     //?
-    bb.webOut = webs
+    bb.webs = webs
   }
 
   def useWebPerTac(w: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
@@ -95,7 +85,7 @@ object Web {
         case Some(l) => {
           // Below is assumed that we are doing per block web generation, but it is not correct for inter-block web generation
           var currentWeb = l.last
-          // TODO: endpos and use needs to be udpated
+          // TODO: endpos and use needs to be updated
           l.dropRight(1) :+ Web(currentWeb.id, currentWeb.start, instrNum - currentWeb.start + 1, currentWeb.use + 1)
         }
         // No match found; for now we are doing intra block web creation
