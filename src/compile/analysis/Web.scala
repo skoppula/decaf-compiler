@@ -87,7 +87,7 @@ object Web {
         // No match found; for now we are doing intra block web creation
         // So treat this as if we're making a new web
         case None => {
-          webs.get((s,t)) ++= List(Web(genie.generateWebNumber(), instrNum, instrNum, 0))
+          webs.get((s,t)).get ++= List(Web(genie.generateWebNumber(), instrNum, instrNum, 0))
         }
       }
     }
@@ -109,7 +109,7 @@ object Web {
         case None => {
           // No match found
           // Create a new web
-          webs.get((s,t)) ++= List(Web(genie.generateWebNumber(), instrNum, instrNum, 0) )
+          webs.get((s,t)).get ++= List(Web(genie.generateWebNumber(), instrNum, instrNum, 0) )
         }
       }
     }
