@@ -494,19 +494,29 @@ object AsmGen{
 
         asmCommands.toList
       }
-      // Match rel ops // TODO: Providing register support
-
+      // Match rel ops
       case LT => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2asm)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3asm)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
+        (type2, type3) match {
+          case ("CONSTANT", "CONSTANT") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case ("ADDRESS", "ADDRESS") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case _ => {
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, addr2asm)
+          }
+        }
         asmCommands += "\t%s\t%s\n".format("setl", "%al")
         asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
@@ -515,14 +525,26 @@ object AsmGen{
       case LTE => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2asm)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3asm)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        (type2, type3) match {
+          case ("CONSTANT", "CONSTANT") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case ("ADDRESS", "ADDRESS") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case _ => {
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, addr2asm)
+          }
+        }
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
         asmCommands += "\t%s\t%s\n".format("setle", "%al")
         asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
@@ -531,14 +553,26 @@ object AsmGen{
       case GT => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2asm)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3asm)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        (type2, type3) match {
+          case ("CONSTANT", "CONSTANT") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case ("ADDRESS", "ADDRESS") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case _ => {
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, addr2asm)
+          }
+        }
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
         asmCommands += "\t%s\t%s\n".format("setg", "%al")
         asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
@@ -547,14 +581,26 @@ object AsmGen{
       case GTE => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2asm)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3asm)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        (type2, type3) match {
+          case ("CONSTANT", "CONSTANT") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case ("ADDRESS", "ADDRESS") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case _ => {
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, addr2asm)
+          }
+        }
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r11", "%r10")
         asmCommands += "\t%s\t%s\n".format("setge", "%al")
         asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
@@ -564,14 +610,26 @@ object AsmGen{
       case EQ => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2asm)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3asm)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        (type2, type3) match {
+          case ("CONSTANT", "CONSTANT") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case ("ADDRESS", "ADDRESS") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case _ => {
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, addr2asm)
+          }
+        }
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
         asmCommands += "\t%s\t%s\n".format("sete", "%al")
         asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
@@ -580,14 +638,26 @@ object AsmGen{
       case NEQ => {
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2asm)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3asm)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+        (type2, type3) match {
+          case ("CONSTANT", "CONSTANT") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case ("ADDRESS", "ADDRESS") => {
+            asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, "%r11")
+          }
+          case _ => {
+            asmCommands += "\t%s\t%s, %s\n".format("cmpq", addr3asm, addr2asm)
+          }
+        }
 
-        asmCommands += "\t%s\t%s, %s\n".format("cmpq", "%r10", "%r11")
         asmCommands += "\t%s\t%s\n".format("setne", "%al")
         asmCommands += "\t%s\t%s, %s\n".format("movzx", "%al", "%r11")
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
