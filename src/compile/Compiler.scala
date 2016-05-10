@@ -209,13 +209,25 @@ object Compiler {
 
       // opt 3 is already taken by array bounding checking optimizer cfg flag
       if(CLI.opts(4)) {
-        dprintln("Constructing webs...")
 
+        dprintln("Constructing webs...")
         for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
           Web.getWebInBB(bb, new WebGenie)
         }
-
         dprintln("Finished Constructing webs...")
+
+
+        dprintln("Determining web to register mapping...")
+        for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
+          RegAlloc.assignRegistersToWebs(bb)
+        }
+        dprintln("Finished web to register mapping...")
+
+        dprintln("Taking register allocation and replacing TACs...")
+        for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
+          RegAlloc.replaceTacsWithRegTacs(bb, tempGenie)
+        }
+        dprintln("Finished replacing TACs...")
       }
 
  

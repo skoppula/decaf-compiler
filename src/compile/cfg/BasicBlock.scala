@@ -23,7 +23,7 @@ class NormalBB(
 
   //reg alloc
   var webs = Map.empty[(String, SymbolTable), List[Web]]
-  var idToWebMap = Map.empty[Int, Web]
+  var webIDToReg = Map.empty[Int, String]
 
   var methodTop = false
   var programStart = false

@@ -349,7 +349,7 @@ object CFGUtil {
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
         if(printDataflow) {
           //                                                                          web
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
             "type: " + getBBType(parentBB),
@@ -358,6 +358,7 @@ object CFGUtil {
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
             "web: " + webStr,
+            "regWebMap: " + parentBB.webIDToReg,
             "merge: " + merge,
             "preinc: " + preinc,
             "whilest: " + ws,
@@ -382,7 +383,7 @@ object CFGUtil {
         }
       } else {
         if(printDataflow) {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n\\n%s\"];\n".format(
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
             "type: " + getBBType(parentBB),
@@ -391,6 +392,7 @@ object CFGUtil {
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
             "web: " + webStr,
+            "regWebMap: " + parentBB.webIDToReg,
             instrs.mkString("\\n")
           )
         } else {
