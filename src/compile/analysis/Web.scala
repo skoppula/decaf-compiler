@@ -7,6 +7,8 @@ import scala.collection.mutable.{ArrayBuffer}
 import compile.util.Util.dprintln
 
 case class Web (id: Int, start: Int, end: Int, use: Int){
+  var register : String = null
+
   override def toString : String = {
     return "(%s, %d, %d, %d)".format(id, start, end, use)
   }
