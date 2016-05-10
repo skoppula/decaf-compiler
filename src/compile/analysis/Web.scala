@@ -23,7 +23,9 @@ case class Web (id: Int, start: Int, end: Int, use: Int){
 }
 
 object Web {
-  def getWebInBB(bb : NormalBB, genie : WebGenie): Map[(String, SymbolTable), List[Web]] = {
+
+  //returns Map[(String, SymbolTable), List[Web]]
+  def getWebInBB(bb : NormalBB, genie : WebGenie) = {
     // We start with an empty map of webs
     val table = bb.symbolTable
     var webs = Map.empty[(String, SymbolTable), List[Web]]
@@ -31,46 +33,46 @@ object Web {
     for(instr <- bb.instrs) {
       instr match {
         case t:TacBinOp => {
-          webs = useWebPerTac(webs, t, table, genie)
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacUnOp => {
-          webs = useWebPerTac(webs, t, table, genie)
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacCopy => {
-          webs = useWebPerTac(webs, t, table, genie)
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacCopyInt => {
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacCopyBoolean => {
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacIf => {
-          webs = useWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacIfFalse => {
-          webs = useWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacReturnValue => {
-          webs = useWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacArrayLeft => {
-          webs = useWebPerTac(webs, t, table, genie)
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacArrayRight => {
-          webs = useWebPerTac(webs, t, table, genie)
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t:TacMethodCallExpr => {
-          webs = useWebPerTac(webs, t, table, genie)
-          webs = defWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
+          webs = defWebPerTac(webs, t, table, instrNum, genie)
         }
         case t: TacMethodCallStmt => {
-          webs = useWebPerTac(webs, t, table, genie)
+          webs = useWebPerTac(webs, t, table, instrNum, genie)
         }
         case _ => {
         }
@@ -78,7 +80,10 @@ object Web {
 
       instrNum += 1
     }
-    return webs
+
+
+    //?
+    bb.webOut = webs
   }
 
   def useWebPerTac(w: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
@@ -100,7 +105,7 @@ object Web {
       }
     }
 
-  
+
     return webs
   }
 
