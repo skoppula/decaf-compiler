@@ -132,38 +132,188 @@ object AsmGen{
       // Match arith ops
       case ADD => {
         val addr1asm = addrToAsm(addr1,table)
+        val type1 = addrToType(addr1)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("addq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+        var other = ".NONE"
+        var otherType = ".NONE"
+        if (addr1asm == addr2asm) {
+          other = addr3asm
+          otherType = type3
+        } else if (addr1asm == addr3asm) {
+          other = addr2asm
+          otherType = type2
+        }
+
+        if (other == ".NONE") {
+          (type1, type2, type3) match {
+            case ("REGISTER",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, addr1asm)
+              asmCommands += "\t%s\t%s, %s\n".format("addq", addr3asm, addr1asm)
+            } // Other cases must have type1 == "ADDRESS"
+            case ("ADDRESS","ADDRESS",_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("addq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+            case ("ADDRESS",_,"ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("addq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // Other cases must have type2 and type3 as either "REGISTER" or "CONSTANT"
+            case ("ADDRESS",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("addq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // This shouldn't trigger, but if all else fails revert to original codegen
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("addq", "%r10", "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+          }
+        } else {
+          (type1, otherType) match {
+            case ("ADDRESS","ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", other, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("addq", "%r11", addr1asm)
+            }
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("addq", other, addr1asm)
+            }
+          }
+        }
 
         asmCommands.toList
       }
       case SUB => {
         val addr1asm = addrToAsm(addr1,table)
+        val type1 = addrToType(addr1)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("subq", "%r11", "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r10", addr1asm)
+        var other = ".NONE"
+        var otherType = ".NONE"
+        if (addr1asm == addr2asm) {
+          other = addr3asm
+          otherType = type3
+        } else if (addr1asm == addr3asm) {
+          other = addr2asm
+          otherType = type2
+        }
+
+        if (other == ".NONE") {
+          (type1, type2, type3) match {
+            case ("REGISTER",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, addr1asm)
+              asmCommands += "\t%s\t%s, %s\n".format("subq", addr3asm, addr1asm)
+            } // Other cases must have type1 == "ADDRESS"
+            case ("ADDRESS",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("subq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // This shouldn't trigger, but if all else fails revert to original codegen
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("subq", "%r11", "%r10")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r10", addr1asm)
+            }
+          }
+        } else {
+          (type1, otherType) match {
+            case ("ADDRESS","ADDRESS") => {
+              if (addr1asm == addr2asm) { // other == addr3asm, a = a - b
+                asmCommands += "\t%s\t%s, %s\n".format("movq", other, "%r11")
+                asmCommands += "\t%s\t%s, %s\n".format("subq", "%r11", addr1asm)
+              } else { // other == addr2asm, a = b - a; forced to do 3 memory operations
+                asmCommands += "\t%s\t%s, %s\n".format("movq", other, "%r11")
+                asmCommands += "\t%s\t%s, %s\n".format("subq", "%r11", addr1asm)
+                asmCommands += "\t%s\t%s\n".format("negq", addr1asm)
+              }
+            }
+            case _ => {
+              if (addr1asm == addr2asm) { // other == addr3asm, a = a - b
+                asmCommands += "\t%s\t%s, %s\n".format("subq", other, addr1asm)
+              } else { // other == addr3asm, a = b - a
+                asmCommands += "\t%s\t%s, %s\n".format("subq", other, addr1asm)
+                asmCommands += "\t%s\t%s\n".format("negq", addr1asm)
+              }
+            }
+          }
+        }
 
         asmCommands.toList
       }
-      case MULT => {
+      case MULT => { // TODO: There is a three operand imul instruction; worth looking into?
         val addr1asm = addrToAsm(addr1,table)
+        val type1 = addrToType(addr1)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3)
 
         var asmCommands = new mutable.ListBuffer[String]()
+
+        var other = ".NONE"
+        var otherType = ".NONE"
+        if (addr1asm == addr2asm) {
+          other = addr3asm
+          otherType = type3
+        } else if (addr1asm == addr3asm) {
+          other = addr2asm
+          otherType = type2
+        }
+
+        if (other == ".NONE") {
+          (type1, type2, type3) match {
+            case ("REGISTER",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, addr1asm)
+              asmCommands += "\t%s\t%s, %s\n".format("imulq", addr3asm, addr1asm)
+            } // Other cases must have type1 == "ADDRESS"
+            case ("ADDRESS","ADDRESS",_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("imulq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+            case ("ADDRESS",_,"ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("imulq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // Other cases must have type2 and type3 as either "REGISTER" or "CONSTANT"
+            case ("ADDRESS",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("imulq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // This shouldn't trigger, but if all else fails revert to original codegen
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("imulq", "%r10", "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+          }
+        } else {
+          (type1, otherType) match {
+            case ("ADDRESS","ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", other, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("imulq", "%r11", addr1asm)
+            }
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("imulq", other, addr1asm)
+            }
+          }
+        }
 
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
@@ -179,13 +329,19 @@ object AsmGen{
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%rax")
         asmCommands += "\t%s\n".format("cqo")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s\n".format("idivq","%r11")
+
+        if (type3 == "REGISTER") {
+          asmCommands += "\t%s\t%s\n".format("idivq",addr3asm)
+        } else {
+          asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+          asmCommands += "\t%s\t%s\n".format("idivq","%r11")
+        }
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%rax", addr1asm)
 
         asmCommands.toList
@@ -197,13 +353,18 @@ object AsmGen{
         val addr1asm = addrToAsm(addr1,table)
         val addr2asm = addrToAsm(addr2,table)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
         asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%rax")
         asmCommands += "\t%s\n".format("cqo")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s\n".format("idivq","%r11")
+        if (type3 == "REGISTER") {
+          asmCommands += "\t%s\t%s\n".format("idivq",addr3asm)
+        } else {
+          asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+          asmCommands += "\t%s\t%s\n".format("idivq","%r11")
+        }
         asmCommands += "\t%s\t%s, %s\n".format("movq", "%rdx", addr1asm)
 
         asmCommands.toList
@@ -211,33 +372,129 @@ object AsmGen{
       // Match cond ops 
       case AND => {
         val addr1asm = addrToAsm(addr1,table)
+        val type1 = addrToType(addr1)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("andq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+        var other = ".NONE"
+        var otherType = ".NONE"
+        if (addr1asm == addr2asm) {
+          other = addr3asm
+          otherType = type3
+        } else if (addr1asm == addr3asm) {
+          other = addr2asm
+          otherType = type2
+        }
+
+        if (other == ".NONE") {
+          (type1, type2, type3) match {
+            case ("REGISTER",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, addr1asm)
+              asmCommands += "\t%s\t%s, %s\n".format("andq", addr3asm, addr1asm)
+            } // Other cases must have type1 == "ADDRESS"
+            case ("ADDRESS","ADDRESS",_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("andq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+            case ("ADDRESS",_,"ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("andq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // Other cases must have type2 and type3 as either "REGISTER" or "CONSTANT"
+            case ("ADDRESS",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("andq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // This shouldn't trigger, but if all else fails revert to original codegen
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("andq", "%r10", "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+          }
+        } else {
+          (type1, otherType) match {
+            case ("ADDRESS","ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", other, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("andq", "%r11", addr1asm)
+            }
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("andq", other, addr1asm)
+            }
+          }
+        }
 
         asmCommands.toList
       }
       case OR => {
         val addr1asm = addrToAsm(addr1,table)
+        val type1 = addrToType(addr1)
         val addr2asm = addrToAsm(addr2,table)
+        val type2 = addrToType(addr2)
         val addr3asm = addrToAsm(addr3,table)
+        val type3 = addrToType(addr3)
 
         var asmCommands = new mutable.ListBuffer[String]()
 
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("orq", "%r10", "%r11")
-        asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+        var other = ".NONE"
+        var otherType = ".NONE"
+        if (addr1asm == addr2asm) {
+          other = addr3asm
+          otherType = type3
+        } else if (addr1asm == addr3asm) {
+          other = addr2asm
+          otherType = type2
+        }
+
+        if (other == ".NONE") {
+          (type1, type2, type3) match {
+            case ("REGISTER",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, addr1asm)
+              asmCommands += "\t%s\t%s, %s\n".format("orq", addr3asm, addr1asm)
+            } // Other cases must have type1 == "ADDRESS"
+            case ("ADDRESS","ADDRESS",_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("orq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+            case ("ADDRESS",_,"ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("orq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // Other cases must have type2 and type3 as either "REGISTER" or "CONSTANT"
+            case ("ADDRESS",_,_) => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("orq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            } // This shouldn't trigger, but if all else fails revert to original codegen
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr2asm, "%r10")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", addr3asm, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("orq", "%r10", "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("movq", "%r11", addr1asm)
+            }
+          }
+        } else {
+          (type1, otherType) match {
+            case ("ADDRESS","ADDRESS") => {
+              asmCommands += "\t%s\t%s, %s\n".format("movq", other, "%r11")
+              asmCommands += "\t%s\t%s, %s\n".format("orq", "%r11", addr1asm)
+            }
+            case _ => {
+              asmCommands += "\t%s\t%s, %s\n".format("orq", other, addr1asm)
+            }
+          }
+        }
 
         asmCommands.toList
       }
-      // Match rel ops
+      // Match rel ops // TODO: Providing register support
 
       case LT => {
         val addr1asm = addrToAsm(addr1,table)
