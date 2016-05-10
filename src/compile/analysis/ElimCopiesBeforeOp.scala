@@ -18,6 +18,7 @@ object ElimCopiesBeforeOp {
       elimFromBBTacCopyIntBinOp(BasicBlockGenie.idToBBReference(bbID), tempGenie)
       elimFromBBTacCopyBinOp(BasicBlockGenie.idToBBReference(bbID), tempGenie)
       elimFromBBTacCopyIntBinOp(BasicBlockGenie.idToBBReference(bbID), tempGenie)
+      elimFromBBTacCopyTacCopy(BasicBlockGenie.idToBBReference(bbID), tempGenie)
     }
   }
 
@@ -68,6 +69,73 @@ object ElimCopiesBeforeOp {
                 i = i + 2
               } else if (instr1_addr1 == instr2_addr3) {
                 newInstrs.append(TacBinOp(tempGenie.generateTacNumber(), instr2BO.addr1, instr2_addr2, instr2BO.op, instr1_addr2))
+                i = i + 2
+              } else {
+                newInstrs.append(bb.instrs(i))
+                i += 1
+              }
+            }
+
+          } else {
+            newInstrs.append(bb.instrs(i))
+            i += 1
+          }
+        } else {
+          newInstrs.append(bb.instrs(i))
+          i += 1
+        }
+      }
+
+      bb.instrs.clear()
+      bb.instrs ++= newInstrs
+    }
+  }
+
+  def elimFromBBTacCopyTacCopy(bb : NormalBB, tempGenie : TempVariableGenie) {
+    /*
+    optimization for when:
+    TacCopy(T1,B)
+    TacCopy(A,T1)
+    ->
+    TacCopy(A,B)
+     */
+
+    val num_instrs = bb.instrs.size
+    if(num_instrs < 2) return
+    else {
+      val newInstrs = ArrayBuffer.empty[Tac]
+
+      var i = 0
+      while(i < num_instrs) {
+        if(i < num_instrs - 1) {
+          val instr1 = bb.instrs(i)
+          val instr2 = bb.instrs(i + 1)
+          if (instr1.isInstanceOf[TacCopy] && instr2.isInstanceOf[TacCopy]) {
+
+            val instr1TC = instr1.asInstanceOf[TacCopy]
+            val instr2TC = instr2.asInstanceOf[TacCopy]
+            val i1_addr1 = instr1TC.addr1
+            val i1_addr2 = instr1TC.addr2
+            val i2_addr1 = instr2TC.addr1
+            val i2_addr2 = instr2TC.addr2
+
+            // TODO would changes by previous bin op optimization mess up DCE_out? i don't think so...
+            val varAndST1 = DCE.getSymbolAndTable(i1_addr1, bb.symbolTable)
+
+            var tempIsUsed = false
+            for(tac <- bb.instrs.slice(i+2,num_instrs)) {
+              val uses = DCE.usePerTac(Set.empty[(String, SymbolTable)], tac, bb.symbolTable)
+              val used_in_tac1 = uses.contains(varAndST1)
+              tempIsUsed = tempIsUsed || used_in_tac1
+            }
+
+            if(bb.dceOut.contains(varAndST1) || tempIsUsed) {
+              newInstrs.append(bb.instrs(i))
+              i += 1
+            } else {
+              // do the TACCopy substitution
+              if (i1_addr1 == i2_addr2) {
+                newInstrs.append(TacCopy(tempGenie.generateTacNumber(), i2_addr1, i1_addr2))
                 i = i + 2
               } else {
                 newInstrs.append(bb.instrs(i))

@@ -1,0 +1,8 @@
+digraph G {
+	BB36 [shape=box,label="BB36\ntype: NormalBB\n\ncseIn: \ncseOut: \n\ndceIn: {}\ndceOut: {}\n\nweb: {}\n\nTacProgramEnter(30)\nTacStringLiteralStart(31)\nTacStringLiteral(24,.L1,%d\n)\nTacStringLiteralEnd(32)"];
+	BB1 [shape=box,label="BB1\ntype: NormalBB\n\ncseIn: \ncseOut: \n\ndceIn: {}\ndceOut: {}\n\nweb: {x->(1, 0, 4, 1),.T1->(2, 4, 5, 1),}\n\nTacNop(1,)\nTacLabel(2,get_int)\nTacMethodEnter(3,Method(get_int,IntType))\nTacCopy(4,.T1,x)\nTacReturnValue(5,.T1)\nTacReturn(6)\nTacSystemExit(7,-2)"];
+	BB10 [shape=box,label="BB10\ntype: NormalBB\n\ncseIn: \ncseOut: \n\ndceIn: {}\ndceOut: {}\n\nweb: {.T7->(7, 11, 12, 1),.T3->(4, 8, 9, 1),.T8->(9, 13, 13, 0),c->(2, 6, 6, 0),(5, 9, 9, 0),(6, 10, 13, 2),a->(1, 5, 5, 0),(3, 7, 8, 1),(8, 12, 12, 0),}\n\nTacNop(8,)\nTacGlobl(9,main)\nTacLabel(10,main)\nTacMethodEnter(11,Method(main,VoidType))\nTacCopyInt(12,a,0)\nTacCopyInt(13,c,0)\nTacCopyInt(33,a,2)\nTacBinOp(36,.T3,.C1,ADD,a)\nTacCopy(19,c,.T3)\nTacCopyInt(34,c,3)\nTacCopy(22,.T7,c)\nTacCopy(23,a,.T7)\nTacCopy(25,.T8,c)"];
+	BB10 -> BB35;
+	BB35 [shape=box,label="BB35\ntype: MethodCallBB\n\ncseIn: \ncseOut: \n\ndceIn: {}\ndceOut: {}\n\nweb: {.T8->(1, 0, 1, 1),.T9->(2, 2, 3, 1),}\n\nTacMethodCallStmt(26,printf,List(.L1, .T8))\nTacCopyInt(27,.T9,0)\nTacReturnValue(28,.T9)\nTacReturn(29)"];
+	BB35 -> BB10 [color = red];
+	Legend [shape=box,label="Bitvectors\n\n"];}

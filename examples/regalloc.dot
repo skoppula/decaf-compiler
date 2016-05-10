@@ -1,0 +1,22 @@
+digraph G {
+	BB48 [shape=box,label="BB48\ntype: MethodCallBB\n\ncseIn: \ncseOut: \n\ndceIn: {.T12,}\ndceOut: {}\n\nweb: {.T12->(1, 0, 1, 1),.T13->(2, 2, 3, 1),}\n\nregWebMap: Map()\n\nTacMethodCallStmt(40,printf,List(.L6, .T12))\nTacCopyInt(41,.T13,0)\nTacReturnValue(42,.T13)\nTacReturn(43)"];
+	BB1 [shape=box,label="BB1\ntype: NormalBB\n\ncseIn: \ncseOut: \n\ndceIn: {}d,f,e,b,c,.T7,\ndceOut: {}\n\nweb: {.T6->(10, 15, 16, 1),d->(7, 12, 12, 0),f->(11, 16, 16, 0),e->(9, 14, 14, 0),.T3->(4, 9, 10, 1),.T2->(2, 7, 8, 1),.T4->(6, 11, 12, 1),b->(3, 8, 8, 0),a->(1, 5, 16, 6),c->(5, 10, 10, 0),.T5->(8, 13, 14, 1),.T7->(12, 16, 16, 0),}\n\nregWebMap: Map(1 -> .Rr12)\n\nTacNop(1,)\nTacGlobl(2,main)\nTacLabel(3,main)\nTacMethodEnter(4,Method(main,VoidType))\nTacCopyInt(47,a,2)\nTacCopy(48,a,.Rr12)\nTacCopy(13,.T2,.Rr12)\nTacCopy(14,b,.T2)\nTacCopy(15,.T3,.Rr12)\nTacCopy(16,c,.T3)\nTacCopy(17,.T4,.Rr12)\nTacCopy(18,d,.T4)\nTacCopy(19,.T5,.Rr12)\nTacCopy(20,e,.T5)\nTacCopy(21,.T6,.Rr12)\nTacCopy(22,f,.T6)\nTacCopy(24,.T7,.Rr12)\nTacCopy(49,.Rr12,a)"];
+	BB1 -> BB28;
+	BB28 [shape=box,label="BB28\ntype: MethodCallBB\n\ncseIn: \ncseOut: \n\ndceIn: {d,f,e,b,c,.T7,}d,f,e,c,.T8,\ndceOut: {}\n\nweb: {.T7->(1, 0, 1, 1),b->(2, 0, 2, 1),.T8->(3, 2, 2, 0),}\n\nregWebMap: Map()\n\nTacMethodCallStmt(25,printf,List(.L1, .T7))\nTacCopy(27,.T8,b)"];
+	BB28 -> BB32;
+	BB36 [shape=box,label="BB36\ntype: MethodCallBB\n\ncseIn: \ncseOut: \n\ndceIn: {.T9,d,e,f,}.T10,e,f,\ndceOut: {}\n\nweb: {.T9->(1, 0, 1, 1),d->(2, 0, 2, 1),.T10->(3, 2, 2, 0),}\n\nregWebMap: Map()\n\nTacMethodCallStmt(31,printf,List(.L3, .T9))\nTacCopy(33,.T10,d)"];
+	BB36 -> BB40;
+	BB40 [shape=box,label="BB40\ntype: MethodCallBB\n\ncseIn: \ncseOut: \n\ndceIn: {.T10,e,f,}.T11,f,\ndceOut: {}\n\nweb: {.T10->(1, 0, 1, 1),e->(2, 0, 2, 1),.T11->(3, 2, 2, 0),}\n\nregWebMap: Map()\n\nTacMethodCallStmt(34,printf,List(.L4, .T10))\nTacCopy(36,.T11,e)"];
+	BB40 -> BB44;
+	BB32 [shape=box,label="BB32\ntype: MethodCallBB\n\ncseIn: \ncseOut: \n\ndceIn: {d,f,e,c,.T8,}.T9,d,e,f,\ndceOut: {}\n\nweb: {.T8->(1, 0, 1, 1),c->(2, 0, 2, 1),.T9->(3, 2, 2, 0),}\n\nregWebMap: Map()\n\nTacMethodCallStmt(28,printf,List(.L2, .T8))\nTacCopy(30,.T9,c)"];
+	BB32 -> BB36;
+	BB49 [shape=box,label="BB49\ntype: NormalBB\n\ncseIn: \ncseOut: \n\ndceIn: {}\ndceOut: {}\n\nweb: {}\n\nregWebMap: Map()\n\nTacProgramEnter(44)\nTacStringLiteralStart(45)\nTacStringLiteral(23,.L1,%d\n)\nTacStringLiteral(26,.L2,%d\n)\nTacStringLiteral(29,.L3,%d\n)\nTacStringLiteral(32,.L4,%d\n)\nTacStringLiteral(35,.L5,%d\n)\nTacStringLiteral(38,.L6,%d\n)\nTacStringLiteralEnd(46)"];
+	BB44 [shape=box,label="BB44\ntype: MethodCallBB\n\ncseIn: \ncseOut: \n\ndceIn: {.T11,f,}.T12,\ndceOut: {}\n\nweb: {.T11->(1, 0, 1, 1),f->(2, 0, 2, 1),.T12->(3, 2, 2, 0),}\n\nregWebMap: Map()\n\nTacMethodCallStmt(37,printf,List(.L5, .T11))\nTacCopy(39,.T12,f)"];
+	BB44 -> BB48;
+	BB40 -> BB36 [color = red];
+	BB28 -> BB1 [color = red];
+	BB48 -> BB44 [color = red];
+	BB36 -> BB32 [color = red];
+	BB44 -> BB40 [color = red];
+	BB32 -> BB28 [color = red];
+	Legend [shape=box,label="Bitvectors\n\n"];}

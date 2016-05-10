@@ -1,0 +1,12 @@
+callout printf;
+int get_int ( int x ) {
+  return x;
+}
+void main ( ) {
+  int a, c;
+  a = 2;
+  c = 1 + a;
+  c = 3;
+  a = c;
+  printf ( "%d\n", c );
+}
