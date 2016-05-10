@@ -208,7 +208,8 @@ object Compiler {
       }
 
       // opt 3 is already taken by array bounding checking optimizer cfg flag
-      if(CLI.opts(4)) {
+      //if(CLI.opts(4)) {
+      if(false) {
 
         dprintln("Constructing webs...")
         for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
