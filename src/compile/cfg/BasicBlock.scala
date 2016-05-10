@@ -1,6 +1,7 @@
 package compile.cfg
 
 import compile.analysis.Expression
+import compile.analysis.Web
 import compile.symboltables.SymbolTable
 
 import scala.collection.mutable
@@ -19,6 +20,13 @@ class NormalBB(
 
   var dceIn = Set.empty[(String, SymbolTable)]
   var dceOut = Set.empty[(String, SymbolTable)]
+
+  //cfg
+  var webIn = Map.empty[(String, SymbolTable), List[Web]]
+  var webOut = Map.empty[(String, SymbolTable), List[Web]]
+
+  //reg alloc
+  var webs = Map.empty[(String, SymbolTable), List[Web]]
 
   var methodTop = false
   var programStart = false
