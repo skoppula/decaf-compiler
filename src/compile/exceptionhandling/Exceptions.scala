@@ -122,6 +122,7 @@ case class TempVariableAlreadyExistsInGlobalMapException(message: String) extend
 case class SymbolVariableIsNullException(message: String) extends Exception(message)
 
 case class VariableIsNullException(message: String) extends Exception(message)
+case class NothingThatCanBeReplacedException(message: String) extends Exception(message)
 
 case class NoMatchingStatementException(message: String, loc: NodeLocation) extends ExceptionWithLocation(message, loc)
 
