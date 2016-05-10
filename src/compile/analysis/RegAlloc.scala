@@ -18,7 +18,7 @@ object RegAlloc {
       allWebs ++= webs
     }
 
-    var registers : mutable.ArrayBuffer[(String,Array[Web])] = new mutable.ArrayBuffer[(String,Array[Web])]
+    var registers : mutable.ArrayBuffer[(String,mutable.ArrayBuffer[Web])] = new mutable.ArrayBuffer[(String,mutable.ArrayBuffer[Web])]
     registers += (("reg1",null))
     registers += (("reg2",null))
     registers += (("reg3",null))
@@ -31,7 +31,7 @@ object RegAlloc {
 
       for(r <- registers){
         r._2 match {
-          case pastWebs : Array[Web] => {
+          case pastWebs : mutable.ArrayBuffer[Web] => {
             if(regsFilled >= registers.length){
 
               var conflicts = false
@@ -41,14 +41,14 @@ object RegAlloc {
                 }
               }
               if(conflicts){
-                //r._2 += web
+                r._2 ++= mutable.ArrayBuffer(web)
                 web.register = r._1
                 regsFilled += 1;
               }
             }
           }
           case _ => {
-            //r._2 += web
+            r._2 ++= mutable.ArrayBuffer(web)
             web.register = r._1
             regsFilled += 1;
           }
