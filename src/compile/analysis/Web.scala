@@ -84,14 +84,13 @@ object Web {
       var weblist = webs.get((s,t)) match {
         case Some(l) => {
           // Below is assumed that we are doing per block web generation, but it is not correct for inter-block web generation
-          var currentWeb = l.last
-          // TODO: endpos and use needs to be updated
+          val currentWeb = l.last
           l.dropRight(1) :+ Web(currentWeb.id, currentWeb.start, instrNum - currentWeb.start + 1, currentWeb.use + 1)
         }
         // No match found; for now we are doing intra block web creation
         // So treat this as if we're making a new web
           // TODO: initialize properly
-        case None => List(Web(genie.generateWebNumber(), 0, 1, 0))
+        case None => List(Web(genie.generateWebNumber(), instrNum, instrNum, 0))
       }
     }
 
@@ -106,15 +105,14 @@ object Web {
     for ((s,t) <- defSet) { // There should only really be one item
       var weblist = webs.get((s,t)) match {
         case Some(l) => {
-          // We should append the new web to this list
-          // TODO: make sure initialization is correct
-          l :+ Web(genie.generateWebNumber(), instrNum, 1, 0) 
+          // Below is assumed that we are doing per block web generation, but it is not correct for inter-block web generation
+          val currentWeb = l.last
+          l.dropRight(1) :+ Web(currentWeb.id, currentWeb.start, instrNum - currentWeb.start + 1, currentWeb.use + 1)
         }
         case None => {
           // No match found
           // Create a new web
-          // TODO: make sure initialization is correct
-          List(Web(genie.generateWebNumber(), instrNum, 1, 0) )
+          List(Web(genie.generateWebNumber(), instrNum, instrNum, 0) )
         }
       }
     }
