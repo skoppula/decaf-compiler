@@ -71,13 +71,10 @@ object Web {
       instrNum += 1
     }
 
-
-    //?
     bb.webs = webs
   }
 
-  def useWebPerTac(w: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
-    var webs : Map[(String, SymbolTable), List[Web]] = w
+  def useWebPerTac(webs: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
     var usedSet : Set[(String, SymbolTable)] = DCE.convertTacToUsedVarSet(tac, table)
 
     for ((s,t) <- usedSet) { // There should only be up to two items
@@ -89,8 +86,9 @@ object Web {
         }
         // No match found; for now we are doing intra block web creation
         // So treat this as if we're making a new web
-          // TODO: initialize properly
-        case None => List(Web(genie.generateWebNumber(), instrNum, instrNum, 0))
+        case None => {
+          webs.get((s,t)) ++= List(Web(genie.generateWebNumber(), instrNum, instrNum, 0))
+        }
       }
     }
 
@@ -98,8 +96,7 @@ object Web {
     return webs
   }
 
-  def defWebPerTac(w: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
-    var webs : Map[(String, SymbolTable), List[Web]] = w
+  def defWebPerTac(webs: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
     var defSet : Set[(String, SymbolTable)] = DCE.convertTacToDefVarSet(tac, table)
 
     for ((s,t) <- defSet) { // There should only really be one item
@@ -112,7 +109,7 @@ object Web {
         case None => {
           // No match found
           // Create a new web
-          List(Web(genie.generateWebNumber(), instrNum, instrNum, 0) )
+          webs.get((s,t)) ++= List(Web(genie.generateWebNumber(), instrNum, instrNum, 0) )
         }
       }
     }

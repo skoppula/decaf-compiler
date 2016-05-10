@@ -212,7 +212,7 @@ object Compiler {
         dprintln("Constructing webs...")
 
         for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
-          Web.getWebInBB(bb)
+          Web.getWebInBB(bb, new WebGenie)
         }
 
         dprintln("Finished Constructing webs...")
