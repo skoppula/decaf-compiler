@@ -331,6 +331,9 @@ object CFGUtil {
       }
       dceOutStr += "}"
 
+      var webInStr = parentBB.webIn.mkString("\\n")
+      var webOutStr = parentBB.webOut.mkString("\\n")
+
       if(parentBB.isInstanceOf[BranchBB]) {
         val parentBranchBB = parentBB.asInstanceOf[BranchBB]
         val merge = if(parentBranchBB.merge == null) "" else parentBranchBB.merge.id
@@ -340,7 +343,7 @@ object CFGUtil {
         val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
         if(printDataflow) {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
             "type: " + getBBType(parentBB),
@@ -348,6 +351,8 @@ object CFGUtil {
             "cseOut: " + cseOutStr,
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
+            "webIn: " + webInStr,
+            "webOut: " + webOutStr,
             "merge: " + merge,
             "preinc: " + preinc,
             "whilest: " + ws,
@@ -357,7 +362,7 @@ object CFGUtil {
             instrs.mkString("\\n")
           )
         } else {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
             "type: " + getBBType(parentBB),
@@ -372,7 +377,7 @@ object CFGUtil {
         }
       } else {
         if(printDataflow) {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
             "type: " + getBBType(parentBB),
@@ -380,6 +385,8 @@ object CFGUtil {
             "cseOut: " + cseOutStr,
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
+            "webIn: " + webInStr,
+            "webOut: " + webOutStr,
             instrs.mkString("\\n")
           )
         } else {
