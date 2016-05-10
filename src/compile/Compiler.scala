@@ -32,7 +32,7 @@ object Compiler {
   var outFile = if (CLI.outfile == null) Console.out else (new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile)))
 
   def main(args: Array[String]): Unit = {
-    CLI.parse(args, Array("cse", "dce", "copy", "cfg"))
+    CLI.parse(args, Array("cse", "dce", "copy", "cfg", "regalloc"))
     if (CLI.target == CLI.Action.SCAN) {
       scan(CLI.infile)
       System.exit(0)
@@ -207,8 +207,8 @@ object Compiler {
         dprintln("Finished extraneous Copy TACS...")
       }
 
-      /*
-      if(CLI.opts(3)) {
+      // opt 3 is already taken by array bounding checking optimizer cfg flag
+      if(CLI.opts(4)) {
         dprintln("Constructing webs...")
 
         for (bb <- BasicBlockGenie.idToBBReference.valuesIterator) {
@@ -217,7 +217,6 @@ object Compiler {
 
         dprintln("Finished Constructing webs...")
       }
-      */
 
  
       dprintln("Converting CFG to a TAC list...")

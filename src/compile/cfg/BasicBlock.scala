@@ -21,10 +21,6 @@ class NormalBB(
   var dceIn = Set.empty[(String, SymbolTable)]
   var dceOut = Set.empty[(String, SymbolTable)]
 
-  //cfg
-  var webIn = Map.empty[(String, SymbolTable), List[Web]]
-  var webOut = Map.empty[(String, SymbolTable), List[Web]]
-
   //reg alloc
   var webs = Map.empty[(String, SymbolTable), List[Web]]
 
@@ -51,6 +47,15 @@ class NormalBB(
     }
     dceOutStr += "}"
     return dceOutStr
+  }
+
+  def printWebOut : String = {
+    var webStr = "{"
+    for((key, listDefUses) <- this.webs) {
+      webStr += key._1 + "->" + listDefUses.mkString(",") + ","
+    }
+    webStr += "}"
+    return webStr
   }
 }
 

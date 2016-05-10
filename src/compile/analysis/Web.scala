@@ -8,7 +8,7 @@ import compile.util.Util.dprintln
 
 case class Web (id: Int, start: Int, end: Int, use: Int){
   override def toString : String = {
-    return "%s -> start: %d, end: %d, use: %d".format(id, start, end, use)
+    return "(%s, %d, %d, %d)".format(id, start, end, use)
   }
 }
 
@@ -21,6 +21,8 @@ object Web {
     var webs = Map.empty[(String, SymbolTable), List[Web]]
     var instrNum = 1
     for(instr <- bb.instrs) {
+      // dprintln("\t" + instr.toString)
+      // dprintln("\t" + WebUtil.printWebOut(webs))
       instr match {
         case t:TacBinOp => {
           webs = useWebPerTac(webs, t, table, instrNum, genie)
@@ -71,40 +73,46 @@ object Web {
       instrNum += 1
     }
 
+    // dprintln(WebUtil.printWebOut(webs))
     bb.webs = webs
   }
 
   def useWebPerTac(webs: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
-    var usedSet : Set[(String, SymbolTable)] = DCE.convertTacToUsedVarSet(tac, table)
+    val usedSet : Set[(String, SymbolTable)] = DCE.convertTacToUsedVarSet(tac, table)
+    var newWebs = webs
 
     for ((s,t) <- usedSet) { // There should only be up to two items
-      var weblist = webs.get((s,t)) match {
+      // dprintln("\t\tChecking var" + s)
+      val weblist = webs.get((s,t)) match {
         case Some(l) => {
+          // dprintln("Case some")
           // Below is assumed that we are doing per block web generation, but it is not correct for inter-block web generation
           val currentWeb = l.last
-          l.dropRight(1) :+ Web(currentWeb.id, currentWeb.start, instrNum - currentWeb.start + 1, currentWeb.use + 1)
+          l.dropRight(1) :+ Web(currentWeb.id, currentWeb.start, instrNum, currentWeb.use + 1)
         }
         // No match found; for now we are doing intra block web creation
         // So treat this as if we're making a new web
         case None => {
-          List(Web(genie.generateWebNumber(), instrNum, instrNum, 0))
+          // dprintln("Case none")
+          List(Web(genie.generateWebNumber(), 0, instrNum, 1))
         }
       }
+      newWebs = webs.-((s,t)) + {(s,t) -> weblist}
     }
 
-
-    return webs
+    return newWebs
   }
 
   def defWebPerTac(webs: Map[(String, SymbolTable), List[Web]], tac : Tac, table : SymbolTable, instrNum : Int, genie : WebGenie) : Map[(String, SymbolTable), List[Web]] = {
-    var defSet : Set[(String, SymbolTable)] = DCE.convertTacToDefVarSet(tac, table)
+    val defSet : Set[(String, SymbolTable)] = DCE.convertTacToDefVarSet(tac, table)
+    var newWebs = webs
 
     for ((s,t) <- defSet) { // There should only really be one item
-      var weblist = webs.get((s,t)) match {
+      val weblist = webs.get((s,t)) match {
         case Some(l) => {
           // Below is assumed that we are doing per block web generation, but it is not correct for inter-block web generation
           val currentWeb = l.last
-          l.dropRight(1) :+ Web(currentWeb.id, currentWeb.start, instrNum - currentWeb.start + 1, currentWeb.use + 1)
+          l :+ Web(genie.generateWebNumber(), instrNum, instrNum, 0)
         }
         case None => {
           // No match found
@@ -112,9 +120,10 @@ object Web {
           List(Web(genie.generateWebNumber(), instrNum, instrNum, 0) )
         }
       }
+      newWebs = webs.-((s,t)) + {(s,t) -> weblist}
     }
 
-    return webs
+    return newWebs
   }
 
 }

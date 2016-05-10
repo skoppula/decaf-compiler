@@ -318,7 +318,8 @@ object CFGUtil {
 
       var dceInStr = "{"
       for((variable, symbolTable) <- parentBB.dceIn) {
-        dceInStr += "(" + variable + "," + symbolTable.hashCode().toString + ")"
+        //dceInStr += "(" + variable + "," + symbolTable.hashCode().toString + ")"
+        dceInStr += variable + ","
       }
       dceInStr += "}"
 
@@ -327,12 +328,16 @@ object CFGUtil {
         if(variable == null) {
         } else if (symbolTable == null) {
         }
-        dceOutStr += "(" + variable + "," + symbolTable.hashCode().toString + ")"
+        // dceOutStr += "(" + variable + "," + symbolTable.hashCode().toString + ")"
+        dceInStr += variable + ","
       }
       dceOutStr += "}"
 
-      var webInStr = parentBB.webIn.mkString("\\n")
-      var webOutStr = parentBB.webOut.mkString("\\n")
+      var webStr = "{"
+      for((key, listDefUses) <- parentBB.webs) {
+        webStr += key._1 + "->" + listDefUses.mkString(",") + ","
+      }
+      webStr += "}"
 
       if(parentBB.isInstanceOf[BranchBB]) {
         val parentBranchBB = parentBB.asInstanceOf[BranchBB]
@@ -343,7 +348,8 @@ object CFGUtil {
         val child = if(parentBranchBB.child == null) "" else parentBranchBB.child.id
         val child_else = if(parentBranchBB.child_else == null) "" else parentBranchBB.child_else.id
         if(printDataflow) {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
+          //                                                                          web
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n\\n%s\\n%s\\n%s\\n%s\\n%s\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
             "type: " + getBBType(parentBB),
@@ -351,8 +357,7 @@ object CFGUtil {
             "cseOut: " + cseOutStr,
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
-            "webIn: " + webInStr,
-            "webOut: " + webOutStr,
+            "web: " + webStr,
             "merge: " + merge,
             "preinc: " + preinc,
             "whilest: " + ws,
@@ -377,7 +382,7 @@ object CFGUtil {
         }
       } else {
         if(printDataflow) {
-          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\"];\n".format(
+          dot = dot :+ "\t%s [shape=box,label=\"%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n%s\\n\\n%s\\n\\n%s\"];\n".format(
             parent.substring(1),
             parent.substring(1),
             "type: " + getBBType(parentBB),
@@ -385,8 +390,7 @@ object CFGUtil {
             "cseOut: " + cseOutStr,
             "dceIn: " + dceInStr,
             "dceOut: " + dceOutStr,
-            "webIn: " + webInStr,
-            "webOut: " + webOutStr,
+            "web: " + webStr,
             instrs.mkString("\\n")
           )
         } else {

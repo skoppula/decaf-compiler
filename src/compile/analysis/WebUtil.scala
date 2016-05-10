@@ -11,5 +11,12 @@ import scala.collection.mutable.ArrayBuffer
 
 
 object WebUtil {
-
+  def printWebOut(web : Map[(String, SymbolTable), List[Web]]): String = {
+    var webStr = "{"
+    for((key, listDefUses) <- web) {
+      webStr += key._1 + "->" + listDefUses.mkString(",") + ","
+    }
+    webStr += "}"
+    return webStr
+  }
 }
