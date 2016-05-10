@@ -14,6 +14,24 @@ case class Web (id: Int, start: Int, end: Int, use: Int){
 
 object Web {
 
+  def getWebFromId(webs : Map[(String, SymbolTable), List[Web]], id : Int) : Web = {
+    for ((key, lst) <- webs) {
+      for(web <- lst) {
+        if(web.id == id) {
+          return web
+        }
+      }
+    }
+    return null
+  }
+
+  def replaceTacsWithRegTacs(bb : NormalBB, regMapping : Map[Int, String]) = {
+    for((webID, reg) <- regMapping) {
+      val webToUpdate = getWebFromId(bb.webs, webID)
+
+    }
+  }
+
   //returns Map[(String, SymbolTable), List[Web]]
   def getWebInBB(bb : NormalBB, genie : WebGenie) = {
     // We start with an empty map of webs
