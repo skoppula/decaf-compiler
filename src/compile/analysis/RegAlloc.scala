@@ -1,6 +1,7 @@
 package compile.analysis
 
 import compile.cfg.{BranchBB, NormalBB}
+import compile.descriptors.ArrayBaseDescriptor
 import compile.symboltables.{MethodsTable, SymbolTable}
 import compile.exceptionhandling._
 import compile.tac.{ThreeAddressCode, TempVariableGenie}
@@ -17,7 +18,9 @@ object RegAlloc {
     val allWebs : mutable.ArrayBuffer[Web] = mutable.ArrayBuffer.empty[Web]
 
     for((k,webs) <- bb.webs) {
-      allWebs ++= webs
+      if(!k._2.lookupID(k._1).isInstanceOf[ArrayBaseDescriptor]) {
+        allWebs ++= webs
+      }
     }
 
     var registers : mutable.ArrayBuffer[(String,mutable.ArrayBuffer[Web])] = new mutable.ArrayBuffer[(String,mutable.ArrayBuffer[Web])]
