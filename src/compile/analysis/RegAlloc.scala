@@ -43,7 +43,7 @@ object RegAlloc {
               }
             }
           }
-          case w : _ => {
+          case _ => {
             //r._2 = web
             web.register = r._1
             regsFilled += 1;
